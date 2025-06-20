@@ -33,7 +33,7 @@ export default function GoogleCallbackPage() {
         
         // Check if user needs onboarding
         // This will be handled by the protected route layout
-        router.push('/protected/search')
+        router.push('/protected/dashboard')
       } catch (error) {
         console.error('Google authentication failed:', error)
         router.push('/auth/login?error=oauth_failed')

@@ -29,7 +29,7 @@ export default function LoginForm() {
         email: email.trim(), 
         password: password.trim() 
       })).unwrap()
-      router.push('/protected/search')
+      router.push('/protected/dashboard')
     } catch (error) {
       // Error is handled by the slice
     }

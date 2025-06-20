@@ -11,9 +11,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/login', request.url))
   }
   
-  // Redirect to search if accessing auth pages with token
+  // Redirect to dashboard if accessing auth pages with token
   if (isAuthPage && token) {
-    return NextResponse.redirect(new URL('/protected/search', request.url))
+    return NextResponse.redirect(new URL('/protected/dashboard', request.url))
   }
   
   return NextResponse.next()

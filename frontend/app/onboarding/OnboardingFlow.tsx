@@ -79,8 +79,8 @@ export default function OnboardingFlow() {
     if (currentStep < TOTAL_STEPS - 1) {
       setCurrentStep(currentStep + 1)
     } else {
-      // Onboarding complete, redirect to search
-      router.push('/protected/search')
+      // Onboarding complete, redirect to dashboard
+      router.push('/protected/dashboard')
     }
   }
 
