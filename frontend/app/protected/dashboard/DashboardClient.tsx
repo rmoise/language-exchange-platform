@@ -509,7 +509,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                     </Typography>
                     <LinearProgress 
                       variant="determinate" 
-                      value={Math.floor(Math.random() * 40) + 30} // Mock progress
+                      value={50} // Static progress for demo
                       sx={{ 
                         height: 6,
                         borderRadius: 1,
