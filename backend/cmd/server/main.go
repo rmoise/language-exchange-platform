@@ -1,0 +1,156 @@
+package main
+
+import (
+	"log"
+
+	"language-exchange/internal/config"
+	"language-exchange/internal/database"
+	"language-exchange/internal/handlers"
+	"language-exchange/internal/repository/postgres"
+	"language-exchange/internal/services"
+	"language-exchange/internal/websocket"
+	"language-exchange/pkg/jwt"
+
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+)
+
+func main() {
+	// Load environment variables
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found")
+	}
+
+	// Load configuration
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatal("Failed to load config:", err)
+	}
+
+	// Connect to database
+	db, err := database.NewConnection(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+	defer db.Close()
+
+	// Initialize JWT service
+	tokenService := jwt.NewTokenService(cfg.JWTSecret)
+
+	// Initialize repositories
+	userRepo := postgres.NewUserRepository(db)
+	matchRepo := postgres.NewMatchRepository(db)
+	conversationRepo := postgres.NewConversationRepository(db.DB)
+	messageRepo := postgres.NewMessageRepository(db.DB)
+
+	// Initialize WebSocket hub
+	wsHub := websocket.NewHub()
+	go wsHub.Run() // Start the hub in a goroutine
+
+	// Initialize services
+	authService := services.NewAuthService(userRepo, tokenService, cfg.GoogleClientID, cfg.GoogleClientSecret, cfg.GoogleRedirectURL)
+	userService := services.NewUserService(userRepo)
+	matchService := services.NewMatchService(matchRepo, userRepo)
+	conversationService := services.NewConversationService(conversationRepo, userRepo, messageRepo, matchRepo)
+	messageService := services.NewMessageService(messageRepo, conversationRepo, userRepo, wsHub)
+
+	// Initialize handlers
+	authHandler := handlers.NewAuthHandler(authService)
+	userHandler := handlers.NewUserHandler(userService)
+	matchHandler := handlers.NewMatchHandler(matchService)
+	conversationHandler := handlers.NewConversationHandler(conversationService)
+	messageHandler := handlers.NewMessageHandler(messageService, conversationService)
+	wsHandler := handlers.NewWebSocketHandler(wsHub)
+
+	// Setup Gin router
+	if cfg.Environment == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	router := gin.New()
+	router.Use(gin.Logger())
+	router.Use(handlers.ErrorHandlingMiddleware())
+	router.Use(handlers.CORSMiddleware())
+
+	// Health check endpoint
+	router.GET("/health", func(c *gin.Context) {
+		if err := db.Health(); err != nil {
+			c.JSON(500, gin.H{"status": "unhealthy", "error": err.Error()})
+			return
+		}
+		c.JSON(200, gin.H{"status": "healthy"})
+	})
+
+	// API routes
+	api := router.Group("/api")
+	{
+		// Auth routes (public)
+		auth := api.Group("/auth")
+		{
+			auth.POST("/register", authHandler.Register)
+			auth.POST("/login", authHandler.Login)
+			auth.GET("/google", authHandler.GoogleLogin)
+			auth.GET("/google/callback", authHandler.GoogleCallback)
+		}
+
+		// Protected routes
+		protected := api.Group("/")
+		protected.Use(handlers.AuthMiddleware(authService))
+		{
+			// User routes
+			users := protected.Group("/users")
+			{
+				users.GET("/me", authHandler.GetMe)
+				users.PUT("/me/languages", userHandler.UpdateLanguages)
+				users.PUT("/me/profile", userHandler.UpdateProfile)
+				users.PUT("/me/preferences", userHandler.UpdatePreferences)
+				users.PUT("/me/onboarding-step", userHandler.UpdateOnboardingStep)
+				users.GET("", userHandler.SearchPartners)
+			}
+
+			// Match routes
+			matches := protected.Group("/matches")
+			{
+				matches.POST("/requests", matchHandler.SendRequest)
+				matches.GET("/requests/incoming", matchHandler.GetIncomingRequests)
+				matches.GET("/requests/outgoing", matchHandler.GetOutgoingRequests)
+				matches.PUT("/requests/:id", matchHandler.HandleRequest)
+				matches.GET("", matchHandler.GetMatches)
+				matches.POST("/:matchId/conversation", conversationHandler.StartConversationFromMatch)
+			}
+
+			// Conversation routes
+			conversations := protected.Group("/conversations")
+			{
+				conversations.GET("", conversationHandler.GetConversations)
+				conversations.POST("", conversationHandler.CreateConversation)
+				conversations.GET("/:conversationId", conversationHandler.GetConversation)
+				conversations.GET("/:conversationId/messages", messageHandler.GetMessages)
+				conversations.POST("/:conversationId/messages", messageHandler.SendMessage)
+				conversations.PUT("/:conversationId/messages/read", messageHandler.MarkAsRead)
+			}
+
+			// Message routes
+			messages := protected.Group("/messages")
+			{
+				messages.PUT("/:messageId/status", messageHandler.UpdateMessageStatus)
+				messages.DELETE("/:messageId", messageHandler.DeleteMessage)
+			}
+
+			// WebSocket routes
+			ws := protected.Group("/ws")
+			{
+				ws.GET("", wsHandler.HandleWebSocket)
+				ws.GET("/online", wsHandler.GetOnlineUsers)
+				ws.GET("/online/:userId", wsHandler.CheckUserOnline)
+			}
+		}
+	}
+
+	// Start server
+	port := ":" + cfg.Port
+	log.Printf("Server starting on port %s", cfg.Port)
+	if err := router.Run(port); err != nil {
+		log.Fatal("Failed to start server:", err)
+	}
+}
