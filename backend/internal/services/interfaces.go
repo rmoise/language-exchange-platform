@@ -44,3 +44,28 @@ type MessageService interface {
 	UpdateMessageStatus(ctx context.Context, messageID, userID string, status models.MessageStatus) error
 	DeleteMessage(ctx context.Context, messageID, userID string) error
 }
+
+type SessionService interface {
+	// Session management
+	CreateSession(ctx context.Context, userID string, input models.CreateSessionRequest) (*models.LanguageSession, error)
+	GetSession(ctx context.Context, sessionID string) (*models.LanguageSession, error)
+	GetUserSessions(ctx context.Context, userID string) ([]*models.LanguageSession, error)
+	GetActiveSessions(ctx context.Context, limit int) ([]*models.LanguageSession, error)
+	EndSession(ctx context.Context, sessionID, userID string) error
+	
+	// Participant management
+	JoinSession(ctx context.Context, sessionID, userID string) (*models.SessionParticipant, error)
+	LeaveSession(ctx context.Context, sessionID, userID string) error
+	GetSessionParticipants(ctx context.Context, sessionID string) ([]*models.SessionParticipant, error)
+	IsUserInSession(ctx context.Context, sessionID, userID string) (bool, error)
+	
+	// Canvas operations
+	SaveCanvasOperation(ctx context.Context, operation *models.CanvasOperation) error
+	GetCanvasOperations(ctx context.Context, sessionID string, limit, offset int) ([]*models.CanvasOperation, error)
+	ClearCanvas(ctx context.Context, sessionID, userID string) error
+	
+	// Session messages
+	SendMessage(ctx context.Context, sessionID, userID string, input models.SendMessageInput) (*models.SessionMessage, error)
+	SaveMessage(ctx context.Context, message *models.SessionMessage) (*models.SessionMessage, error)
+	GetSessionMessages(ctx context.Context, sessionID string, limit, offset int) ([]*models.SessionMessage, error)
+}

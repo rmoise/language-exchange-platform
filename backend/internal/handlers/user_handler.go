@@ -36,6 +36,26 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 	errors.SendSuccess(c, user)
 }
 
+func (h *UserHandler) GetUserByID(c *gin.Context) {
+	targetUserID := c.Param("id")
+	if targetUserID == "" {
+		errors.SendError(c, 400, "INVALID_USER_ID", "User ID is required")
+		return
+	}
+
+	user, err := h.userService.GetProfile(c.Request.Context(), targetUserID)
+	if err != nil {
+		errors.HandleError(c, err)
+		return
+	}
+
+	// Don't return sensitive information for other users
+	user.PasswordHash = ""
+	user.Email = ""
+
+	errors.SendSuccess(c, user)
+}
+
 func (h *UserHandler) UpdateLanguages(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {

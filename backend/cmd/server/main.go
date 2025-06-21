@@ -42,6 +42,7 @@ func main() {
 	matchRepo := postgres.NewMatchRepository(db)
 	conversationRepo := postgres.NewConversationRepository(db.DB)
 	messageRepo := postgres.NewMessageRepository(db.DB)
+	sessionRepo := postgres.NewSessionRepository(db)
 
 	// Initialize WebSocket hub
 	wsHub := websocket.NewHub()
@@ -53,6 +54,10 @@ func main() {
 	matchService := services.NewMatchService(matchRepo, userRepo)
 	conversationService := services.NewConversationService(conversationRepo, userRepo, messageRepo, matchRepo)
 	messageService := services.NewMessageService(messageRepo, conversationRepo, userRepo, wsHub)
+	sessionService := services.NewSessionService(sessionRepo, userRepo)
+	
+	// Set session service on the hub for database operations
+	wsHub.SetSessionService(sessionService)
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService)
@@ -60,7 +65,8 @@ func main() {
 	matchHandler := handlers.NewMatchHandler(matchService)
 	conversationHandler := handlers.NewConversationHandler(conversationService)
 	messageHandler := handlers.NewMessageHandler(messageService, conversationService)
-	wsHandler := handlers.NewWebSocketHandler(wsHub)
+	sessionHandler := handlers.NewSessionHandler(sessionService, wsHub)
+	wsHandler := handlers.NewWebSocketHandler(wsHub, sessionService)
 
 	// Setup Gin router
 	if cfg.Environment == "production" {
@@ -105,6 +111,7 @@ func main() {
 				users.PUT("/me/profile", userHandler.UpdateProfile)
 				users.PUT("/me/preferences", userHandler.UpdatePreferences)
 				users.PUT("/me/onboarding-step", userHandler.UpdateOnboardingStep)
+				users.GET("/:id", userHandler.GetUserByID)
 				users.GET("", userHandler.SearchPartners)
 			}
 
@@ -137,13 +144,38 @@ func main() {
 				messages.DELETE("/:messageId", messageHandler.DeleteMessage)
 			}
 
-			// WebSocket routes
+			// Session routes
+			sessions := protected.Group("/sessions")
+			{
+				sessions.POST("", sessionHandler.CreateSession)
+				sessions.GET("/active", sessionHandler.GetActiveSessions)
+				sessions.GET("/my", sessionHandler.GetUserSessions)
+				sessions.GET("/:sessionId", sessionHandler.GetSession)
+				sessions.POST("/:sessionId/join", sessionHandler.JoinSession)
+				sessions.POST("/:sessionId/leave", sessionHandler.LeaveSession)
+				sessions.POST("/:sessionId/end", sessionHandler.EndSession)
+				sessions.GET("/:sessionId/participants", sessionHandler.GetSessionParticipants)
+				sessions.GET("/:sessionId/messages", sessionHandler.GetSessionMessages)
+				sessions.POST("/:sessionId/messages", sessionHandler.SendMessage)
+				sessions.GET("/:sessionId/canvas", sessionHandler.GetCanvasOperations)
+				sessions.POST("/:sessionId/canvas", sessionHandler.SaveCanvasOperation)
+			}
+
+			// WebSocket routes  
 			ws := protected.Group("/ws")
 			{
 				ws.GET("", wsHandler.HandleWebSocket)
 				ws.GET("/online", wsHandler.GetOnlineUsers)
 				ws.GET("/online/:userId", wsHandler.CheckUserOnline)
+				ws.GET("/sessions/:sessionId/participants", wsHandler.GetSessionParticipants)
 			}
+		}
+		
+		// WebSocket session routes with special auth middleware
+		wsSession := api.Group("/ws/sessions")
+		wsSession.Use(handlers.WebSocketAuthMiddleware(authService))
+		{
+			wsSession.GET("/:sessionId", wsHandler.HandleSessionWebSocket)
 		}
 	}
 

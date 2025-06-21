@@ -64,6 +64,56 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
+// WebSocketAuthMiddleware is a special auth middleware for WebSocket connections
+// that can read tokens from query parameters
+func WebSocketAuthMiddleware(authService services.AuthService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		log.Printf("WebSocket Auth middleware - Path: %s", c.Request.URL.Path)
+		
+		var token string
+		
+		// Try to get token from Authorization header first
+		authHeader := c.GetHeader("Authorization")
+		if authHeader != "" {
+			log.Printf("WebSocket Auth middleware - Authorization header: '%s'", authHeader)
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				token = parts[1]
+			}
+		}
+		
+		// If no token in header, try query parameter
+		if token == "" {
+			token = c.Query("token")
+			if token != "" {
+				log.Printf("WebSocket Auth middleware - Token from query param")
+			}
+		}
+		
+		if token == "" {
+			log.Printf("WebSocket Auth middleware - No token found")
+			errors.HandleError(c, models.ErrInvalidToken)
+			c.Abort()
+			return
+		}
+
+		log.Printf("WebSocket Auth middleware - Validating token for path: %s", c.Request.URL.Path)
+		user, err := authService.ValidateToken(token)
+		if err != nil {
+			log.Printf("WebSocket Auth middleware - Token validation failed for path %s: %v", c.Request.URL.Path, err)
+			errors.HandleError(c, err)
+			c.Abort()
+			return
+		}
+		log.Printf("WebSocket Auth middleware - Token validation successful for path %s, user: %s", c.Request.URL.Path, user.ID)
+
+		// Set user in context
+		c.Set("user", user)
+		c.Set("userID", user.ID)
+		c.Next()
+	}
+}
+
 func ErrorHandlingMiddleware() gin.HandlerFunc {
 	return gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
 		errors.SendError(c, 500, "INTERNAL_SERVER_ERROR", "Internal server error")

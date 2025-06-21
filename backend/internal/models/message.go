@@ -103,12 +103,20 @@ type WebSocketMessage struct {
 
 // WebSocketMessageTypes
 const (
-	WSMessageTypeNewMessage    = "new_message"
-	WSMessageTypeMessageRead  = "message_read"
-	WSMessageTypeTyping       = "typing"
-	WSMessageTypeStopTyping   = "stop_typing"
-	WSMessageTypeUserOnline   = "user_online"
-	WSMessageTypeUserOffline  = "user_offline"
+	WSMessageTypeNewMessage      = "new_message"
+	WSMessageTypeMessageRead     = "message_read"
+	WSMessageTypeTyping          = "typing"
+	WSMessageTypeStopTyping      = "stop_typing"
+	WSMessageTypeUserOnline      = "user_online"
+	WSMessageTypeUserOffline     = "user_offline"
+	// Session-specific message types
+	WSMessageTypeSessionJoin     = "session_join"
+	WSMessageTypeSessionLeave    = "session_leave"
+	WSMessageTypeSessionMessage  = "session_message"
+	WSMessageTypeCanvasOperation = "canvas_operation"
+	WSMessageTypeCursorPosition  = "cursor_position"
+	WSMessageTypeUserJoined      = "user_joined"
+	WSMessageTypeUserLeft        = "user_left"
 )
 
 // TypingIndicator represents typing status
@@ -122,4 +130,28 @@ type TypingIndicator struct {
 type OnlineStatus struct {
 	UserID   string `json:"user_id"`
 	IsOnline bool   `json:"is_online"`
+}
+
+// SessionNotification represents session-related notifications
+type SessionNotification struct {
+	SessionID string      `json:"session_id"`
+	UserID    string      `json:"user_id"`
+	Type      string      `json:"type"`
+	Data      interface{} `json:"data,omitempty"`
+}
+
+// CanvasOperationMessage represents canvas operations for sessions
+type CanvasOperationMessage struct {
+	SessionID     string                 `json:"session_id"`
+	UserID        string                 `json:"user_id"`
+	OperationType string                 `json:"operation_type"`
+	Data          map[string]interface{} `json:"data"`
+}
+
+// CursorPosition represents user cursor position in a session
+type CursorPosition struct {
+	SessionID string  `json:"session_id"`
+	UserID    string  `json:"user_id"`
+	X         float64 `json:"x"`
+	Y         float64 `json:"y"`
 }

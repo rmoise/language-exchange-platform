@@ -34,4 +34,10 @@ var (
 	ErrCannotMatchSelf    = NewAppError("CANNOT_MATCH_SELF", "Cannot send match request to yourself", http.StatusBadRequest)
 	ErrInternalServer     = NewAppError("INTERNAL_SERVER_ERROR", "Internal server error", http.StatusInternalServerError)
 	ErrValidation         = NewAppError("VALIDATION_ERROR", "Validation failed", http.StatusBadRequest)
+	
+	// Session errors
+	ErrSessionNotFound      = NewAppError("SESSION_NOT_FOUND", "Session not found", http.StatusNotFound)
+	ErrParticipantNotFound  = NewAppError("PARTICIPANT_NOT_FOUND", "Participant not found", http.StatusNotFound)
+	ErrSessionFull          = NewAppError("SESSION_FULL", "Session has reached maximum capacity", http.StatusConflict)
+	ErrSessionEnded         = NewAppError("SESSION_ENDED", "Session has ended", http.StatusGone)
 )

@@ -61,20 +61,26 @@ func (s *userService) SearchPartners(ctx context.Context, userID string, filters
 		return nil, models.ErrInternalServer
 	}
 
-	// Filter users based on language compatibility
-	currentUser, err := s.userRepo.GetByID(ctx, userID)
-	if err != nil {
-		return users, nil // Return unfiltered if we can't get current user
-	}
-
-	var compatibleUsers []*models.User
-	for _, user := range users {
-		if currentUser.CanMatchWith(user) {
-			compatibleUsers = append(compatibleUsers, user)
+	// Only apply language compatibility filtering if specific language filters are provided
+	// This allows the Community page to show all users, while search with language criteria shows compatible matches
+	if filters.Native != "" || filters.Target != "" {
+		// Filter users based on language compatibility
+		currentUser, err := s.userRepo.GetByID(ctx, userID)
+		if err != nil {
+			return users, nil // Return unfiltered if we can't get current user
 		}
+
+		var compatibleUsers []*models.User
+		for _, user := range users {
+			if currentUser.CanMatchWith(user) {
+				compatibleUsers = append(compatibleUsers, user)
+			}
+		}
+		return compatibleUsers, nil
 	}
 
-	return compatibleUsers, nil
+	// Return all users (except current user) when no language filters are applied
+	return users, nil
 }
 
 func (s *userService) UpdateProfile(ctx context.Context, userID string, input models.UpdateProfileInput) error {
