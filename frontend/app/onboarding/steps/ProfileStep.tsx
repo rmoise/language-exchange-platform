@@ -8,10 +8,10 @@ import {
   Button,
   Paper,
   Alert,
-  Grid,
   IconButton,
   Chip,
   Avatar,
+  Grid,
 } from '@mui/material'
 import { 
   Person as PersonIcon,
@@ -258,7 +258,7 @@ export default function ProfileStep({ user, onNext, onBack }: ProfileStepProps) 
         </Typography>
         <Grid container spacing={1} sx={{ mb: 3 }}>
           {COMMON_INTERESTS.map((interest) => (
-            <Grid item key={interest}>
+            <Grid key={interest}>
               <Chip
                 label={interest}
                 onClick={() => handleInterestToggle(interest)}
@@ -311,7 +311,7 @@ export default function ProfileStep({ user, onNext, onBack }: ProfileStepProps) 
 
       {/* Navigation buttons */}
       <Grid container spacing={2}>
-        <Grid item xs={6}>
+        <Grid size={6}>
           <Button
             fullWidth
             variant="outlined"
@@ -325,7 +325,7 @@ export default function ProfileStep({ user, onNext, onBack }: ProfileStepProps) 
             Back
           </Button>
         </Grid>
-        <Grid item xs={6}>
+        <Grid size={6}>
           <Button
             fullWidth
             variant="contained"

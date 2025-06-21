@@ -3,8 +3,10 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"language-exchange/internal/models"
 	"language-exchange/internal/services"
@@ -52,14 +54,22 @@ func (h *AuthHandler) Register(c *gin.Context) {
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
+	// Debug: Log raw request body
+	body, _ := c.GetRawData()
+	log.Printf("Raw request body: %s", string(body))
+
+	// Reset the body for binding
+	c.Request.Body = io.NopCloser(strings.NewReader(string(body)))
+
 	var input models.LoginInput
 	if err := c.ShouldBindJSON(&input); err != nil {
+		log.Printf("JSON binding error: %v", err)
 		errors.SendError(c, 400, "INVALID_INPUT", "Invalid request body")
 		return
 	}
 
 	// Debug: Log the exact input received
-	log.Printf("Login attempt - Email: '%s' (length: %d), Password length: %d", 
+	log.Printf("Login attempt - Email: '%s' (length: %d), Password length: %d",
 		input.Email, len(input.Email), len(input.Password))
 
 	// Validate input
@@ -97,13 +107,13 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 func (h *AuthHandler) GoogleLogin(c *gin.Context) {
 	// Generate a random state string
 	state := generateRandomState()
-	
+
 	// Store state in session or cookie for verification later
 	c.SetCookie("oauth_state", state, 300, "/", "", false, true) // 5 minutes expiry
-	
+
 	// Get Google OAuth URL
 	authURL := h.authService.GetGoogleAuthURL(state)
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"authUrl": authURL,
 	})
@@ -116,35 +126,35 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 		errors.SendError(c, http.StatusBadRequest, "INVALID_STATE", "Missing OAuth state")
 		return
 	}
-	
+
 	receivedState := c.Query("state")
 	if receivedState != expectedState {
 		errors.SendError(c, http.StatusBadRequest, "INVALID_STATE", "Invalid OAuth state")
 		return
 	}
-	
+
 	// Clear the state cookie
 	c.SetCookie("oauth_state", "", -1, "/", "", false, true)
-	
+
 	// Get authorization code
 	code := c.Query("code")
 	if code == "" {
 		errors.SendError(c, http.StatusBadRequest, "MISSING_CODE", "Authorization code is required")
 		return
 	}
-	
+
 	// Exchange code for user info and create/login user
 	user, token, err := h.authService.GoogleAuth(c.Request.Context(), code)
 	if err != nil {
 		errors.HandleError(c, err)
 		return
 	}
-	
+
 	response := gin.H{
 		"token": token,
 		"user":  user,
 	}
-	
+
 	errors.SendSuccess(c, response)
 }
 

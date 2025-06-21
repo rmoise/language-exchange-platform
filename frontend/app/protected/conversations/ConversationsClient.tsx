@@ -17,7 +17,7 @@ import {
 import {
   Search as SearchIcon,
   Send as SendIcon,
-  Clock as ClockIcon,
+  Schedule as ClockIcon,
   Chat as MessageIcon
 } from '@mui/icons-material';
 import { ConversationList } from '@/features/messaging/components/ConversationList';
@@ -181,19 +181,19 @@ export const ConversationsClient = () => {
 
   return (
     <Box sx={{ 
-      background: 'rgba(0, 0, 0, 0.4)',
-      backdropFilter: 'blur(10px)',
-      border: '1px solid #374151',
-      borderRadius: 1,
-      p: { xs: 3, sm: 5 },
-      mb: 3,
-      transition: 'all 0.3s ease-in-out',
-      '&:hover': {
-        borderColor: '#6366f1',
-        background: 'rgba(0, 0, 0, 0.6)',
-      }
-    }}>
-      {/* Header */}
+        background: 'rgba(0, 0, 0, 0.4)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid #374151',
+        borderRadius: 1,
+        p: { xs: 3, sm: 5 },
+        mb: 3,
+        transition: 'all 0.3s ease-in-out',
+        '&:hover': {
+          borderColor: '#6366f1',
+          background: 'rgba(0, 0, 0, 0.6)',
+        }
+      }}>
+        {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
         <Typography sx={{ fontSize: '1.125rem', fontWeight: 300, color: 'white', letterSpacing: '-0.025em' }}>
           Language Exchange Chat
@@ -418,7 +418,7 @@ export const ConversationsClient = () => {
           </Typography>
           {!searchTerm && (
             <IconButton 
-              onClick={() => router.push('/protected/search')}
+              onClick={() => router.push('/protected/community')}
               sx={{ 
                 background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
                 color: 'white',

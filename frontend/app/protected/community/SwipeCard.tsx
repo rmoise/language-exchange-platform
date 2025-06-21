@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { Box, Typography, Chip, Avatar, IconButton } from '@mui/material'
-import { 
+import {
   LocationOn as LocationIcon,
   Star as StarIcon,
   Language as LanguageIcon,
@@ -39,7 +39,7 @@ export default function SwipeCard({ users }: SwipeCardProps) {
 
   if (!currentUser) {
     return (
-      <Box sx={{ 
+      <Box sx={{
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -67,22 +67,22 @@ export default function SwipeCard({ users }: SwipeCardProps) {
       if (!isDragging) return
       let deltaX = currentX - startX
       const deltaY = currentY - startY
-      
+
       // Limit horizontal movement to prevent going beyond sidebar
       const constraints = getSwipeConstraints()
       deltaX = Math.max(constraints.maxLeft, Math.min(constraints.maxRight, deltaX))
-      
+
       setDragOffset({ x: deltaX, y: deltaY })
     }
 
     const handleEnd = () => {
       setIsDragging(false)
-      
+
       // Check if swiped far enough
       if (Math.abs(dragOffset.x) > 100) {
         nextCard()
       }
-      
+
       setDragOffset({ x: 0, y: 0 })
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
@@ -134,11 +134,11 @@ export default function SwipeCard({ users }: SwipeCardProps) {
   const getSwipeConstraints = () => {
     const container = cardRef.current?.parentElement
     if (!container) return { maxRight: 300, maxLeft: -300 }
-    
+
     const containerRect = container.getBoundingClientRect()
     const maxRight = containerRect.width * 0.7 // Stop at 70% of container width
     const maxLeft = -containerRect.width * 0.7
-    
+
     return { maxRight, maxLeft }
   }
 
@@ -189,7 +189,7 @@ export default function SwipeCard({ users }: SwipeCardProps) {
             LIKE
           </Box>
         )}
-        
+
         {getSwipeDirection() === 'left' && (
           <Box sx={{
             position: 'absolute',
@@ -258,7 +258,7 @@ export default function SwipeCard({ users }: SwipeCardProps) {
           <Typography sx={{ fontSize: '1.75rem', fontWeight: 600, mb: 0.5 }}>
             {currentUser.name}{currentUser.age ? `, ${currentUser.age}` : ''}
           </Typography>
-          
+
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
             <LocationIcon sx={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.8)' }} />
             <Typography sx={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.8)' }}>
@@ -285,7 +285,7 @@ export default function SwipeCard({ users }: SwipeCardProps) {
               <Typography sx={{ fontSize: '0.875rem', mb: 2, lineHeight: 1.4 }}>
                 {currentUser.bio}
               </Typography>
-              
+
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                 {currentUser.interests.slice(0, 3).map((interest) => (
                   <Chip
@@ -322,7 +322,7 @@ export default function SwipeCard({ users }: SwipeCardProps) {
                   ))}
                 </Box>
               </Box>
-              
+
               <Box>
                 <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, mb: 1 }}>
                   Learning Languages

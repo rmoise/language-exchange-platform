@@ -18,7 +18,7 @@ export const useTypingIndicator = ({
 }: UseTypingIndicatorOptions) => {
   const [isTyping, setIsTyping] = useState(false);
   const [otherUsersTyping, setOtherUsersTyping] = useState<Map<string, TypingIndicator>>(new Map());
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTypingTimeRef = useRef<number>(0);
 
   // Start typing indicator
@@ -95,13 +95,13 @@ export const useTypingIndicator = ({
         const newMap = new Map(prev);
         let hasChanges = false;
 
-        for (const [userId, indicator] of newMap.entries()) {
+        Array.from(newMap.entries()).forEach(([userId, indicator]) => {
           const typingIndicator = indicator as TypingIndicator & { timestamp: number };
           if (now - typingIndicator.timestamp > staleThreshold) {
             newMap.delete(userId);
             hasChanges = true;
           }
-        }
+        });
 
         return hasChanges ? newMap : prev;
       });

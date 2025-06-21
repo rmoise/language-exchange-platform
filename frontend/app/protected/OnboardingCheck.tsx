@@ -9,7 +9,7 @@ async function getUser() {
     redirect('/auth/login')
   }
   
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
+  const response = await fetch(`${process.env.API_URL || process.env.NEXT_PUBLIC_API_URL}/users/me`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',

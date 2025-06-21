@@ -65,7 +65,7 @@ export const ChatClient: React.FC<ChatClientProps> = ({ conversationId }) => {
       
       <Grid container spacing={3}>
         {/* Conversation List - Hidden on mobile when viewing a chat */}
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Box sx={{ display: { xs: 'none', md: 'block' } }}>
             <ConversationList
               conversations={conversations}
@@ -76,7 +76,7 @@ export const ChatClient: React.FC<ChatClientProps> = ({ conversationId }) => {
         </Grid>
         
         {/* Chat Interface */}
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <ChatInterface conversationId={conversationId} />
         </Grid>
       </Grid>

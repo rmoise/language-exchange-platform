@@ -6,7 +6,7 @@ A full-stack web application that helps users find language partners based on th
 
 ### Prerequisites
 - Go 1.21+
-- Node.js 18+ (React 19 requires Node.js 18.17+)
+- Node.js 18+
 - PostgreSQL 13+
 
 ### Backend Setup
@@ -44,10 +44,10 @@ npm run dev
 - **JWT Authentication** with secure token handling
 - **Layered Structure**: Handlers → Services → Repositories
 
-### Frontend (Next.js 15 + React 19 + TypeScript)
+### Frontend (Next.js 14 + TypeScript)
 - **App Router** with Server/Client Components
 - **Redux Toolkit** for client-side state management
-- **Material-UI v7** for consistent design system
+- **Material-UI** for consistent design system
 - **Server Actions** for form handling
 
 ## 📂 Project Structure

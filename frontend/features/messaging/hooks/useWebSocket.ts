@@ -23,7 +23,7 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
   } = options;
 
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -44,11 +44,9 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
       }
 
       const wsUrl = process.env.NEXT_PUBLIC_API_URL?.replace('http', 'ws').replace('/api', '') || 'ws://localhost:8080';
-      const ws = new WebSocket(`${wsUrl}/api/ws`, [], {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      } as any);
+      // WebSocket doesn't support custom headers in browser environment
+      // Token should be passed via query parameter or handled by the server differently
+      const ws = new WebSocket(`${wsUrl}/api/ws?token=${encodeURIComponent(token)}`);
 
       ws.onopen = () => {
         console.log('WebSocket connected');

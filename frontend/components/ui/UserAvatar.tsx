@@ -44,11 +44,12 @@ export default function UserAvatar({
       )
     }
 
-    // If user has profile image, use it
-    if (user.profileImage) {
+    // If user has profile image or avatar, use it
+    const imageUrl = user.profileImage || (user as any).avatar;
+    if (imageUrl) {
       return (
         <Avatar
-          src={user.profileImage}
+          src={imageUrl}
           alt={user.name}
           sx={{
             width: size,

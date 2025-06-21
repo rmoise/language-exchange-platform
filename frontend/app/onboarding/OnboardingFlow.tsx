@@ -59,9 +59,9 @@ export default function OnboardingFlow() {
         setUser(userData)
         setCurrentStep(userData.onboardingStep || 0)
         
-        // If user has completed onboarding, redirect to search
+        // If user has completed onboarding, redirect to community
         if (userData.onboardingStep >= 5) {
-          router.push('/protected/search')
+          router.push('/protected/community')
           return
         }
       } catch (err) {
@@ -79,8 +79,8 @@ export default function OnboardingFlow() {
     if (currentStep < TOTAL_STEPS - 1) {
       setCurrentStep(currentStep + 1)
     } else {
-      // Onboarding complete, redirect to dashboard
-      router.push('/protected/dashboard')
+      // Onboarding complete, redirect to community
+      router.push('/protected/community')
     }
   }
 

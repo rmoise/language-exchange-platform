@@ -7,12 +7,12 @@ import {
   Button,
   Paper,
   Alert,
-  Grid,
   IconButton,
   Slider,
   FormControlLabel,
   Switch,
   Chip,
+  Grid,
 } from '@mui/material'
 import { 
   Settings as SettingsIcon,
@@ -209,7 +209,7 @@ export default function PreferencesStep({ user, onNext, onBack }: PreferencesSte
         
         <Grid container spacing={2}>
           {meetingTypeOptions.map((option) => (
-            <Grid item xs={12} sm={6} key={option.value}>
+            <Grid size={{ xs: 12, sm: 6 }} key={option.value}>
               <Box
                 onClick={() => handleMeetingTypeToggle(option.value)}
                 sx={{
@@ -299,7 +299,7 @@ export default function PreferencesStep({ user, onNext, onBack }: PreferencesSte
 
       {/* Navigation buttons */}
       <Grid container spacing={2}>
-        <Grid item xs={6}>
+        <Grid size={6}>
           <Button
             fullWidth
             variant="outlined"
@@ -313,7 +313,7 @@ export default function PreferencesStep({ user, onNext, onBack }: PreferencesSte
             Back
           </Button>
         </Grid>
-        <Grid item xs={6}>
+        <Grid size={6}>
           <Button
             fullWidth
             variant="contained"

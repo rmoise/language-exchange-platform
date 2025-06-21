@@ -132,7 +132,7 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
         </Box>
 
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <LanguageIcon sx={{ color: '#667eea', mr: 1, fontSize: 20 }} />
               <Typography variant="body2" sx={{ fontWeight: 500, color: '#1a1a1a' }}>
@@ -152,7 +152,7 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
             </Box>
           </Grid>
 
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <LanguageIcon sx={{ color: '#764ba2', mr: 1, fontSize: 20 }} />
               <Typography variant="body2" sx={{ fontWeight: 500, color: '#1a1a1a' }}>
