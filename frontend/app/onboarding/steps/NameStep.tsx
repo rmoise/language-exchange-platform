@@ -1,14 +1,15 @@
 'use client'
 
 import { useState } from 'react'
+import { useAppDispatch } from '@/lib/hooks'
+import { updateOnboardingStep } from '@/features/onboarding/onboardingSlice'
 import { 
   Box, 
   Typography, 
   TextField, 
   Button, 
   Alert,
-  InputAdornment,
-  CircularProgress 
+  useTheme
 } from '@mui/material'
 import { User } from '@/types/global'
 import { authenticatedFetch } from '@/utils/auth'
@@ -19,41 +20,14 @@ interface NameStepProps {
 }
 
 export default function NameStep({ user, onNext }: NameStepProps) {
+  const dispatch = useAppDispatch()
+  const theme = useTheme()
   const [name, setName] = useState(user.name || '')
-  const [username, setUsername] = useState(user.username || '')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [usernameError, setUsernameError] = useState<string | null>(null)
-
-  const validateUsername = (value: string) => {
-    if (!value) {
-      setUsernameError('Username is required')
-      return false
-    }
-    if (value.length < 3) {
-      setUsernameError('Username must be at least 3 characters')
-      return false
-    }
-    if (value.length > 30) {
-      setUsernameError('Username must be less than 30 characters')
-      return false
-    }
-    if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
-      setUsernameError('Username can only contain letters, numbers, _ and -')
-      return false
-    }
-    setUsernameError(null)
-    return true
-  }
 
   const validateName = (value: string) => {
     return value.trim().length >= 2
-  }
-
-  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toLowerCase().replace(/[^a-zA-Z0-9_-]/g, '')
-    setUsername(value)
-    validateUsername(value)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,10 +35,6 @@ export default function NameStep({ user, onNext }: NameStepProps) {
     
     if (!validateName(name)) {
       setError('Name must be at least 2 characters long')
-      return
-    }
-    
-    if (!validateUsername(username)) {
       return
     }
 
@@ -78,29 +48,18 @@ export default function NameStep({ user, onNext }: NameStepProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: name.trim(),
-          username: username.trim()
+          name: name.trim()
         }),
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        if (response.status === 409 && errorData.code === 'DUPLICATE_USERNAME') {
-          setUsernameError('This username is already taken')
-          return
-        }
         throw new Error(errorData.error || 'Failed to update profile')
       }
 
-      // Update onboarding step
-      await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/onboarding-step`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ step: 1 }),
-      })
-
+      // Update onboarding step using Redux
+      await dispatch(updateOnboardingStep(1))
+      
       onNext()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
@@ -109,21 +68,15 @@ export default function NameStep({ user, onNext }: NameStepProps) {
     }
   }
 
-  const canContinue = validateName(name) && validateUsername(username) && !usernameError
+  // Check validation without calling the functions that set state
+  const canContinue = name.trim().length >= 2
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Typography variant="h4" sx={{ mb: 1, fontWeight: 600, color: '#333' }}>
-        Set Your Name & Username
-      </Typography>
-      <Typography variant="body1" sx={{ mb: 4, color: '#666' }}>
-        Choose how you want to be identified on the platform
-      </Typography>
-
+    <Box>
       <form onSubmit={handleSubmit}>
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
-            Display Name
+            Your Name
           </Typography>
           <TextField
             fullWidth
@@ -131,26 +84,15 @@ export default function NameStep({ user, onNext }: NameStepProps) {
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g., John Smith"
             helperText="This is how others will see your name"
-            error={name.length > 0 && !validateName(name)}
+            error={name.length > 0 && name.trim().length < 2}
             required
-          />
-        </Box>
-
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
-            Username
-          </Typography>
-          <TextField
-            fullWidth
-            value={username}
-            onChange={handleUsernameChange}
-            placeholder="e.g., johnsmith123"
-            InputProps={{
-              startAdornment: <InputAdornment position="start">@</InputAdornment>,
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: theme.palette.mode === 'dark' 
+                  ? theme.palette.background.paper 
+                  : 'white',
+              },
             }}
-            helperText={usernameError || "Your unique identifier (3-30 characters, letters, numbers, _ and - only)"}
-            error={!!usernameError}
-            required
           />
         </Box>
 
@@ -160,34 +102,23 @@ export default function NameStep({ user, onNext }: NameStepProps) {
           </Alert>
         )}
 
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-          <Button
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={!canContinue || isLoading}
-            sx={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              px: 4,
-              py: 1.5,
-              textTransform: 'none',
-              fontSize: '1.1rem',
-              fontWeight: 600,
-              borderRadius: 2,
-              boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5a67d8 0%, #6b5b95 100%)',
-                boxShadow: '0 6px 20px rgba(102, 126, 234, 0.6)',
-              },
-            }}
-          >
-            {isLoading ? (
-              <CircularProgress size={20} sx={{ color: 'white' }} />
-            ) : (
-              'Continue'
-            )}
-          </Button>
-        </Box>
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          disabled={!canContinue || isLoading}
+          sx={{
+            py: 2,
+            fontSize: '1rem',
+            fontWeight: 600,
+            backgroundColor: theme.palette.primary.main,
+            '&:hover': {
+              backgroundColor: theme.palette.primary.dark,
+            },
+          }}
+        >
+          {isLoading ? 'Saving...' : 'Continue'}
+        </Button>
       </form>
     </Box>
   )

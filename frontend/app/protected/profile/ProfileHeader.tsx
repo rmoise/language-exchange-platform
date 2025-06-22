@@ -1,27 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Typography, Avatar, Button } from "@mui/material";
+import { Box, Typography, Avatar, Button, Badge, IconButton } from "@mui/material";
 import {
   PhotoCamera as PhotoCameraIcon,
   LocationOn as LocationIcon,
+  CameraAlt,
 } from "@mui/icons-material";
 import EditIconButton from "@/features/users/components/EditIconButton";
 import { PhotoCarouselModal } from "./[userId]/PhotoCarousel";
+import { getAbsoluteImageUrl } from '@/utils/imageUrl';
+import SimpleImageUpload from "./SimpleImageUpload";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 interface ProfileHeaderProps {
   user: {
     name?: string;
     avatar?: string;
+    profileImage?: string;
+    profile_image?: string;
     city?: string;
     country?: string;
     coverImage?: string;
+    coverPhoto?: string;
     age?: number;
     isOnline?: boolean;
   };
   onEditName?: () => void;
-  onEditAvatar?: () => void;
-  onEditCover?: () => void;
+  onEditAvatar?: (imageUrl: string) => void;
+  onEditCover?: (imageUrl: string) => void;
   actionButtons?: React.ReactNode;
   isUserProfile?: boolean;
 }
@@ -36,25 +43,49 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 }) => {
   const [carouselOpen, setCarouselOpen] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [carouselPhotos, setCarouselPhotos] = useState<string[]>([]);
+  const [photoType, setPhotoType] = useState<'profile' | 'cover'>('profile');
 
-  // User profile photo - single high-resolution image
-  const profilePhoto = user.avatar || "https://randomuser.me/api/portraits/men/1.jpg";
+  // User profile photo - check multiple possible field names (same as onboarding)
+  const currentProfileImage = user.profileImage || (user as any).avatar || (user as any).profile_image || undefined;
+  const displayImage = getAbsoluteImageUrl(currentProfileImage);
   
-  // Convert to high-res version for modal viewing
-  let highResPhoto = profilePhoto;
-  if (profilePhoto.includes('randomuser.me')) {
-    // For randomuser.me, just use the original URL - it should work fine
-    highResPhoto = profilePhoto;
-  }
-  
-  const userPhotos = [highResPhoto];
+  // User cover photo
+  const currentCoverPhoto = user.coverPhoto || user.coverImage;
+  const displayCoverPhoto = getAbsoluteImageUrl(currentCoverPhoto);
 
   const handleAvatarClick = () => {
-    setSelectedPhotoIndex(0); // Start with avatar photo
-    setCarouselOpen(true);
+    // Only open carousel if user has an avatar image
+    if (displayImage) {
+      setCarouselPhotos([displayImage]);
+      setSelectedPhotoIndex(0);
+      setPhotoType('profile');
+      setCarouselOpen(true);
+    }
+  };
+
+  const handleCoverClick = () => {
+    // Only open carousel if user has a cover photo
+    if (displayCoverPhoto) {
+      setCarouselPhotos([displayCoverPhoto]);
+      setSelectedPhotoIndex(0);
+      setPhotoType('cover');
+      setCarouselOpen(true);
+    }
   };
 
   const handleCarouselClose = () => {
+    setCarouselOpen(false);
+  };
+
+  const handlePhotoDelete = (photoUrl: string) => {
+    if (photoType === 'profile' && onEditAvatar) {
+      // Call with empty string to remove profile image
+      onEditAvatar('');
+    } else if (photoType === 'cover' && onEditCover) {
+      // Call with empty string to remove cover image
+      onEditCover('');
+    }
     setCarouselOpen(false);
   };
   return (
@@ -69,14 +100,83 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     >
       {/* Cover Image Section */}
       <Box
+        onClick={displayCoverPhoto ? handleCoverClick : undefined}
         sx={{
           position: "relative",
           height: { xs: "180px", sm: "200px" },
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          background: displayCoverPhoto 
+            ? `url(${displayCoverPhoto})`
+            : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
           overflow: "hidden",
+          cursor: displayCoverPhoto ? "pointer" : "default",
+          transition: "all 0.2s ease",
+          "&:hover": displayCoverPhoto ? {
+            transform: "scale(1.01)",
+            filter: "brightness(1.1)",
+          } : {},
         }}
       >
-        {/* Geometric Pattern Overlay */}
+        {/* Geometric Pattern Overlay - only show if no cover photo */}
+        {!displayCoverPhoto && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: `
+                radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.05) 50%, transparent 60%)
+              `,
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                top: "-50%",
+                left: "-50%",
+                width: "200%",
+                height: "200%",
+                background: `
+                  repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 20px,
+                    rgba(255,255,255,0.03) 20px,
+                    rgba(255,255,255,0.03) 40px
+                  )
+                `,
+              },
+            }}
+          />
+        )}
+
+        {/* Cover Image Upload Button */}
+        {onEditCover && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              bottom: 0,
+              left: 0,
+              zIndex: 3,
+            }}
+          >
+            <SimpleImageUpload
+              currentImage={displayCoverPhoto}
+              userName={user.name || 'User'}
+              isProfilePicture={false}
+              onImageUpdate={onEditCover}
+              isOwnProfile={isUserProfile}
+            />
+          </Box>
+        )}
+
+        {/* Dark overlay for better text readability */}
         <Box
           sx={{
             position: "absolute",
@@ -84,57 +184,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundImage: `
-              radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
-              radial-gradient(circle at 75% 75%, rgba(255,255,255,0.08) 0%, transparent 50%),
-              linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.05) 50%, transparent 60%)
-            `,
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              top: "-50%",
-              left: "-50%",
-              width: "200%",
-              height: "200%",
-              background: `
-                repeating-linear-gradient(
-                  45deg,
-                  transparent,
-                  transparent 20px,
-                  rgba(255,255,255,0.03) 20px,
-                  rgba(255,255,255,0.03) 40px
-                )
-              `,
-            },
-          }}
-        />
-
-        {/* Cover Image Upload Button */}
-        {onEditCover && (
-          <EditIconButton
-            onClick={onEditCover}
-            sx={{
-              position: "absolute",
-              top: 16,
-              right: 16,
-              zIndex: 3,
-            }}
-          />
-        )}
-
-        {/* Cover Image */}
-        <Box
-          component="img"
-          src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80"
-          alt="Cover Image"
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            zIndex: 0,
+            background: displayCoverPhoto 
+              ? "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 100%)"
+              : "none",
+            zIndex: 1,
           }}
         />
       </Box>
@@ -167,26 +220,26 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               alignSelf: { xs: "center", sm: "flex-start" },
             }}
           >
-            <Avatar
-              src={user.avatar}
-              onClick={handleAvatarClick}
-              sx={{
-                width: { xs: 100, sm: 120 },
-                height: { xs: 100, sm: 120 },
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                "&:hover": {
-                  transform: "scale(1.05)",
-                  boxShadow: "0 6px 20px rgba(0, 0, 0, 0.25)",
-                },
-                border: "3px solid white",
-                fontSize: { xs: "1.5rem", sm: "2rem" },
-                fontWeight: 500,
-              }}
-            >
-              {user.name?.charAt(0)?.toUpperCase()}
-            </Avatar>
+            {onEditAvatar ? (
+              // Editable avatar using SimpleImageUpload component
+              <SimpleImageUpload
+                currentImage={displayImage}
+                userName={user.name || 'User'}
+                size={{ xs: 100, sm: 120 }}
+                isProfilePicture={true}
+                onImageUpdate={onEditAvatar}
+                onImageClick={handleAvatarClick}
+                isOwnProfile={isUserProfile}
+              />
+            ) : (
+              // Non-editable avatar (for viewing other profiles) - using UserAvatar for consistency
+              <UserAvatar
+                user={{ ...user, profileImage: displayImage }}
+                size={{ xs: 100, sm: 120 }}
+                onClick={handleAvatarClick}
+                showOnlineStatus={false}
+              />
+            )}
             {/* Online Status Dot for user profiles */}
             {isUserProfile && user.isOnline && (
               <Box
@@ -198,18 +251,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                   height: 16,
                   backgroundColor: "#22c55e",
                   borderRadius: "50%",
-                  border: "3px solid white",
+                  border: "2px solid white",
                   zIndex: 1,
-                }}
-              />
-            )}
-            {onEditAvatar && (
-              <EditIconButton
-                onClick={onEditAvatar}
-                sx={{
-                  position: "absolute",
-                  bottom: 0,
-                  right: 0,
                 }}
               />
             )}
@@ -243,7 +286,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                   textShadow: "0 2px 4px rgba(0,0,0,0.3)",
                 }}
               >
-                {isUserProfile && user.age 
+                {user.age 
                   ? `${user.name}, ${user.age}` 
                   : user.name || "Your Name"}
               </Typography>
@@ -338,9 +381,16 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     {/* Photo Carousel Modal */}
     <PhotoCarouselModal
       open={carouselOpen}
-      photos={userPhotos}
+      photos={carouselPhotos}
       currentIndex={selectedPhotoIndex}
       onClose={handleCarouselClose}
+      canDelete={isUserProfile} // Only allow delete on own profile
+      onDelete={isUserProfile ? handlePhotoDelete : undefined}
+      buttonPosition={
+        photoType === 'profile' 
+          ? { top: 8, right: -60 }  // Profile photos: buttons moved even further right
+          : { top: 8, left: 'calc(100% + 20px)' }  // Cover photos: buttons moved a bit to the right
+      }
     />
   </>
   );

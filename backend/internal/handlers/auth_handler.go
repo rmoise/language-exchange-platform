@@ -18,11 +18,13 @@ import (
 
 type AuthHandler struct {
 	authService services.AuthService
+	userService services.UserService
 }
 
-func NewAuthHandler(authService services.AuthService) *AuthHandler {
+func NewAuthHandler(authService services.AuthService, userService services.UserService) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
+		userService: userService,
 	}
 }
 
@@ -95,9 +97,16 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 func (h *AuthHandler) GetMe(c *gin.Context) {
-	user, exists := c.Get("user")
+	userID, exists := c.Get("userID")
 	if !exists {
 		errors.HandleError(c, models.ErrInvalidToken)
+		return
+	}
+
+	// Fetch fresh user data from database instead of using cached data from middleware
+	user, err := h.userService.GetUserByID(c.Request.Context(), userID.(string))
+	if err != nil {
+		errors.HandleError(c, err)
 		return
 	}
 

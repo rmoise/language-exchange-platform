@@ -8,7 +8,7 @@ import {
   Paper,
   Avatar,
   Chip,
-  Grid,
+  useTheme,
 } from '@mui/material'
 import { 
   CheckCircle as CheckCircleIcon,
@@ -22,10 +22,12 @@ import { User } from '@/types/global'
 interface CompleteStepProps {
   user: User
   onNext: () => void
+  onUserUpdate?: (user: User) => void
 }
 
-export default function CompleteStep({ user, onNext }: CompleteStepProps) {
+export default function CompleteStep({ user, onNext, onUserUpdate }: CompleteStepProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const theme = useTheme()
 
   const handleStartMatching = async () => {
     setIsLoading(true)
@@ -49,16 +51,18 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
 
       if (!stepResponse.ok) {
         console.warn('Failed to update onboarding step')
+        // Don't proceed if API call fails
+        return
       }
 
-      // Small delay for better UX
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Server-side OnboardingCheck will handle the redirect automatically
+      // after the onboarding step is updated
+      console.log('Onboarding completed successfully - reloading page')
       
-      onNext()
+      // Refresh the page to let server-side check handle redirect
+      window.location.reload()
     } catch (err) {
       console.error('Failed to complete onboarding:', err)
-      // Still proceed to next step even if API call fails
-      onNext()
     } finally {
       setIsLoading(false)
     }
@@ -66,12 +70,15 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
 
   return (
     <Box sx={{ textAlign: 'center' }}>
+      {/* Debug: Current theme mode */}
+      {/* <Typography variant="caption">Theme mode: {theme.palette.mode}</Typography> */}
+      
       {/* Success Icon */}
       <Box sx={{ mb: 4 }}>
         <CheckCircleIcon 
           sx={{ 
             fontSize: 80, 
-            color: '#22c55e',
+            color: theme.palette.mode === 'dark' ? '#10b981' : '#22c55e',
             mb: 2,
           }} 
         />
@@ -79,7 +86,7 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
           variant="h4" 
           sx={{ 
             fontWeight: 600, 
-            color: '#1a1a1a',
+            color: theme.palette.text.primary,
             mb: 1,
           }}
         >
@@ -88,7 +95,7 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
         <Typography 
           variant="body1" 
           sx={{ 
-            color: '#666',
+            color: theme.palette.text.secondary,
             fontSize: '1.1rem',
           }}
         >
@@ -102,8 +109,12 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
         sx={{ 
           p: 3, 
           mb: 4, 
-          backgroundColor: 'rgba(102, 126, 234, 0.05)',
-          border: '1px solid rgba(102, 126, 234, 0.1)',
+          backgroundColor: theme.palette.mode === 'dark' 
+            ? 'rgba(139, 92, 246, 0.1)'
+            : 'rgba(102, 126, 234, 0.05)',
+          border: `1px solid ${theme.palette.mode === 'dark' 
+            ? 'rgba(139, 92, 246, 0.3)'
+            : 'rgba(102, 126, 234, 0.1)'}`,
           textAlign: 'left',
         }}
       >
@@ -114,7 +125,7 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
               width: 64, 
               height: 64, 
               mr: 2,
-              backgroundColor: '#667eea',
+              backgroundColor: theme.palette.primary.main,
               fontSize: '1.75rem',
               fontWeight: 600,
             }}
@@ -122,20 +133,20 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
             {user.name?.charAt(0) || 'U'}
           </Avatar>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a1a1a' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
               {user.name}
             </Typography>
-            <Typography variant="body2" sx={{ color: '#666' }}>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
               {user.city && user.country ? `${user.city}, ${user.country}` : 'Global'}
             </Typography>
           </Box>
         </Box>
 
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+          <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <LanguageIcon sx={{ color: '#667eea', mr: 1, fontSize: 20 }} />
-              <Typography variant="body2" sx={{ fontWeight: 500, color: '#1a1a1a' }}>
+              <LanguageIcon sx={{ color: theme.palette.primary.main, mr: 1, fontSize: 20 }} />
+              <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                 Native Languages
               </Typography>
             </Box>
@@ -150,12 +161,12 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
                 />
               ))}
             </Box>
-          </Grid>
+          </Box>
 
-          <Grid size={{ xs: 12, sm: 6 }}>
+          <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <LanguageIcon sx={{ color: '#764ba2', mr: 1, fontSize: 20 }} />
-              <Typography variant="body2" sx={{ fontWeight: 500, color: '#1a1a1a' }}>
+              <LanguageIcon sx={{ color: theme.palette.secondary.main, mr: 1, fontSize: 20 }} />
+              <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                 Learning Languages
               </Typography>
             </Box>
@@ -170,14 +181,14 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
                 />
               ))}
             </Box>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
 
         {user.interests && user.interests.length > 0 && (
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <PersonIcon sx={{ color: '#059669', mr: 1, fontSize: 20 }} />
-              <Typography variant="body2" sx={{ fontWeight: 500, color: '#1a1a1a' }}>
+              <PersonIcon sx={{ color: theme.palette.mode === 'dark' ? '#10b981' : '#059669', mr: 1, fontSize: 20 }} />
+              <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
                 Interests
               </Typography>
             </Box>
@@ -188,7 +199,10 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
                   label={interest} 
                   size="small" 
                   variant="outlined"
-                  sx={{ borderColor: '#059669', color: '#059669' }}
+                  sx={{ 
+                    borderColor: theme.palette.mode === 'dark' ? '#10b981' : '#059669', 
+                    color: theme.palette.mode === 'dark' ? '#10b981' : '#059669' 
+                  }}
                 />
               ))}
               {user.interests.length > 6 && (
@@ -196,7 +210,10 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
                   label={`+${user.interests.length - 6} more`}
                   size="small" 
                   variant="outlined"
-                  sx={{ borderColor: '#9ca3af', color: '#9ca3af' }}
+                  sx={{ 
+                    borderColor: theme.palette.mode === 'dark' ? '#6b7280' : '#9ca3af', 
+                    color: theme.palette.mode === 'dark' ? '#6b7280' : '#9ca3af' 
+                  }}
                 />
               )}
             </Box>
@@ -210,18 +227,22 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
         sx={{ 
           p: 3, 
           mb: 4, 
-          backgroundColor: 'rgba(34, 197, 94, 0.05)',
-          border: '1px solid rgba(34, 197, 94, 0.2)',
+          backgroundColor: theme.palette.mode === 'dark'
+            ? 'rgba(34, 197, 94, 0.1)'
+            : 'rgba(34, 197, 94, 0.05)',
+          border: `1px solid ${theme.palette.mode === 'dark'
+            ? 'rgba(34, 197, 94, 0.3)'
+            : 'rgba(34, 197, 94, 0.2)'}`,
           textAlign: 'left',
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a1a1a', mb: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 2 }}>
           What's next?
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <SearchIcon sx={{ color: '#22c55e', mr: 2, fontSize: 20 }} />
-            <Typography variant="body2" sx={{ color: '#666' }}>
+            <SearchIcon sx={{ color: theme.palette.mode === 'dark' ? '#10b981' : '#22c55e', mr: 2, fontSize: 20 }} />
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
               Browse and discover language partners who match your criteria
             </Typography>
           </Box>
@@ -230,7 +251,7 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
               width: 20, 
               height: 20, 
               borderRadius: '50%', 
-              backgroundColor: '#22c55e', 
+              backgroundColor: theme.palette.mode === 'dark' ? '#10b981' : '#22c55e', 
               color: 'white',
               display: 'flex',
               alignItems: 'center',
@@ -241,7 +262,7 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
             }}>
               ❤️
             </Box>
-            <Typography variant="body2" sx={{ color: '#666' }}>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
               Send match requests to people you'd like to practice with
             </Typography>
           </Box>
@@ -250,7 +271,7 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
               width: 20, 
               height: 20, 
               borderRadius: '50%', 
-              backgroundColor: '#22c55e', 
+              backgroundColor: theme.palette.mode === 'dark' ? '#10b981' : '#22c55e', 
               color: 'white',
               display: 'flex',
               alignItems: 'center',
@@ -261,7 +282,7 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
             }}>
               💬
             </Box>
-            <Typography variant="body2" sx={{ color: '#666' }}>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
               Start conversations and begin your language learning journey
             </Typography>
           </Box>
@@ -279,9 +300,9 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
           py: 2.5,
           fontSize: '1.1rem',
           fontWeight: 600,
-          backgroundColor: '#22c55e',
+          backgroundColor: theme.palette.mode === 'dark' ? '#10b981' : '#22c55e',
           '&:hover': {
-            backgroundColor: '#16a34a',
+            backgroundColor: theme.palette.mode === 'dark' ? '#059669' : '#16a34a',
           },
           '&:disabled': {
             backgroundColor: '#e5e7eb',
@@ -295,7 +316,7 @@ export default function CompleteStep({ user, onNext }: CompleteStepProps) {
       <Typography 
         variant="body2" 
         sx={{ 
-          color: '#9ca3af', 
+          color: theme.palette.text.disabled, 
           mt: 2,
           fontSize: '0.875rem',
         }}

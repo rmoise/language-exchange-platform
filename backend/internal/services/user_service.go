@@ -5,6 +5,7 @@ import (
 	"language-exchange/internal/models"
 	"language-exchange/internal/repository"
 	"strings"
+	"time"
 
 	"github.com/lib/pq"
 )
@@ -96,6 +97,15 @@ func (s *userService) UpdateProfile(ctx context.Context, userID string, input mo
 	if input.Username != nil {
 		user.Username = input.Username
 	}
+	if input.ProfileImage != nil {
+		user.ProfileImage = input.ProfileImage
+	}
+	if input.CoverPhoto != nil {
+		user.CoverPhoto = input.CoverPhoto
+	}
+	if input.Photos != nil {
+		user.Photos = input.Photos
+	}
 	if input.City != nil {
 		user.City = input.City
 	}
@@ -116,6 +126,13 @@ func (s *userService) UpdateProfile(ctx context.Context, userID string, input mo
 	}
 	if input.Interests != nil {
 		user.Interests = input.Interests
+	}
+	if input.Birthday != nil && *input.Birthday != "" {
+		// Parse the birthday string
+		parsedTime, err := time.Parse(time.RFC3339, *input.Birthday)
+		if err == nil {
+			user.Birthday = &parsedTime
+		}
 	}
 
 	if err := s.userRepo.Update(ctx, user); err != nil {
@@ -161,6 +178,60 @@ func (s *userService) UpdateOnboardingStep(ctx context.Context, userID string, s
 	}
 
 	user.OnboardingStep = step
+
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return models.ErrInternalServer
+	}
+
+	return nil
+}
+
+func (s *userService) GetUserByID(ctx context.Context, userID string) (*models.User, error) {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, models.ErrUserNotFound
+	}
+	return user, nil
+}
+
+func (s *userService) UpdateProfileImage(ctx context.Context, userID string, imageURL string) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return models.ErrUserNotFound
+	}
+
+	user.ProfileImage = &imageURL
+
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return models.ErrInternalServer
+	}
+
+	return nil
+}
+
+func (s *userService) UpdateCoverPhoto(ctx context.Context, userID string, imageURL string) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return models.ErrUserNotFound
+	}
+
+	user.CoverPhoto = &imageURL
+
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return models.ErrInternalServer
+	}
+
+	return nil
+}
+
+func (s *userService) AddPhoto(ctx context.Context, userID string, photoURL string) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return models.ErrUserNotFound
+	}
+
+	// Add the photo to the Photos array
+	user.Photos = append(user.Photos, photoURL)
 
 	if err := s.userRepo.Update(ctx, user); err != nil {
 		return models.ErrInternalServer

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -23,6 +24,35 @@ func NewSessionHandler(sessionService services.SessionService, hub *websocket.Hu
 		sessionService: sessionService,
 		hub:            hub,
 	}
+}
+
+// Helper function to check if user is authorized to access a session
+func (h *SessionHandler) isUserAuthorizedForSession(ctx context.Context, sessionID, userID string) (bool, error) {
+	// Get session details to verify access
+	session, err := h.sessionService.GetSession(ctx, sessionID)
+	if err != nil {
+		return false, err
+	}
+
+	// Verify user is allowed to access (creator or invited user)
+	isAuthorized := session.CreatedBy == userID
+	if !isAuthorized && session.InvitedUserID != nil {
+		isAuthorized = *session.InvitedUserID == userID
+	}
+	// If no invited user, session is open to participants
+	if !isAuthorized && session.InvitedUserID == nil {
+		participants, err := h.sessionService.GetSessionParticipants(ctx, sessionID)
+		if err == nil {
+			for _, participant := range participants {
+				if participant.UserID == userID {
+					isAuthorized = true
+					break
+				}
+			}
+		}
+	}
+
+	return isAuthorized, nil
 }
 
 // CreateSession creates a new language learning session
@@ -365,23 +395,15 @@ func (h *SessionHandler) GetSessionMessages(c *gin.Context) {
 		return
 	}
 
-	// Verify user is a participant
-	participants, err := h.sessionService.GetSessionParticipants(context.Background(), sessionID)
+	// Verify user is authorized to access this session
+	isAuthorized, err := h.isUserAuthorizedForSession(context.Background(), sessionID, userID.(string))
 	if err != nil {
-		errors.SendError(c, http.StatusInternalServerError, "PARTICIPANTS_FETCH_FAILED", "Failed to verify session access")
+		errors.SendError(c, http.StatusInternalServerError, "SESSION_FETCH_FAILED", "Failed to verify session access")
 		return
 	}
 
-	isParticipant := false
-	for _, participant := range participants {
-		if participant.UserID == userID.(string) {
-			isParticipant = true
-			break
-		}
-	}
-
-	if !isParticipant {
-		errors.SendError(c, http.StatusForbidden, "NOT_PARTICIPANT", "User is not a participant in this session")
+	if !isAuthorized {
+		errors.SendError(c, http.StatusForbidden, "NOT_AUTHORIZED", "User is not authorized to access this session")
 		return
 	}
 
@@ -449,23 +471,15 @@ func (h *SessionHandler) SendMessage(c *gin.Context) {
 		req.MessageType = "text"
 	}
 
-	// Verify user is a participant
-	participants, err := h.sessionService.GetSessionParticipants(context.Background(), sessionID)
+	// Verify user is authorized to access this session
+	isAuthorized, err := h.isUserAuthorizedForSession(context.Background(), sessionID, userID.(string))
 	if err != nil {
-		errors.SendError(c, http.StatusInternalServerError, "PARTICIPANTS_FETCH_FAILED", "Failed to verify session access")
+		errors.SendError(c, http.StatusInternalServerError, "SESSION_FETCH_FAILED", "Failed to verify session access")
 		return
 	}
 
-	isParticipant := false
-	for _, participant := range participants {
-		if participant.UserID == userID.(string) {
-			isParticipant = true
-			break
-		}
-	}
-
-	if !isParticipant {
-		errors.SendError(c, http.StatusForbidden, "NOT_PARTICIPANT", "User is not a participant in this session")
+	if !isAuthorized {
+		errors.SendError(c, http.StatusForbidden, "NOT_AUTHORIZED", "User is not authorized to access this session")
 		return
 	}
 
@@ -532,23 +546,15 @@ func (h *SessionHandler) GetCanvasOperations(c *gin.Context) {
 		return
 	}
 
-	// Verify user is a participant
-	participants, err := h.sessionService.GetSessionParticipants(context.Background(), sessionID)
+	// Verify user is authorized to access this session
+	isAuthorized, err := h.isUserAuthorizedForSession(context.Background(), sessionID, userID.(string))
 	if err != nil {
-		errors.SendError(c, http.StatusInternalServerError, "PARTICIPANTS_FETCH_FAILED", "Failed to verify session access")
+		errors.SendError(c, http.StatusInternalServerError, "SESSION_FETCH_FAILED", "Failed to verify session access")
 		return
 	}
 
-	isParticipant := false
-	for _, participant := range participants {
-		if participant.UserID == userID.(string) {
-			isParticipant = true
-			break
-		}
-	}
-
-	if !isParticipant {
-		errors.SendError(c, http.StatusForbidden, "NOT_PARTICIPANT", "User is not a participant in this session")
+	if !isAuthorized {
+		errors.SendError(c, http.StatusForbidden, "NOT_AUTHORIZED", "User is not authorized to access this session")
 		return
 	}
 
@@ -612,23 +618,15 @@ func (h *SessionHandler) SaveCanvasOperation(c *gin.Context) {
 		return
 	}
 
-	// Verify user is a participant
-	participants, err := h.sessionService.GetSessionParticipants(context.Background(), sessionID)
+	// Verify user is authorized to access this session
+	isAuthorized, err := h.isUserAuthorizedForSession(context.Background(), sessionID, userID.(string))
 	if err != nil {
-		errors.SendError(c, http.StatusInternalServerError, "PARTICIPANTS_FETCH_FAILED", "Failed to verify session access")
+		errors.SendError(c, http.StatusInternalServerError, "SESSION_FETCH_FAILED", "Failed to verify session access")
 		return
 	}
 
-	isParticipant := false
-	for _, participant := range participants {
-		if participant.UserID == userID.(string) {
-			isParticipant = true
-			break
-		}
-	}
-
-	if !isParticipant {
-		errors.SendError(c, http.StatusForbidden, "NOT_PARTICIPANT", "User is not a participant in this session")
+	if !isAuthorized {
+		errors.SendError(c, http.StatusForbidden, "NOT_AUTHORIZED", "User is not authorized to access this session")
 		return
 	}
 
@@ -642,9 +640,11 @@ func (h *SessionHandler) SaveCanvasOperation(c *gin.Context) {
 
 	err = h.sessionService.SaveCanvasOperation(context.Background(), operation)
 	if err != nil {
-		errors.SendError(c, http.StatusInternalServerError, "OPERATION_SAVE_FAILED", "Failed to save canvas operation")
+		fmt.Printf("DEBUG: Canvas save error: %v\n", err)
+		errors.SendError(c, http.StatusInternalServerError, "OPERATION_SAVE_FAILED", "Failed to save canvas operation: "+err.Error())
 		return
 	}
+	fmt.Printf("DEBUG: Canvas operation saved successfully, type: %s\n", operation.OperationType)
 
 	// Broadcast operation via WebSocket to all session participants
 	wsMessage := models.WebSocketMessage{

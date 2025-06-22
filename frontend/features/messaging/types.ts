@@ -94,3 +94,50 @@ export interface OnlineStatus {
   user_id: string;
   is_online: boolean;
 }
+
+// Translation types
+export interface TranslateRequest {
+  text: string;
+  source_lang: string;
+  target_lang: string;
+}
+
+export interface TranslateResponse {
+  original_text: string;
+  translated_text: string;
+  source_lang: string;
+  target_lang: string;
+  provider: string;
+}
+
+export interface SupportedLanguage {
+  code: string;
+  name: string;
+}
+
+export interface LanguagesResponse {
+  languages: SupportedLanguage[];
+}
+
+export interface TranslationError {
+  code: string;
+  message: string;
+  details?: string;
+}
+
+export interface MessageTranslation {
+  messageId: string;
+  originalText: string;
+  translatedText: string;
+  sourceLang: string;
+  targetLang: string;
+  isLoading: boolean;
+  error?: string;
+}
+
+// Translation cache entry
+export interface TranslationCacheEntry {
+  key: string; // messageId:sourceLang:targetLang
+  translation: TranslateResponse;
+  timestamp: number;
+}

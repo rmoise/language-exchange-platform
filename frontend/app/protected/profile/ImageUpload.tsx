@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { 
   Box, 
   IconButton, 
@@ -15,20 +15,27 @@ import {
   Snackbar,
   Alert
 } from '@mui/material'
-import { CameraAlt, Close, Upload } from '@mui/icons-material'
+import { CameraAlt, Close, Upload, Crop, Delete } from '@mui/icons-material'
+import { api } from '@/utils/api'
 
 interface ImageUploadProps {
   currentImage?: string
   userName: string
   size?: number | { xs?: number; sm?: number; md?: number; lg?: number; xl?: number }
   isProfilePicture?: boolean
+  onImageUpdate?: (imageUrl: string) => void
+  onImageDelete?: () => void
+  onImageClick?: () => void
 }
 
 export default function ImageUpload({ 
   currentImage, 
   userName, 
   size = 168,
-  isProfilePicture = true 
+  isProfilePicture = true,
+  onImageUpdate,
+  onImageDelete,
+  onImageClick
 }: ImageUploadProps) {
   
   const getSize = (breakpoint?: string) => {
@@ -43,8 +50,13 @@ export default function ImageUpload({
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [showCrop, setShowCrop] = useState(false)
+  const [cropData, setCropData] = useState<{x: number, y: number, width: number, height: number} | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const selectedFileRef = useRef<File | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
 
   const getInitials = (name: string) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'
@@ -89,32 +101,34 @@ export default function ImageUpload({
       formData.append('image', selectedFileRef.current)
       formData.append('type', isProfilePicture ? 'profile' : 'cover')
       
-      // This would be your actual API call
-      const response = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include', // Include cookies for auth
+      // API call to backend upload endpoint using axios api instance
+      const response = await api.post('/upload/image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       })
       
-      if (!response.ok) {
-        throw new Error('Failed to upload image')
-      }
+      // Get the uploaded image URL from response (backend returns {url, filename, message})
+      const uploadedImageUrl = response.data?.url
       
-      const result = await response.json()
-      console.log('Upload successful:', result)
+      // Ensure we have a valid URL before updating
+      if (!uploadedImageUrl) {
+        throw new Error('No image URL returned from server')
+      }
       
       setSuccess(true)
       setOpen(false)
       setPreview(null)
       selectedFileRef.current = null
       
-      // Reload the page to show the new image
-      setTimeout(() => {
-        window.location.reload()
-      }, 1000)
+      // Notify parent component of the new image URL
+      if (onImageUpdate) {
+        onImageUpdate(uploadedImageUrl)
+      }
       
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload image')
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to upload image'
+      setError(errorMessage)
     } finally {
       setUploading(false)
     }
@@ -129,91 +143,167 @@ export default function ImageUpload({
     }
   }
 
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = () => {
+    if (onImageDelete) {
+      onImageDelete()
+    }
+    setDeleteDialogOpen(false)
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false)
+  }
+
   const ProfileImageComponent = () => (
-    <Badge
-      overlap="circular"
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      badgeContent={
+    <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <Box sx={{ position: 'relative' }}>
+        <Badge
+          overlap="circular"
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          badgeContent={
+            <IconButton
+              component="label"
+              sx={{
+                width: 40,
+                height: 40,
+                backgroundColor: 'background.paper',
+                border: '2px solid',
+                borderColor: 'background.paper',
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                },
+              }}
+            >
+              <input
+                ref={fileInputRef}
+                hidden
+                accept="image/*"
+                type="file"
+                onChange={handleFileSelect}
+              />
+              <CameraAlt sx={{ fontSize: 20 }} />
+            </IconButton>
+          }
+        >
+        <Box
+          key={currentImage || 'no-image'} // Force re-render when image changes
+          sx={{
+            width: typeof size === 'number' ? size : size,
+            height: typeof size === 'number' ? size : size,
+            minWidth: typeof size === 'number' ? size : size,
+            minHeight: typeof size === 'number' ? size : size,
+            maxWidth: typeof size === 'number' ? size : size,
+            maxHeight: typeof size === 'number' ? size : size,
+            borderRadius: '50%',
+            border: { xs: '2px solid', sm: '3px solid' },
+            borderColor: 'background.paper',
+            backgroundColor: 'primary.main',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: typeof size === 'number' 
+              ? (size > 100 ? '3rem' : '1.5rem')
+              : { xs: '1.5rem', sm: '2rem', md: '3rem' },
+            fontWeight: 700,
+            color: 'primary.contrastText',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            backgroundImage: currentImage ? `url('${currentImage}')` : 'none',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease-in-out',
+            overflow: 'hidden',
+            position: 'relative',
+            aspectRatio: '1 / 1',
+            '&:hover': {
+              transform: 'scale(1.02)',
+            },
+          }}
+          onClick={(e) => {
+            // If there's an image and onImageClick is provided, show gallery
+            if (currentImage && onImageClick) {
+              onImageClick();
+            } else {
+              // Otherwise, open file dialog
+              fileInputRef.current?.click();
+            }
+          }}
+        >
+          {!currentImage && getInitials(userName)}
+        </Box>
+      </Badge>
+      </Box>
+      
+      {/* Delete button - positioned next to the avatar using flexbox */}
+      {currentImage && onImageDelete && (
         <IconButton
-          component="label"
+          onClick={handleDeleteClick}
           sx={{
             width: 40,
             height: 40,
-            backgroundColor: 'background.paper',
-            border: '2px solid',
-            borderColor: 'background.paper',
+            backgroundColor: 'red', // Bright red to make it visible
+            color: 'white',
             '&:hover': {
-              backgroundColor: 'action.hover',
-            },
+              backgroundColor: 'darkred',
+            }
           }}
         >
-          <input
-            ref={fileInputRef}
-            hidden
-            accept="image/*"
-            type="file"
-            onChange={handleFileSelect}
-          />
-          <CameraAlt sx={{ fontSize: 20 }} />
+          <Delete sx={{ fontSize: 20 }} />
         </IconButton>
-      }
-    >
-      <Box
-        sx={{
-          width: typeof size === 'number' ? size : size,
-          height: typeof size === 'number' ? size : size,
-          borderRadius: '50%',
-          border: { xs: '4px solid', sm: '6px solid' },
-          borderColor: 'background.paper',
-          backgroundColor: 'primary.main',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: typeof size === 'number' 
-            ? (size > 100 ? '3rem' : '1.5rem')
-            : { xs: '1.5rem', sm: '2rem', md: '3rem' },
-          fontWeight: 700,
-          color: 'primary.contrastText',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          backgroundImage: currentImage ? `url(${currentImage})` : 'none',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease-in-out',
-          '&:hover': {
-            transform: 'scale(1.02)',
-          },
-        }}
-        onClick={() => fileInputRef.current?.click()}
-      >
-        {!currentImage && getInitials(userName)}
-      </Box>
-    </Badge>
+      )}
+    </Box>
   )
 
   const CoverImageComponent = () => (
-    <IconButton
-      component="label"
-      sx={{
-        position: 'absolute',
-        top: 16,
-        right: 16,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        color: 'white',
-        '&:hover': {
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        },
-      }}
-    >
-      <input
-        ref={fileInputRef}
-        hidden
-        accept="image/*"
-        type="file"
-        onChange={handleFileSelect}
-      />
-      <CameraAlt />
-    </IconButton>
+    <Box sx={{ 
+      position: 'absolute', 
+      top: 16, 
+      right: -80, // Cover photo buttons positioned differently than profile
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: 1 
+    }}>
+      <IconButton
+        component="label"
+        sx={{
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          color: 'white',
+          '&:hover': {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          },
+        }}
+      >
+        <input
+          ref={fileInputRef}
+          hidden
+          accept="image/*"
+          type="file"
+          onChange={handleFileSelect}
+        />
+        <CameraAlt />
+      </IconButton>
+      
+      {/* Delete button for cover photo */}
+      {currentImage && onImageDelete && (
+        <IconButton
+          onClick={handleDeleteClick}
+          sx={{
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            color: 'white',
+            '&:hover': {
+              backgroundColor: 'rgba(220, 38, 38, 0.8)',
+            },
+          }}
+        >
+          <Delete />
+        </IconButton>
+      )}
+    </Box>
   )
 
   return (
@@ -228,9 +318,7 @@ export default function ImageUpload({
         fullWidth
       >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">
-            {isProfilePicture ? 'Update Profile Picture' : 'Update Cover Photo'}
-          </Typography>
+          {isProfilePicture ? 'Update Profile Picture' : 'Update Cover Photo'}
           <IconButton onClick={handleCancel}>
             <Close />
           </IconButton>
@@ -240,18 +328,31 @@ export default function ImageUpload({
           {preview && (
             <Box sx={{ textAlign: 'center', py: 2 }}>
               <Box
-                component="img"
-                src={preview}
-                alt="Preview"
                 sx={{
-                  maxWidth: '100%',
-                  maxHeight: 300,
-                  borderRadius: isProfilePicture ? '50%' : 2,
-                  objectFit: 'cover',
-                  border: '1px solid',
-                  borderColor: 'divider',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}
-              />
+              >
+                <Box
+                  component="img"
+                  src={preview}
+                  alt="Preview"
+                  sx={{
+                    width: isProfilePicture ? 200 : 'auto',
+                    height: isProfilePicture ? 200 : 'auto',
+                    maxWidth: isProfilePicture ? 200 : '100%',
+                    maxHeight: isProfilePicture ? 200 : 300,
+                    minWidth: isProfilePicture ? 200 : 'auto',
+                    minHeight: isProfilePicture ? 200 : 'auto',
+                    borderRadius: isProfilePicture ? '50%' : 2,
+                    objectFit: 'cover',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    aspectRatio: isProfilePicture ? '1 / 1' : 'auto',
+                  }}
+                />
+              </Box>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
                 Preview of your new {isProfilePicture ? 'profile picture' : 'cover photo'}
               </Typography>
@@ -274,6 +375,54 @@ export default function ImageUpload({
             startIcon={uploading ? undefined : <Upload />}
           >
             {uploading ? 'Uploading...' : 'Upload'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        PaperProps={{
+          sx: {
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            border: '1px solid #374151',
+            borderRadius: 2,
+            backdropFilter: 'blur(10px)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: 'white' }}>
+          Delete {isProfilePicture ? 'Profile Picture' : 'Cover Photo'}?
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+            Are you sure you want to delete your {isProfilePicture ? 'profile picture' : 'cover photo'}? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={handleDeleteCancel}
+            sx={{ 
+              color: 'rgba(255, 255, 255, 0.7)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              }
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteConfirm}
+            variant="contained"
+            sx={{
+              backgroundColor: '#dc2626',
+              '&:hover': {
+                backgroundColor: '#b91c1c',
+              }
+            }}
+          >
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

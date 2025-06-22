@@ -6,6 +6,7 @@ export interface LanguageSession {
   name: string
   description?: string
   created_by: string
+  invited_user_id?: string
   status: 'active' | 'ended'
   max_participants: number
   session_type: 'practice' | 'lesson' | 'conversation'
@@ -14,6 +15,11 @@ export interface LanguageSession {
   ended_at?: string
   updated_at: string
   creator?: {
+    id: string
+    name: string
+    email: string
+  }
+  invited_user?: {
     id: string
     name: string
     email: string
@@ -54,7 +60,7 @@ export interface CanvasOperation {
   id: string
   session_id: string
   user_id: string
-  operation_type: 'text' | 'draw' | 'erase' | 'clear' | 'move' | 'delete'
+  operation_type: 'text' | 'draw' | 'erase' | 'clear' | 'move' | 'delete' | 'excalidraw_update' | 'text_update'
   operation_data: any
   sequence_number: number
   timestamp: string
@@ -71,6 +77,7 @@ export interface CreateSessionInput {
   max_participants: number
   session_type: 'practice' | 'lesson' | 'conversation'
   target_language?: string
+  invited_user_id: string
 }
 
 export interface SendMessageInput {
@@ -79,7 +86,7 @@ export interface SendMessageInput {
 }
 
 export interface CanvasOperationInput {
-  operation_type: 'text' | 'draw' | 'erase' | 'clear' | 'move' | 'delete'
+  operation_type: 'text' | 'draw' | 'erase' | 'clear' | 'move' | 'delete' | 'excalidraw_update' | 'text_update'
   operation_data: any
 }
 

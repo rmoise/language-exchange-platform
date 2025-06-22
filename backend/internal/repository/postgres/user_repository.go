@@ -42,7 +42,7 @@ func (r *userRepository) Create(ctx context.Context, user *models.User) error {
 
 func (r *userRepository) GetByID(ctx context.Context, id string) (*models.User, error) {
 	query := `
-		SELECT id, email, password_hash, name, username, google_id, profile_image, city, country, timezone, 
+		SELECT id, email, password_hash, name, username, google_id, profile_image, cover_photo, photos, birthday, city, country, timezone, 
 			   latitude, longitude, bio, interests, native_languages, target_languages, 
 			   max_distance, enable_location_matching, preferred_meeting_types,
 			   onboarding_step, created_at, updated_at
@@ -58,6 +58,9 @@ func (r *userRepository) GetByID(ctx context.Context, id string) (*models.User, 
 		&user.Username,
 		&user.GoogleID,
 		&user.ProfileImage,
+		&user.CoverPhoto,
+		(*pq.StringArray)(&user.Photos),
+		&user.Birthday,
 		&user.City,
 		&user.Country,
 		&user.Timezone,
@@ -84,7 +87,7 @@ func (r *userRepository) GetByID(ctx context.Context, id string) (*models.User, 
 
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
-		SELECT id, email, password_hash, name, username, google_id, profile_image, city, country, timezone, 
+		SELECT id, email, password_hash, name, username, google_id, profile_image, cover_photo, photos, birthday, city, country, timezone, 
 			   latitude, longitude, bio, interests, native_languages, target_languages, 
 			   max_distance, enable_location_matching, preferred_meeting_types,
 			   onboarding_step, created_at, updated_at
@@ -100,6 +103,9 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*models.
 		&user.Username,
 		&user.GoogleID,
 		&user.ProfileImage,
+		&user.CoverPhoto,
+		(*pq.StringArray)(&user.Photos),
+		&user.Birthday,
 		&user.City,
 		&user.Country,
 		&user.Timezone,
@@ -127,16 +133,20 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*models.
 func (r *userRepository) Update(ctx context.Context, user *models.User) error {
 	query := `
 		UPDATE users
-		SET name = $2, username = $3, city = $4, country = $5, timezone = $6, latitude = $7, longitude = $8, 
-			bio = $9, interests = $10, native_languages = $11, target_languages = $12, 
-			max_distance = $13, enable_location_matching = $14, preferred_meeting_types = $15,
-			onboarding_step = $16, updated_at = NOW()
+		SET name = $2, username = $3, profile_image = $4, cover_photo = $5, photos = $6, birthday = $7, city = $8, country = $9, timezone = $10, latitude = $11, longitude = $12, 
+			bio = $13, interests = $14, native_languages = $15, target_languages = $16, 
+			max_distance = $17, enable_location_matching = $18, preferred_meeting_types = $19,
+			onboarding_step = $20, updated_at = NOW()
 		WHERE id = $1`
 
 	result, err := r.db.ExecContext(ctx, query,
 		user.ID,
 		user.Name,
 		user.Username,
+		user.ProfileImage,
+		user.CoverPhoto,
+		pq.Array(user.Photos),
+		user.Birthday,
 		user.City,
 		user.Country,
 		user.Timezone,
@@ -216,7 +226,7 @@ func (r *userRepository) Search(ctx context.Context, filters models.SearchFilter
 	var selectClause string
 	if filters.Latitude != nil && filters.Longitude != nil {
 		selectClause = `
-			id, email, name, google_id, profile_image, city, country, timezone, 
+			id, email, name, google_id, profile_image, cover_photo, photos, birthday, city, country, timezone, 
 			latitude, longitude, bio, interests, native_languages, target_languages, 
 			onboarding_step, created_at, updated_at,
 			(6371 * acos(cos(radians($` + fmt.Sprintf("%d", argIndex) + `)) * cos(radians(latitude)) * 
@@ -226,7 +236,7 @@ func (r *userRepository) Search(ctx context.Context, filters models.SearchFilter
 		argIndex += 2
 	} else {
 		selectClause = `
-			id, email, name, google_id, profile_image, city, country, timezone, 
+			id, email, name, google_id, profile_image, cover_photo, photos, birthday, city, country, timezone, 
 			latitude, longitude, bio, interests, native_languages, target_languages, 
 			onboarding_step, created_at, updated_at`
 	}
@@ -274,8 +284,8 @@ func (r *userRepository) Search(ctx context.Context, filters models.SearchFilter
 		if filters.Latitude != nil && filters.Longitude != nil {
 			var distance sql.NullFloat64
 			err := rows.Scan(
-				&user.ID, &user.Email, &user.Name, &user.GoogleID, &user.ProfileImage,
-				&user.City, &user.Country, &user.Timezone, &user.Latitude, &user.Longitude,
+				&user.ID, &user.Email, &user.Name, &user.GoogleID, &user.ProfileImage, &user.CoverPhoto,
+				(*pq.StringArray)(&user.Photos), &user.Birthday, &user.City, &user.Country, &user.Timezone, &user.Latitude, &user.Longitude,
 				&user.Bio, (*pq.StringArray)(&user.Interests), (*pq.StringArray)(&user.NativeLanguages),
 				(*pq.StringArray)(&user.TargetLanguages), &user.OnboardingStep, &user.CreatedAt,
 				&user.UpdatedAt, &distance,
@@ -285,8 +295,8 @@ func (r *userRepository) Search(ctx context.Context, filters models.SearchFilter
 			}
 		} else {
 			err := rows.Scan(
-				&user.ID, &user.Email, &user.Name, &user.GoogleID, &user.ProfileImage,
-				&user.City, &user.Country, &user.Timezone, &user.Latitude, &user.Longitude,
+				&user.ID, &user.Email, &user.Name, &user.GoogleID, &user.ProfileImage, &user.CoverPhoto,
+				(*pq.StringArray)(&user.Photos), &user.Birthday, &user.City, &user.Country, &user.Timezone, &user.Latitude, &user.Longitude,
 				&user.Bio, (*pq.StringArray)(&user.Interests), (*pq.StringArray)(&user.NativeLanguages),
 				(*pq.StringArray)(&user.TargetLanguages), &user.OnboardingStep, &user.CreatedAt,
 				&user.UpdatedAt,
@@ -303,7 +313,7 @@ func (r *userRepository) Search(ctx context.Context, filters models.SearchFilter
 
 func (r *userRepository) GetByGoogleID(ctx context.Context, googleID string) (*models.User, error) {
 	query := `
-		SELECT id, email, password_hash, name, username, google_id, profile_image, city, country, timezone, 
+		SELECT id, email, password_hash, name, username, google_id, profile_image, cover_photo, photos, birthday, city, country, timezone, 
 			   latitude, longitude, bio, interests, native_languages, target_languages, 
 			   max_distance, enable_location_matching, preferred_meeting_types,
 			   onboarding_step, created_at, updated_at
@@ -319,6 +329,9 @@ func (r *userRepository) GetByGoogleID(ctx context.Context, googleID string) (*m
 		&user.Username,
 		&user.GoogleID,
 		&user.ProfileImage,
+		&user.CoverPhoto,
+		(*pq.StringArray)(&user.Photos),
+		&user.Birthday,
 		&user.City,
 		&user.Country,
 		&user.Timezone,

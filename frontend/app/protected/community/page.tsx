@@ -34,6 +34,8 @@ async function searchUsers(searchParams: {
 
   // Build query string from search params
   const queryParams = new URLSearchParams();
+  // Increase limit to show more users (including Test User 5)
+  queryParams.append("limit", "50");
   if (searchParams.native && typeof searchParams.native === "string") {
     queryParams.append("native", searchParams.native);
   }

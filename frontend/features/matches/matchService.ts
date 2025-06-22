@@ -41,7 +41,8 @@ export interface Conversation {
 export class MatchService {
   static async getMatches(): Promise<Match[]> {
     const response = await api.get('/matches');
-    return response.data;
+    // Handle different response structures
+    return Array.isArray(response.data) ? response.data : (response.data?.data || []);
   }
 
   static async sendMatchRequest(recipientId: string): Promise<void> {

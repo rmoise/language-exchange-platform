@@ -53,6 +53,7 @@ export const API_ENDPOINTS = {
   },
   USERS: {
     UPDATE_LANGUAGES: '/users/me/languages',
+    UPDATE_PROFILE: '/users/me/profile',
     SEARCH: '/users',
   },
   MATCHES: {

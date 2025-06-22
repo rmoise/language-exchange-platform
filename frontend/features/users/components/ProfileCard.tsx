@@ -4,21 +4,28 @@ import {
     Stack, 
     Typography, 
     Button, 
-    Avatar, 
     Divider,
     Collapse,
     IconButton
 } from "@mui/material";
 import { LocationOn, Close } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
+import { getAbsoluteImageUrl } from '@/utils/imageUrl';
+import UserAvatar from "@/components/ui/UserAvatar";
 
 interface User {
   id: string;
   name: string;
-  profile_picture?: string;
+  profileImage?: string;
+  profile_image?: string;
+  avatar?: string;
   bio?: string;
+  city?: string;
+  country?: string;
   location?: string;
   age?: number;
+  nativeLanguages?: string[];
+  targetLanguages?: string[];
   native_languages?: string[];
   learning_languages?: string[];
   interests?: string[];
@@ -47,19 +54,43 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   const router = useRouter();
   const [followExpanded, setFollowExpanded] = useState(false);
   
+  // Helper function to truncate text
+  const truncateText = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength).trim() + '...';
+  };
+  
+  // Extract first name from full name
+  const getFirstName = (fullName: string) => {
+    return fullName.split(' ')[0];
+  };
+
+  // Get profile image using the same approach as ProfileHeader
+  const currentProfileImage = user.avatar || user.profileImage || user.profile_image || undefined;
+  const displayImage = getAbsoluteImageUrl(currentProfileImage);
+  
+  // Construct location string
+  const locationString = user.city && user.country 
+    ? `${user.city}, ${user.country}` 
+    : user.location || user.city || user.country || "Zurich, Switzerland";
+
   const profileData = {
-    name: user.name || "Jay Vaughn",
-    description: user.bio || "Friendly language learner seeking conversation practice. I love talking about food, music, movies, and travel adventures.",
-    location: user.location || "Zurich, Switzerland",
-    profileImage: user.profile_picture || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=94&h=94&fit=crop&crop=face",
+    name: getFirstName(user.name || "Jay Vaughn"),
+    fullName: user.name || "Jay Vaughn", // Keep full name for other uses
+    description: truncateText(
+      user.bio || "Friendly language learner seeking conversation practice. I love talking about food, music, movies, and travel adventures.",
+      90 // Maximum 90 characters to match the clean look of test users 3 and 4
+    ),
+    location: locationString,
+    profileImage: displayImage,
     languages: {
       fluent: {
         flag: "🇩🇪",
-        count: user.native_languages?.length || 2
+        count: (user.nativeLanguages || user.native_languages)?.length || 2
       },
       learning: {
         flag: "🇦🇺", 
-        count: user.learning_languages?.length || 1
+        count: (user.targetLanguages || user.learning_languages)?.length || 1
       }
     }
   };
@@ -118,6 +149,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           cursor: 'pointer',
           transform: "translate3d(0, 0, 0)",
           willChange: "transform",
+          display: "flex",
+          flexDirection: "column",
           "&:hover": {
             backgroundColor: darkMode ? "rgba(0, 0, 0, 0.6)" : "white",
             boxShadow: darkMode ? "0 16px 40px rgba(99, 102, 241, 0.4)" : "0 8px 32px rgba(99, 102, 241, 0.3)",
@@ -126,14 +159,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           },
         }}
       >
-        <Stack spacing={3.5}>
+        <Stack spacing={3.5} sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
           <Stack direction="row" spacing={3} alignItems="center">
-            <Avatar
-              src={profileData.profileImage}
-              sx={{
-                width: 94,
-                height: 94,
-              }}
+            <UserAvatar
+              user={{ ...user, profileImage: profileData.profileImage }}
+              size={94}
+              showOnlineStatus={false}
             />
 
             <Stack spacing={1.5} sx={{ flex: 1 }}>
@@ -258,52 +289,52 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               </Typography>
             </Stack>
           </Stack>
+        </Stack>
 
-          <Stack direction="row" spacing={1.5}>
-            <Button
-              onClick={handleFollow}
-              variant="outlined"
-              sx={{
-                width: 129,
-                height: 41,
-                borderRadius: "14px",
-                borderColor: darkMode ? "#555" : "#d6d7dd",
-                color: darkMode ? "#ccc" : "#5e5d66",
-                fontFamily: "Inter",
-                fontWeight: 500,
-                fontSize: "13.7px",
-                letterSpacing: "-0.14px",
-                textTransform: "none",
-                "&:hover": {
-                  borderColor: darkMode ? "#666" : "#d6d7dd",
-                  backgroundColor: darkMode ? "rgba(85, 85, 85, 0.1)" : "rgba(214, 215, 221, 0.04)",
-                },
-              }}
-            >
-              {isFollowing ? "Following" : "Follow"}
-            </Button>
+        <Stack direction="row" spacing={1.5} sx={{ mt: "auto" }}>
+          <Button
+            onClick={handleFollow}
+            variant="outlined"
+            sx={{
+              width: 129,
+              height: 41,
+              borderRadius: "14px",
+              borderColor: darkMode ? "#555" : "#d6d7dd",
+              color: darkMode ? "#ccc" : "#5e5d66",
+              fontFamily: "Inter",
+              fontWeight: 500,
+              fontSize: "13.7px",
+              letterSpacing: "-0.14px",
+              textTransform: "none",
+              "&:hover": {
+                borderColor: darkMode ? "#666" : "#d6d7dd",
+                backgroundColor: darkMode ? "rgba(85, 85, 85, 0.1)" : "rgba(214, 215, 221, 0.04)",
+              },
+            }}
+          >
+            {isFollowing ? "Connected" : "Connect"}
+          </Button>
 
-            <Button
-              variant="contained"
-              sx={{
-                width: 129,
-                height: 41,
-                borderRadius: "14px",
-                backgroundColor: darkMode ? "#ffffff" : "#151515",
-                color: darkMode ? "#151515" : "#d6d7dd",
-                fontFamily: "Inter",
-                fontWeight: 500,
-                fontSize: "13.7px",
-                letterSpacing: "-0.14px",
-                textTransform: "none",
-                "&:hover": {
-                  backgroundColor: darkMode ? "#f0f0f0" : "#2a2a2a",
-                },
-              }}
-            >
-              Message
-            </Button>
-          </Stack>
+          <Button
+            variant="contained"
+            sx={{
+              width: 129,
+              height: 41,
+              borderRadius: "14px",
+              backgroundColor: darkMode ? "#ffffff" : "#151515",
+              color: darkMode ? "#151515" : "#d6d7dd",
+              fontFamily: "Inter",
+              fontWeight: 500,
+              fontSize: "13.7px",
+              letterSpacing: "-0.14px",
+              textTransform: "none",
+              "&:hover": {
+                backgroundColor: darkMode ? "#f0f0f0" : "#2a2a2a",
+              },
+            }}
+          >
+            View Profile
+          </Button>
         </Stack>
       </Box>
 
@@ -332,7 +363,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                   color: darkMode ? "#ffffff" : "#151515",
                 }}
               >
-                {isFollowing ? "Unfollow" : "Follow"} {profileData.name}?
+                {isFollowing ? "Disconnect" : "Connect"} {profileData.fullName}?
               </Typography>
               <IconButton
                 onClick={handleCancelAction}
@@ -359,8 +390,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               }}
             >
               {isFollowing 
-                ? `You will stop seeing ${profileData.name}'s posts in your feed and they won't be notified of your activity.`
-                : `You'll see ${profileData.name}'s posts in your feed and they'll be notified that you followed them.`
+                ? `You will stop seeing ${profileData.fullName}'s posts in your feed and they won't be notified of your activity.`
+                : `You'll see ${profileData.fullName}'s posts in your feed and they'll be notified that you followed them.`
               }
             </Typography>
 
@@ -408,7 +439,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                   },
                 }}
               >
-                {isFollowing ? "Unfollow" : "Follow"}
+                {isFollowing ? "Disconnect" : "Connect"}
               </Button>
             </Stack>
           </Stack>

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useAppDispatch } from '@/lib/hooks'
+import { updateOnboardingStep } from '@/features/onboarding/onboardingSlice'
 import {
   Box,
   Typography,
@@ -8,8 +10,8 @@ import {
   Button,
   Paper,
   Alert,
-  Grid,
   IconButton,
+  useTheme,
 } from '@mui/material'
 import { 
   LocationOn as LocationIcon, 
@@ -25,6 +27,8 @@ interface LocationStepProps {
 }
 
 export default function LocationStep({ user, onNext, onBack }: LocationStepProps) {
+  const dispatch = useAppDispatch()
+  const theme = useTheme()
   const [city, setCity] = useState(user.city || '')
   const [country, setCountry] = useState(user.country || '')
   const [timezone, setTimezone] = useState(user.timezone || '')
@@ -117,20 +121,9 @@ export default function LocationStep({ user, onNext, onBack }: LocationStepProps
         throw new Error('Failed to update location')
       }
 
-      // Update onboarding step
-      const stepResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/onboarding-step`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ step: 2 }),
-      })
-
-      if (!stepResponse.ok) {
-        console.warn('Failed to update onboarding step')
-      }
-
+      // Update onboarding step using Redux (should be step 3)
+      await dispatch(updateOnboardingStep(3))
+      
       onNext()
     } catch (err) {
       setError('Failed to save location. Please try again.')
@@ -143,12 +136,6 @@ export default function LocationStep({ user, onNext, onBack }: LocationStepProps
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <IconButton onClick={onBack} sx={{ mr: 1 }}>
-          <ArrowBackIcon />
-        </IconButton>
-      </Box>
-
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
@@ -161,16 +148,20 @@ export default function LocationStep({ user, onNext, onBack }: LocationStepProps
         sx={{ 
           p: 3, 
           mb: 3, 
-          backgroundColor: 'rgba(102, 126, 234, 0.05)',
-          border: '1px solid rgba(102, 126, 234, 0.1)'
+          backgroundColor: theme.palette.mode === 'dark' 
+            ? 'rgba(139, 92, 246, 0.1)'
+            : 'rgba(102, 126, 234, 0.05)',
+          border: `1px solid ${theme.palette.mode === 'dark' 
+            ? 'rgba(139, 92, 246, 0.3)'
+            : 'rgba(102, 126, 234, 0.1)'}`
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a1a1a', mb: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 1 }}>
               Auto-detect Location
             </Typography>
-            <Typography variant="body2" sx={{ color: '#666' }}>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
               We'll help you find language partners nearby
             </Typography>
           </Box>
@@ -180,11 +171,11 @@ export default function LocationStep({ user, onNext, onBack }: LocationStepProps
             onClick={detectLocation}
             disabled={isDetecting}
             sx={{
-              borderColor: '#667eea',
-              color: '#667eea',
+              borderColor: theme.palette.primary.main,
+              color: theme.palette.primary.main,
               '&:hover': {
-                borderColor: '#5a6fd8',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderColor: theme.palette.primary.dark,
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(102, 126, 234, 0.1)',
               },
             }}
           >
@@ -199,19 +190,23 @@ export default function LocationStep({ user, onNext, onBack }: LocationStepProps
         sx={{ 
           p: 3, 
           mb: 4, 
-          backgroundColor: 'rgba(248, 250, 252, 0.8)',
-          border: '1px solid rgba(226, 232, 240, 0.8)'
+          backgroundColor: theme.palette.mode === 'dark'
+            ? 'rgba(45, 55, 72, 0.3)'
+            : 'rgba(248, 250, 252, 0.8)',
+          border: `1px solid ${theme.palette.mode === 'dark'
+            ? 'rgba(74, 85, 104, 0.5)'
+            : 'rgba(226, 232, 240, 0.8)'}`
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <LocationIcon sx={{ color: '#667eea', mr: 1 }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a1a1a' }}>
+          <LocationIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             Your Location
           </Typography>
         </Box>
 
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+          <Box>
             <TextField
               fullWidth
               label="City"
@@ -221,12 +216,14 @@ export default function LocationStep({ user, onNext, onBack }: LocationStepProps
               variant="outlined"
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'white',
+                  backgroundColor: theme.palette.mode === 'dark' 
+                    ? theme.palette.background.paper 
+                    : 'white',
                 },
               }}
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
+          </Box>
+          <Box>
             <TextField
               fullWidth
               label="Country"
@@ -236,24 +233,30 @@ export default function LocationStep({ user, onNext, onBack }: LocationStepProps
               variant="outlined"
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'white',
+                  backgroundColor: theme.palette.mode === 'dark' 
+                    ? theme.palette.background.paper 
+                    : 'white',
                 },
               }}
             />
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
 
         {coordinates && (
           <Box 
             sx={{ 
               mt: 2, 
               p: 2, 
-              backgroundColor: 'rgba(34, 197, 94, 0.05)',
-              border: '1px solid rgba(34, 197, 94, 0.2)',
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(34, 197, 94, 0.1)'
+                : 'rgba(34, 197, 94, 0.05)',
+              border: `1px solid ${theme.palette.mode === 'dark'
+                ? 'rgba(34, 197, 94, 0.3)'
+                : 'rgba(34, 197, 94, 0.2)'}`,
               borderRadius: 1,
             }}
           >
-            <Typography variant="body2" sx={{ color: '#059669', fontWeight: 500 }}>
+            <Typography variant="body2" sx={{ color: theme.palette.mode === 'dark' ? '#10b981' : '#059669', fontWeight: 500 }}>
               ✓ Location coordinates detected for better matching
             </Typography>
           </Box>
@@ -265,15 +268,19 @@ export default function LocationStep({ user, onNext, onBack }: LocationStepProps
         sx={{ 
           p: 3, 
           mb: 4, 
-          backgroundColor: 'rgba(59, 130, 246, 0.05)',
-          border: '1px solid rgba(59, 130, 246, 0.2)',
+          backgroundColor: theme.palette.mode === 'dark'
+            ? 'rgba(59, 130, 246, 0.1)'
+            : 'rgba(59, 130, 246, 0.05)',
+          border: `1px solid ${theme.palette.mode === 'dark'
+            ? 'rgba(59, 130, 246, 0.3)'
+            : 'rgba(59, 130, 246, 0.2)'}`,
           borderRadius: 2,
         }}
       >
-        <Typography variant="body2" sx={{ color: '#1d4ed8', fontWeight: 500, mb: 1 }}>
+        <Typography variant="body2" sx={{ color: theme.palette.mode === 'dark' ? '#60a5fa' : '#1d4ed8', fontWeight: 500, mb: 1 }}>
           🌍 Why we need your location:
         </Typography>
-        <Typography variant="body2" sx={{ color: '#666' }}>
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
           • Find language partners in your area for in-person meetings<br/>
           • Match with people in compatible time zones<br/>
           • Discover local language exchange events and meetups
@@ -281,22 +288,22 @@ export default function LocationStep({ user, onNext, onBack }: LocationStepProps
       </Box>
 
       {/* Navigation buttons */}
-      <Grid container spacing={2}>
-        <Grid size={6}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr' }, gap: 2 }}>
+        <Box>
           <Button
             fullWidth
             variant="outlined"
             onClick={onBack}
             sx={{
               py: 2,
-              borderColor: '#d1d5db',
-              color: '#6b7280',
+              borderColor: theme.palette.mode === 'dark' ? 'rgba(107, 114, 128, 0.5)' : '#d1d5db',
+              color: theme.palette.text.secondary,
             }}
           >
             Back
           </Button>
-        </Grid>
-        <Grid size={6}>
+        </Box>
+        <Box>
           <Button
             fullWidth
             variant="contained"
@@ -306,16 +313,16 @@ export default function LocationStep({ user, onNext, onBack }: LocationStepProps
               py: 2,
               fontSize: '1rem',
               fontWeight: 600,
-              backgroundColor: '#667eea',
+              backgroundColor: theme.palette.primary.main,
               '&:hover': {
-                backgroundColor: '#5a6fd8',
+                backgroundColor: theme.palette.primary.dark,
               },
             }}
           >
             {isLoading ? 'Saving...' : 'Continue'}
           </Button>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   )
 }

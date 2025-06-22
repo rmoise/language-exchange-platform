@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: language_exchange_db
+    environment:
+      POSTGRES_DB: language_exchange
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/internal/database/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # LibreTranslate Service
+  libretranslate:
+    image: libretranslate/libretranslate:latest
+    container_name: libretranslate
+    restart: unless-stopped
+    environment:
+      LT_HOST: 0.0.0.0
+      LT_PORT: 5000
+      LT_API_KEYS: false
+      LT_API_KEYS_DB_PATH: /app/db/api_keys.db
+      LT_SUGGESTIONS: ${LIBRETRANSLATE_SUGGESTIONS:-false}
+      LT_CHAR_LIMIT: ${LIBRETRANSLATE_CHAR_LIMIT:-5000}
+      LT_REQ_LIMIT: ${LIBRETRANSLATE_REQ_LIMIT:-100}
+      LT_BATCH_LIMIT: ${LIBRETRANSLATE_BATCH_LIMIT:-10}
+      LT_GA_ID: ${LIBRETRANSLATE_GA_ID:-}
+      LT_FRONTEND_LANGUAGE_SOURCE: ${LIBRETRANSLATE_FRONTEND_LANGUAGE_SOURCE:-auto}
+      LT_FRONTEND_LANGUAGE_TARGET: ${LIBRETRANSLATE_FRONTEND_LANGUAGE_TARGET:-en}
+      LT_FRONTEND_TIMEOUT: ${LIBRETRANSLATE_FRONTEND_TIMEOUT:-500}
+      LT_API_KEYS_REMOTE_URL: ${LIBRETRANSLATE_API_KEYS_REMOTE_URL:-}
+      LT_GET_API_KEY_LINK: ${LIBRETRANSLATE_GET_API_KEY_LINK:-}
+      # LT_SHARED_STORAGE: ${LIBRETRANSLATE_SHARED_STORAGE:-memory}
+    volumes:
+      - libretranslate_data:/app/db
+    ports:
+      - "5050:5000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/languages || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend Service (optional - for future containerization)
+  # backend:
+  #   build: 
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: language_exchange_backend
+  #   environment:
+  #     DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-password}@postgres:5432/language_exchange?sslmode=disable
+  #     LIBRETRANSLATE_URL: http://libretranslate:5000
+  #     LIBRETRANSLATE_API_KEY: ${LIBRETRANSLATE_API_KEY}
+  #     JWT_SECRET: ${JWT_SECRET}
+  #     PORT: 8080
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     libretranslate:
+  #       condition: service_healthy
+
+volumes:
+  postgres_data:
+  libretranslate_data:
+
+networks:
+  default:
+    name: language_exchange_network

@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useAppDispatch } from '@/lib/hooks';
+import { updateOnboardingStep } from '@/features/onboarding/onboardingSlice';
 import {
   Box,
   Typography,
   Chip,
   Button,
   Paper,
-  Grid,
   Alert,
+  useTheme,
 } from "@mui/material";
 import { Language as LanguageIcon } from "@mui/icons-material";
 import { User } from "@/types/global";
@@ -20,7 +22,9 @@ interface LanguageStepProps {
   onBack?: () => void;
 }
 
-export default function LanguageStep({ user, onNext }: LanguageStepProps) {
+export default function LanguageStep({ user, onNext, onBack }: LanguageStepProps) {
+  const dispatch = useAppDispatch();
+  const theme = useTheme();
   const [nativeLanguages, setNativeLanguages] = useState<string[]>(
     user.nativeLanguages || []
   );
@@ -85,23 +89,9 @@ export default function LanguageStep({ user, onNext }: LanguageStepProps) {
         throw new Error("Failed to update languages");
       }
 
-      // Update onboarding step
-      const stepResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/users/me/onboarding-step`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ step: 1 }),
-        }
-      );
-
-      if (!stepResponse.ok) {
-        console.warn("Failed to update onboarding step");
-      }
-
+      // Update onboarding step using Redux (should be step 2, not 1)
+      await dispatch(updateOnboardingStep(2));
+      
       onNext();
     } catch (err) {
       setError("Failed to save languages. Please try again.");
@@ -126,23 +116,27 @@ export default function LanguageStep({ user, onNext }: LanguageStepProps) {
         sx={{
           p: 3,
           mb: 3,
-          backgroundColor: "rgba(102, 126, 234, 0.05)",
-          border: "1px solid rgba(102, 126, 234, 0.1)",
+          backgroundColor: theme.palette.mode === 'dark' 
+            ? 'rgba(139, 92, 246, 0.1)'
+            : 'rgba(102, 126, 234, 0.05)',
+          border: `1px solid ${theme.palette.mode === 'dark' 
+            ? 'rgba(139, 92, 246, 0.3)'
+            : 'rgba(102, 126, 234, 0.1)'}`,
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <LanguageIcon sx={{ color: "#667eea", mr: 1 }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, color: "#1a1a1a" }}>
+          <LanguageIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             Languages I Speak
           </Typography>
         </Box>
-        <Typography variant="body2" sx={{ color: "#666", mb: 3 }}>
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 3 }}>
           Select the languages you can speak fluently and help others learn.
         </Typography>
 
-        <Grid container spacing={1}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
           {LANGUAGES.map((language) => (
-            <Grid size="auto" key={`native-${language}`}>
+            <Box key={`native-${language}`}>
               <Chip
                 label={language}
                 onClick={() => handleNativeLanguageToggle(language)}
@@ -156,14 +150,14 @@ export default function LanguageStep({ user, onNext }: LanguageStepProps) {
                   fontSize: "0.875rem",
                   "&:hover": {
                     backgroundColor: nativeLanguages.includes(language)
-                      ? "#5a6fd8"
-                      : "rgba(102, 126, 234, 0.1)",
+                      ? theme.palette.primary.dark
+                      : theme.palette.mode === 'dark' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(102, 126, 234, 0.1)',
                   },
                 }}
               />
-            </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Box>
       </Paper>
 
       {/* Target Languages */}
@@ -172,24 +166,28 @@ export default function LanguageStep({ user, onNext }: LanguageStepProps) {
         sx={{
           p: 3,
           mb: 4,
-          backgroundColor: "rgba(118, 75, 162, 0.05)",
-          border: "1px solid rgba(118, 75, 162, 0.1)",
+          backgroundColor: theme.palette.mode === 'dark'
+            ? 'rgba(168, 85, 247, 0.1)'
+            : 'rgba(118, 75, 162, 0.05)',
+          border: `1px solid ${theme.palette.mode === 'dark'
+            ? 'rgba(168, 85, 247, 0.3)'
+            : 'rgba(118, 75, 162, 0.1)'}`,
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <LanguageIcon sx={{ color: "#764ba2", mr: 1 }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, color: "#1a1a1a" }}>
+          <LanguageIcon sx={{ color: theme.palette.secondary.main, mr: 1 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             Languages I Want to Learn
           </Typography>
         </Box>
-        <Typography variant="body2" sx={{ color: "#666", mb: 3 }}>
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 3 }}>
           Select the languages you want to learn or improve with native
           speakers.
         </Typography>
 
-        <Grid container spacing={1}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
           {LANGUAGES.map((language) => (
-            <Grid size="auto" key={`target-${language}`}>
+            <Box key={`target-${language}`}>
               <Chip
                 label={language}
                 onClick={() => handleTargetLanguageToggle(language)}
@@ -203,14 +201,14 @@ export default function LanguageStep({ user, onNext }: LanguageStepProps) {
                   fontSize: "0.875rem",
                   "&:hover": {
                     backgroundColor: targetLanguages.includes(language)
-                      ? "#6b4c8e"
-                      : "rgba(118, 75, 162, 0.1)",
+                      ? theme.palette.secondary.dark
+                      : theme.palette.mode === 'dark' ? 'rgba(168, 85, 247, 0.1)' : 'rgba(118, 75, 162, 0.1)',
                   },
                 }}
               />
-            </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Box>
       </Paper>
 
       {/* Matching Info */}
@@ -219,18 +217,22 @@ export default function LanguageStep({ user, onNext }: LanguageStepProps) {
           sx={{
             p: 3,
             mb: 4,
-            backgroundColor: "rgba(34, 197, 94, 0.05)",
-            border: "1px solid rgba(34, 197, 94, 0.2)",
+            backgroundColor: theme.palette.mode === 'dark'
+              ? 'rgba(34, 197, 94, 0.1)'
+              : 'rgba(34, 197, 94, 0.05)',
+            border: `1px solid ${theme.palette.mode === 'dark'
+              ? 'rgba(34, 197, 94, 0.3)'
+              : 'rgba(34, 197, 94, 0.2)'}`,
             borderRadius: 2,
           }}
         >
           <Typography
             variant="body2"
-            sx={{ color: "#059669", fontWeight: 500, mb: 1 }}
+            sx={{ color: theme.palette.mode === 'dark' ? '#10b981' : '#059669', fontWeight: 500, mb: 1 }}
           >
             🎯 How matching works:
           </Typography>
-          <Typography variant="body2" sx={{ color: "#666" }}>
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
             You'll be matched with people who speak your target languages
             natively and want to learn your native languages. It's a win-win
             exchange!
@@ -238,28 +240,48 @@ export default function LanguageStep({ user, onNext }: LanguageStepProps) {
         </Box>
       )}
 
-      {/* Continue Button */}
-      <Button
-        fullWidth
-        variant="contained"
-        onClick={handleContinue}
-        disabled={!canContinue || isLoading}
-        sx={{
-          py: 2,
-          fontSize: "1rem",
-          fontWeight: 600,
-          backgroundColor: "#667eea",
-          "&:hover": {
-            backgroundColor: "#5a6fd8",
-          },
-          "&:disabled": {
-            backgroundColor: "#e5e7eb",
-            color: "#9ca3af",
-          },
-        }}
-      >
-        {isLoading ? "Saving..." : "Continue"}
-      </Button>
+      {/* Navigation buttons */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: onBack ? '1fr 1fr' : '1fr', gap: 2 }}>
+        {onBack && (
+          <Box>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={onBack}
+              sx={{
+                py: 2,
+                borderColor: theme.palette.mode === 'dark' ? 'rgba(107, 114, 128, 0.5)' : '#d1d5db',
+                color: theme.palette.text.secondary,
+              }}
+            >
+              Back
+            </Button>
+          </Box>
+        )}
+        <Box>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={handleContinue}
+            disabled={!canContinue || isLoading}
+            sx={{
+              py: 2,
+              fontSize: "1rem",
+              fontWeight: 600,
+              backgroundColor: theme.palette.primary.main,
+              "&:hover": {
+                backgroundColor: theme.palette.primary.dark,
+              },
+              "&:disabled": {
+                backgroundColor: theme.palette.mode === 'dark' ? '#374151' : '#e5e7eb',
+                color: theme.palette.mode === 'dark' ? '#6b7280' : '#9ca3af',
+              },
+            }}
+          >
+            {isLoading ? "Saving..." : "Continue"}
+          </Button>
+        </Box>
+      </Box>
     </Box>
   );
 }

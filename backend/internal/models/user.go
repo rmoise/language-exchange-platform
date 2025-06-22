@@ -15,6 +15,9 @@ type User struct {
 	Username               *string        `json:"username,omitempty" db:"username"`
 	GoogleID               *string        `json:"googleId,omitempty" db:"google_id"`
 	ProfileImage           *string        `json:"profileImage,omitempty" db:"profile_image"`
+	CoverPhoto             *string        `json:"coverPhoto,omitempty" db:"cover_photo"`
+	Photos                 pq.StringArray `json:"photos,omitempty" db:"photos"`
+	Birthday               *time.Time     `json:"birthday,omitempty" db:"birthday"`
 	City                   *string        `json:"city,omitempty" db:"city"`
 	Country                *string        `json:"country,omitempty" db:"country"`
 	Timezone               *string        `json:"timezone,omitempty" db:"timezone"`
@@ -69,15 +72,19 @@ type SearchFilters struct {
 }
 
 type UpdateProfileInput struct {
-	Name        *string        `json:"name,omitempty"`
-	Username    *string        `json:"username,omitempty"`
-	City        *string        `json:"city,omitempty"`
-	Country     *string        `json:"country,omitempty"`
-	Timezone    *string        `json:"timezone,omitempty"`
-	Latitude    *float64       `json:"latitude,omitempty"`
-	Longitude   *float64       `json:"longitude,omitempty"`
-	Bio         *string        `json:"bio,omitempty"`
-	Interests   pq.StringArray `json:"interests,omitempty"`
+	Name         *string        `json:"name,omitempty"`
+	Username     *string        `json:"username,omitempty"`
+	ProfileImage *string        `json:"profileImage,omitempty"`
+	CoverPhoto   *string        `json:"coverPhoto,omitempty"`
+	Photos       pq.StringArray `json:"photos,omitempty"`
+	Birthday     *string        `json:"birthday,omitempty"`  // Changed to string for JSON parsing
+	City         *string        `json:"city,omitempty"`
+	Country      *string        `json:"country,omitempty"`
+	Timezone     *string        `json:"timezone,omitempty"`
+	Latitude     *float64       `json:"latitude,omitempty"`
+	Longitude    *float64       `json:"longitude,omitempty"`
+	Bio          *string        `json:"bio,omitempty"`
+	Interests    pq.StringArray `json:"interests,omitempty"`
 }
 
 type UpdatePreferencesInput struct {
@@ -180,3 +187,21 @@ func (u *User) GetProfileCompletion() int {
 
 	return (completion * 100) / totalFields
 }
+
+// GetAge calculates the user's current age from their birthday
+func (u *User) GetAge() *int {
+	if u.Birthday == nil {
+		return nil
+	}
+	
+	now := time.Now()
+	age := now.Year() - u.Birthday.Year()
+	
+	// Adjust if birthday hasn't occurred this year yet
+	if now.YearDay() < u.Birthday.YearDay() {
+		age--
+	}
+	
+	return &age
+}
+

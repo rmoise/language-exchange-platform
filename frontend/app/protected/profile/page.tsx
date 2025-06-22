@@ -18,6 +18,8 @@ import {
   Checkbox,
   FormControlLabel,
   Divider,
+  InputAdornment,
+  CircularProgress,
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -31,13 +33,22 @@ import EditIconButton from "@/features/users/components/EditIconButton";
 import AnimatedWrapper from "./AnimatedWrapper";
 import ProfileHeader from "./ProfileHeader";
 import UserAvatar from "@/components/ui/UserAvatar";
-import { enhanceUserData } from "@/utils/userDataEnhancer";
+import { enhanceUserData, calculateAge } from "@/utils/userDataEnhancer";
 import SharedModal from "@/components/ui/SharedModal";
 import PhotosSection from "./[userId]/PhotosSection";
 import CombinedLanguageModal from "@/features/users/components/CombinedLanguageModal";
 import PreferencesModal from "@/features/users/components/PreferencesModal";
 import LearningPreferencesModal from "@/features/users/components/LearningPreferencesModal";
 import { api } from "@/utils/api";
+import { useGetCurrentUserQuery, useUpdateProfileImageCacheMutation, useUpdateUserProfileMutation } from "@/features/api/apiSlice";
+import ImageUpload from "./ImageUpload";
+import { getAbsoluteImageUrl } from '@/utils/imageUrl';
+import { useDispatch, useSelector } from 'react-redux';
+import { updateUser, updateCoverPhoto } from '@/features/auth/authSlice';
+import { RootState } from '@/lib/store';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 // Helper function to map languages to country flags
 const getLanguageFlag = (language: string): string => {
@@ -87,16 +98,21 @@ const getLanguageFlag = (language: string): string => {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const dispatch = useDispatch();
+  const reduxUser = useSelector((state: RootState) => state.auth.user);
   const [user, setUser] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [realUsers, setRealUsers] = useState<any[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
+  
+  // RTK Query hooks
+  const [updateProfileImageCache] = useUpdateProfileImageCacheMutation();
+  const [updateProfile] = useUpdateUserProfileMutation();
 
   // Modal states
   const [languageModalOpen, setLanguageModalOpen] = useState(false);
   const [aboutModalOpen, setAboutModalOpen] = useState(false);
-  const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [topicsModalOpen, setTopicsModalOpen] = useState(false);
   const [nameModalOpen, setNameModalOpen] = useState(false);
   const [followingModalOpen, setFollowingModalOpen] = useState(false);
@@ -107,9 +123,10 @@ export default function ProfilePage() {
 
   // Form states
   const [editName, setEditName] = useState("");
+  const [editBirthday, setEditBirthday] = useState<Date | null>(null);
   const [editBio, setEditBio] = useState("");
-  const [editCity, setEditCity] = useState("");
-  const [editCountry, setEditCountry] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+  const [detectingLocation, setDetectingLocation] = useState(false);
   const [editTopics, setEditTopics] = useState<string[]>([]);
   const [newTopic, setNewTopic] = useState("");
 
@@ -209,9 +226,31 @@ export default function ProfilePage() {
   >("communication");
   const [preferencesModalTitle, setPreferencesModalTitle] = useState("");
 
+  // Initialize user from Redux if available
+  useEffect(() => {
+    if (reduxUser && !user) {
+      setUser(reduxUser);
+      setEditName(reduxUser.name || "");
+      setEditBirthday(reduxUser.birthday ? new Date(reduxUser.birthday) : null);
+      setEditBio(reduxUser.bio || "");
+      // Combine city and country into one location field
+      const location = reduxUser.city && reduxUser.country 
+        ? `${reduxUser.city}, ${reduxUser.country}` 
+        : reduxUser.city || reduxUser.country || "";
+      setEditLocation(location);
+      setEditTopics(reduxUser.topics || []);
+    }
+  }, [reduxUser, user]);
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        // If we already have user data from Redux, skip API call
+        if (reduxUser) {
+          setLoading(false);
+          return;
+        }
+
         const token = document.cookie
           .split("; ")
           .find((row) => row.startsWith("token="))
@@ -237,14 +276,35 @@ export default function ProfilePage() {
 
         const data = await response.json();
         const userData = data.data || data.user;
+        
+        // Ensure profile image and cover photo URLs are absolute
+        if (userData && userData.profileImage && userData.profileImage.startsWith('/')) {
+          const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'
+          const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '') // Remove /api suffix
+          userData.profileImage = baseUrl + userData.profileImage
+        }
+        
+        if (userData && userData.coverPhoto && userData.coverPhoto.startsWith('/')) {
+          const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'
+          const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '') // Remove /api suffix
+          userData.coverPhoto = baseUrl + userData.coverPhoto
+        }
+        
         const enhancedUser = enhanceUserData(userData);
         setUser(enhancedUser);
+        
+        // Update Redux store with the complete user data
+        dispatch(updateUser(enhancedUser));
 
         // Initialize form states
         setEditName(enhancedUser.name || "");
+        setEditBirthday(enhancedUser.birthday ? new Date(enhancedUser.birthday) : null);
         setEditBio(enhancedUser.bio || "");
-        setEditCity(enhancedUser.city || "");
-        setEditCountry(enhancedUser.country || "");
+        // Combine city and country into one location field
+        const location = enhancedUser.city && enhancedUser.country 
+          ? `${enhancedUser.city}, ${enhancedUser.country}` 
+          : enhancedUser.city || enhancedUser.country || "";
+        setEditLocation(location);
         setEditTopics(enhancedUser.topics || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load profile");
@@ -255,7 +315,7 @@ export default function ProfilePage() {
 
     fetchProfile();
     fetchRealUsers();
-  }, []);
+  }, [reduxUser]);
 
   const handleLanguageUpdate = (
     nativeLanguages: string[],
@@ -279,25 +339,88 @@ export default function ProfilePage() {
     setLanguageModalOpen(false);
   };
 
-  const handleAboutSave = () => {
-    if (user) {
-      setUser({ ...user, bio: editBio });
+  const handleDetectLocation = async () => {
+    setDetectingLocation(true);
+    try {
+      // Get user's location
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
+
+      // Use a reverse geocoding service (you could use Google Maps API or similar)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}`
+      );
+      const data = await response.json();
+      
+      // Extract city and country from the response
+      const city = data.address?.city || data.address?.town || data.address?.village || '';
+      const country = data.address?.country || '';
+      
+      // Format as "City, Country"
+      const location = city && country ? `${city}, ${country}` : city || country || 'Location not found';
+      setEditLocation(location);
+    } catch (error) {
+      console.error('Failed to detect location:', error);
+      // You might want to show an error message to the user
+    } finally {
+      setDetectingLocation(false);
     }
-    setAboutModalOpen(false);
   };
 
-  const handleLocationSave = () => {
+  const handleAboutSave = async () => {
     if (user) {
-      setUser({ ...user, city: editCity, country: editCountry });
+      try {
+        const updatedUser = await updateProfile({ bio: editBio }).unwrap();
+        const enhancedUpdatedUser = enhanceUserData(updatedUser);
+        setUser(enhancedUpdatedUser);
+        dispatch(updateUser(enhancedUpdatedUser));
+        setAboutModalOpen(false);
+      } catch (error) {
+        console.error('Failed to update bio:', error);
+      }
     }
-    setLocationModalOpen(false);
   };
 
-  const handleNameSave = () => {
+
+  const handleNameSave = async () => {
     if (user) {
-      setUser({ ...user, name: editName });
+      try {
+        // Parse location back into city and country
+        const locationParts = editLocation.split(',').map(part => part.trim());
+        const city = locationParts[0] || '';
+        const country = locationParts[1] || '';
+        
+        // Prepare update data
+        const updateData: any = {
+          name: editName,
+          city: city || undefined,
+          country: country || undefined,
+        };
+        
+        // Only include birthday if it's set
+        if (editBirthday) {
+          updateData.birthday = editBirthday.toISOString();
+        }
+        
+        // Call the update mutation
+        const updatedUser = await updateProfile(updateData).unwrap();
+        
+        // Enhance the updated user data to calculate age from birthday
+        const enhancedUpdatedUser = enhanceUserData(updatedUser);
+        
+        // Update local state with the enhanced response
+        setUser(enhancedUpdatedUser);
+        
+        // Also update Redux store with enhanced data
+        dispatch(updateUser(enhancedUpdatedUser));
+        
+        setNameModalOpen(false);
+      } catch (error) {
+        console.error('Failed to update profile:', error);
+        // You might want to show an error message to the user
+      }
     }
-    setNameModalOpen(false);
   };
 
   const handleAddTopic = () => {
@@ -311,11 +434,51 @@ export default function ProfilePage() {
     setEditTopics(editTopics.filter((topic) => topic !== topicToRemove));
   };
 
-  const handleTopicsSave = () => {
+  const handleTopicsSave = async () => {
     if (user) {
-      setUser({ ...user, topics: editTopics });
+      try {
+        const updatedUser = await updateProfile({ interests: editTopics }).unwrap();
+        const enhancedUpdatedUser = enhanceUserData(updatedUser);
+        setUser(enhancedUpdatedUser);
+        dispatch(updateUser(enhancedUpdatedUser));
+        setTopicsModalOpen(false);
+      } catch (error) {
+        console.error('Failed to update topics:', error);
+      }
     }
-    setTopicsModalOpen(false);
+  };
+
+  const handleImageUpdate = async (imageUrl: string) => {
+    try {
+      // Update cache immediately for instant UI feedback
+      await updateProfileImageCache(imageUrl);
+      
+      // Update local state with absolute URL
+      const absoluteUrl = getAbsoluteImageUrl(imageUrl);
+      if (user) {
+        const updatedUser = { ...user, profileImage: absoluteUrl || imageUrl };
+        setUser(updatedUser);
+        // Also update Redux store
+        dispatch(updateUser(updatedUser));
+      }
+    } catch (error) {
+      console.error('Failed to update profile image:', error);
+    }
+  };
+
+  const handleCoverPhotoUpdate = async (imageUrl: string) => {
+    try {
+      // Update local state with absolute URL
+      const absoluteUrl = getAbsoluteImageUrl(imageUrl);
+      if (user) {
+        const updatedUser = { ...user, coverPhoto: absoluteUrl || imageUrl };
+        setUser(updatedUser);
+        // Also update Redux store
+        dispatch(updateCoverPhoto(absoluteUrl || imageUrl));
+      }
+    } catch (error) {
+      console.error('Failed to update cover photo:', error);
+    }
   };
 
   const handlePreferencesEdit = (
@@ -505,16 +668,16 @@ export default function ProfilePage() {
             user={user}
             onEditName={() => {
               setEditName(user.name || "");
+              setEditBirthday(user.birthday ? new Date(user.birthday) : null);
+              const location = user.city && user.country 
+                ? `${user.city}, ${user.country}` 
+                : user.city || user.country || "";
+              setEditLocation(location);
               setNameModalOpen(true);
             }}
-            onEditAvatar={() => {
-              // Handle avatar edit
-              console.log("Edit avatar");
-            }}
-            onEditCover={() => {
-              // Handle cover edit
-              console.log("Edit cover");
-            }}
+            onEditAvatar={handleImageUpdate}
+            onEditCover={handleCoverPhotoUpdate}
+            isUserProfile={true}
           />
         </Box>
 
@@ -1012,7 +1175,9 @@ export default function ProfilePage() {
                           animation: "pulse 1.5s ease-in-out infinite",
                         }}
                       >
-                        <Avatar sx={{ width: 48, height: 48, mb: 1, backgroundColor: "rgba(255, 255, 255, 0.2)" }} />
+                        <Box sx={{ mb: 1 }}>
+                          <UserAvatar size={48} showOnlineStatus={false} />
+                        </Box>
                         <Box sx={{ width: 40, height: 12, backgroundColor: "rgba(255, 255, 255, 0.2)", borderRadius: 1 }} />
                       </Box>
                     ))
@@ -1037,11 +1202,13 @@ export default function ProfilePage() {
                           },
                         }}
                       >
-                        <UserAvatar
-                          user={follower}
-                          size={48}
-                          sx={{ mb: 1 }}
-                        />
+                        <Box sx={{ mb: 1, position: 'relative', display: 'inline-block' }}>
+                          <UserAvatar
+                            user={follower}
+                            size={48}
+                            showOnlineStatus={true}
+                          />
+                        </Box>
                         <Typography
                           variant="body2"
                           sx={{
@@ -1198,11 +1365,11 @@ export default function ProfilePage() {
         onSave={handleLanguageUpdate}
       />
 
-      {/* Name Edit Modal */}
+      {/* Name & Birthday Edit Modal */}
       <SharedModal
         open={nameModalOpen}
         onClose={() => setNameModalOpen(false)}
-        title="Edit Name"
+        title="Edit Profile"
         maxWidth="xs"
         actions={
           <>
@@ -1235,37 +1402,134 @@ export default function ProfilePage() {
           </>
         }
       >
-        <TextField
-          autoFocus
-          fullWidth
-          size="small"
-          label="Name"
-          variant="outlined"
-          value={editName}
-          onChange={(e) => setEditName(e.target.value)}
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              backgroundColor: "rgba(255, 255, 255, 0.15)",
-              color: "white",
-              height: 40,
-              "& fieldset": {
-                borderColor: "rgba(255, 255, 255, 0.2)",
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <TextField
+              autoFocus
+              fullWidth
+              size="small"
+              label="Name"
+              variant="outlined"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "rgba(255, 255, 255, 0.15)",
+                  color: "white",
+                  height: 40,
+                  "& fieldset": {
+                    borderColor: "rgba(255, 255, 255, 0.2)",
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "rgba(255, 255, 255, 0.3)",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#6366f1",
+                  },
+                },
+                "& .MuiInputLabel-root": {
+                  color: "rgba(255, 255, 255, 0.7)",
+                  "&.Mui-focused": {
+                    color: "#6366f1",
+                  },
+                },
+              }}
+            />
+            <DatePicker
+              label="Birthday"
+              value={editBirthday}
+              onChange={(newValue) => setEditBirthday(newValue)}
+              maxDate={new Date()}
+              minDate={new Date('1900-01-01')}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  size: "small",
+                  variant: "outlined",
+                  sx: {
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.15)",
+                      color: "white",
+                      height: 40,
+                      "& fieldset": {
+                        borderColor: "rgba(255, 255, 255, 0.2)",
+                      },
+                      "&:hover fieldset": {
+                        borderColor: "rgba(255, 255, 255, 0.3)",
+                      },
+                      "&.Mui-focused fieldset": {
+                        borderColor: "#6366f1",
+                      },
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: "rgba(255, 255, 255, 0.7)",
+                      "&.Mui-focused": {
+                        color: "#6366f1",
+                      },
+                    },
+                    "& .MuiIconButton-root": {
+                      color: "rgba(255, 255, 255, 0.7)",
+                    },
+                  },
+                },
+              }}
+            />
+            <TextField
+            fullWidth
+            size="small"
+            label="Location"
+            variant="outlined"
+            value={editLocation}
+            onChange={(e) => setEditLocation(e.target.value)}
+            placeholder="City, Country"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={handleDetectLocation}
+                    disabled={detectingLocation}
+                    size="small"
+                    sx={{
+                      color: detectingLocation ? "#6366f1" : "rgba(255, 255, 255, 0.7)",
+                      "&:hover": {
+                        backgroundColor: "rgba(99, 102, 241, 0.1)",
+                      },
+                    }}
+                  >
+                    {detectingLocation ? (
+                      <CircularProgress size={20} sx={{ color: "#6366f1" }} />
+                    ) : (
+                      <LocationIcon />
+                    )}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                backgroundColor: "rgba(255, 255, 255, 0.15)",
+                color: "white",
+                height: 40,
+                "& fieldset": {
+                  borderColor: "rgba(255, 255, 255, 0.2)",
+                },
+                "&:hover fieldset": {
+                  borderColor: "rgba(255, 255, 255, 0.3)",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#6366f1",
+                },
               },
-              "&:hover fieldset": {
-                borderColor: "rgba(255, 255, 255, 0.3)",
+              "& .MuiInputLabel-root": {
+                color: "rgba(255, 255, 255, 0.7)",
+                "&.Mui-focused": {
+                  color: "#6366f1",
+                },
               },
-              "&.Mui-focused fieldset": {
-                borderColor: "#6366f1",
-              },
-            },
-            "& .MuiInputLabel-root": {
-              color: "rgba(255, 255, 255, 0.7)",
-              "&.Mui-focused": {
-                color: "#6366f1",
-              },
-            },
-          }}
-        />
+            }}
+          />
+          </Box>
+        </LocalizationProvider>
       </SharedModal>
 
       {/* About Edit Modal */}
@@ -1339,107 +1603,6 @@ export default function ProfilePage() {
         />
       </SharedModal>
 
-      {/* Location Edit Modal */}
-      <SharedModal
-        open={locationModalOpen}
-        onClose={() => setLocationModalOpen(false)}
-        title="Edit Location"
-        maxWidth="xs"
-        actions={
-          <>
-            <Button
-              onClick={() => setLocationModalOpen(false)}
-              size="small"
-              sx={{
-                color: "rgba(255, 255, 255, 0.7)",
-                "&:hover": {
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                },
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleLocationSave}
-              variant="contained"
-              size="small"
-              sx={{
-                backgroundColor: "#6366f1",
-                fontSize: "0.8rem",
-                "&:hover": {
-                  backgroundColor: "#5855eb",
-                },
-              }}
-            >
-              Save
-            </Button>
-          </>
-        }
-      >
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <TextField
-            autoFocus
-            fullWidth
-            size="small"
-            label="City"
-            variant="outlined"
-            value={editCity}
-            onChange={(e) => setEditCity(e.target.value)}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                backgroundColor: "rgba(255, 255, 255, 0.15)",
-                color: "white",
-                height: 40,
-                "& fieldset": {
-                  borderColor: "rgba(255, 255, 255, 0.2)",
-                },
-                "&:hover fieldset": {
-                  borderColor: "rgba(255, 255, 255, 0.3)",
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#6366f1",
-                },
-              },
-              "& .MuiInputLabel-root": {
-                color: "rgba(255, 255, 255, 0.7)",
-                "&.Mui-focused": {
-                  color: "#6366f1",
-                },
-              },
-            }}
-          />
-          <TextField
-            fullWidth
-            size="small"
-            label="Country"
-            variant="outlined"
-            value={editCountry}
-            onChange={(e) => setEditCountry(e.target.value)}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                backgroundColor: "rgba(255, 255, 255, 0.15)",
-                color: "white",
-                height: 40,
-                "& fieldset": {
-                  borderColor: "rgba(255, 255, 255, 0.2)",
-                },
-                "&:hover fieldset": {
-                  borderColor: "rgba(255, 255, 255, 0.3)",
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#6366f1",
-                },
-              },
-              "& .MuiInputLabel-root": {
-                color: "rgba(255, 255, 255, 0.7)",
-                "&.Mui-focused": {
-                  color: "#6366f1",
-                },
-              },
-            }}
-          />
-        </Box>
-      </SharedModal>
 
       {/* Topics Edit Modal */}
       <SharedModal
@@ -1586,17 +1749,17 @@ export default function ProfilePage() {
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Typography sx={{ fontWeight: 600, fontSize: "1rem" }}>
+            <Box component="span" sx={{ fontWeight: 600, fontSize: "1rem" }}>
               Following {realUsers.length} people
-            </Typography>
+            </Box>
             {selectedUsers.size > 0 && (
-              <Typography sx={{ 
+              <Box component="span" sx={{ 
                 color: "#6366f1", 
                 fontSize: "0.8rem",
                 fontWeight: 500 
               }}>
                 ({selectedUsers.size} selected)
-              </Typography>
+              </Box>
             )}
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -1784,11 +1947,10 @@ export default function ProfilePage() {
                             py: 0.5,
                             px: 1,
                           }}>
-                            <Avatar
-                              src={`https://randomuser.me/api/portraits/${
-                                userId % 2 === 0 ? "men" : "women"
-                              }/${userId + 20}.jpg`}
-                              sx={{ width: 24, height: 24 }}
+                            <UserAvatar
+                              userName={userName}
+                              size={24}
+                              showOnlineStatus={false}
                             />
                             <Typography sx={{ color: "white", fontSize: "0.8rem" }}>
                               {userName}
@@ -1861,7 +2023,7 @@ export default function ProfilePage() {
                       border: "1px solid rgba(255, 255, 255, 0.2)",
                       animation: "pulse 1.5s ease-in-out infinite",
                     }}>
-                      <Avatar sx={{ width: 48, height: 48, backgroundColor: "rgba(255, 255, 255, 0.2)" }} />
+                      <UserAvatar size={48} showOnlineStatus={false} />
                       <Box sx={{ flex: 1 }}>
                         <Box sx={{ width: 120, height: 16, backgroundColor: "rgba(255, 255, 255, 0.2)", borderRadius: 1, mb: 0.5 }} />
                         <Box sx={{ width: 80, height: 12, backgroundColor: "rgba(255, 255, 255, 0.2)", borderRadius: 1 }} />

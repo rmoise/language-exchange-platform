@@ -1,5 +1,4 @@
 export { default as ProfileCard } from "./ProfileCard";
-export { default as SimpleProfileCard } from "./SimpleProfileCard";
 export { default as EditIconButton } from "./EditIconButton";
 export { default as CombinedLanguageModal } from "./CombinedLanguageModal";
 export { default as PreferencesModal } from "./PreferencesModal";

@@ -16,7 +16,8 @@ import {
   People as PeopleIcon,
   AccessTime as TimeIcon,
   Language as LanguageIcon,
-  PlayArrow as JoinIcon
+  PlayArrow as JoinIcon,
+  Share as ShareIcon
 } from '@mui/icons-material'
 import { LanguageSession, SessionService } from '@/services/sessionService'
 
@@ -28,6 +29,7 @@ interface SessionCardProps {
 
 export default function SessionCard({ session, onJoinSession, currentUserId }: SessionCardProps) {
   const [joining, setJoining] = useState(false)
+  const [shareSuccess, setShareSuccess] = useState(false)
 
   const handleJoin = async () => {
     setJoining(true)
@@ -75,6 +77,20 @@ export default function SessionCard({ session, onJoinSession, currentUserId }: S
 
   const isCreator = currentUserId === session.created_by
   const isFull = session.participant_count >= session.max_participants
+
+  const handleShare = async () => {
+    const sessionUrl = `${window.location.origin}/protected/sessions/${session.id}`
+    
+    try {
+      await navigator.clipboard.writeText(sessionUrl)
+      setShareSuccess(true)
+      setTimeout(() => setShareSuccess(false), 2000)
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error)
+      // Fallback: show the URL in alert
+      alert(`Share this session link:\n${sessionUrl}`)
+    }
+  }
 
   return (
     <Card
@@ -186,8 +202,9 @@ export default function SessionCard({ session, onJoinSession, currentUserId }: S
           </Box>
         )}
 
-        {/* Action Button */}
+        {/* Action Buttons */}
         <Box sx={{ display: 'flex', gap: 1 }}>
+          {/* Main Action Button */}
           {isCreator ? (
             <Button
               variant="contained"
@@ -224,6 +241,27 @@ export default function SessionCard({ session, onJoinSession, currentUserId }: S
               {joining ? 'Joining...' : isFull ? 'Session Full' : 'Join Session'}
             </Button>
           )}
+          
+          {/* Share Button */}
+          <Tooltip title={shareSuccess ? "Link copied!" : "Share session"}>
+            <Button
+              variant="outlined"
+              onClick={handleShare}
+              sx={{
+                minWidth: 'auto',
+                width: 48,
+                height: 48,
+                borderColor: shareSuccess ? '#22c55e' : 'rgba(255, 255, 255, 0.3)',
+                color: shareSuccess ? '#22c55e' : 'rgba(255, 255, 255, 0.7)',
+                '&:hover': {
+                  borderColor: shareSuccess ? '#16a34a' : 'rgba(255, 255, 255, 0.5)',
+                  backgroundColor: shareSuccess ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.1)'
+                }
+              }}
+            >
+              <ShareIcon fontSize="small" />
+            </Button>
+          </Tooltip>
         </Box>
       </CardContent>
     </Card>

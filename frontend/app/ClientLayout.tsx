@@ -1,77 +1,37 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useMemo } from 'react'
 import { Provider } from 'react-redux'
+import { PersistGate } from 'redux-persist/integration/react'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
+import { CacheProvider } from '@emotion/react'
 import CssBaseline from '@mui/material/CssBaseline'
-import { makeStore, AppStore } from '@/lib/store'
+import { makeStore, makePersistor, AppStore } from '@/lib/store'
 import { useAppDispatch } from '@/lib/hooks'
 import { getCurrentUser } from '@/features/auth/authSlice'
+import { ThemeContextProvider, useTheme as useCustomTheme } from '@/contexts/ThemeContext'
+import { initializeTheme } from '@/features/theme/themeSlice'
+import SimpleLoading from '@/components/ui/SimpleLoading'
+import createEmotionCache from '@/utils/createEmotionCache'
+import { apiSlice } from '@/features/api/apiSlice'
 
-const theme = createTheme({
-  cssVariables: {
-    colorSchemeSelector: 'class',
-  },
-  colorSchemes: {
-    light: {
-      palette: {
-        primary: {
-          main: '#6366f1', // Modern indigo
-          light: '#8b5cf6',
-          dark: '#4f46e5',
-        },
-        secondary: {
-          main: '#f59e0b', // Modern amber
-          light: '#fbbf24',
-          dark: '#d97706',
-        },
-        background: {
-          default: '#f8fafc',
-          paper: '#ffffff',
-        },
-        grey: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a',
-        },
-      },
+// Create theme function that returns theme based on mode
+const createAppTheme = (mode: 'light' | 'dark') => createTheme({
+  palette: {
+    mode,
+    primary: {
+      main: mode === 'light' ? '#6366f1' : '#8b5cf6',
+      light: mode === 'light' ? '#8b5cf6' : '#a78bfa',
+      dark: mode === 'light' ? '#4f46e5' : '#7c3aed',
     },
-    dark: {
-      palette: {
-        primary: {
-          main: '#8b5cf6',
-          light: '#a78bfa',
-          dark: '#7c3aed',
-        },
-        secondary: {
-          main: '#fbbf24',
-          light: '#fcd34d',
-          dark: '#f59e0b',
-        },
-        background: {
-          default: '#0f172a',
-          paper: '#1e293b',
-        },
-        grey: {
-          50: '#0f172a',
-          100: '#1e293b',
-          200: '#334155',
-          300: '#475569',
-          400: '#64748b',
-          500: '#94a3b8',
-          600: '#cbd5e1',
-          700: '#e2e8f0',
-          800: '#f1f5f9',
-          900: '#f8fafc',
-        },
-      },
+    secondary: {
+      main: mode === 'light' ? '#f59e0b' : '#fbbf24',
+      light: mode === 'light' ? '#fbbf24' : '#fcd34d',
+      dark: mode === 'light' ? '#d97706' : '#f59e0b',
+    },
+    background: {
+      default: mode === 'light' ? '#f8fafc' : '#0f172a',
+      paper: mode === 'light' ? '#ffffff' : '#1e293b',
     },
   },
   typography: {
@@ -123,16 +83,6 @@ const theme = createTheme({
     borderRadius: 12,
   },
   components: {
-    MuiCssBaseline: {
-      styleOverrides: {
-        body: {
-          backgroundColor: '#f8fafc',
-        },
-        html: {
-          backgroundColor: '#f8fafc',
-        },
-      },
-    },
     MuiButton: {
       styleOverrides: {
         root: {
@@ -153,11 +103,17 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 16,
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: mode === 'light' 
+            ? '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)'
+            : '0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.8)',
+          border: mode === 'light' 
+            ? '1px solid rgba(255, 255, 255, 0.1)'
+            : '1px solid rgba(255, 255, 255, 0.05)',
           backdropFilter: 'blur(10px)',
           '&:hover': {
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            boxShadow: mode === 'light' 
+              ? '0 4px 12px rgba(0, 0, 0, 0.15)'
+              : '0 4px 12px rgba(0, 0, 0, 0.6)',
             transform: 'translateY(-2px)',
           },
           transition: 'all 0.3s ease-in-out',
@@ -184,23 +140,18 @@ const theme = createTheme({
         },
       },
     },
-    MuiAppBar: {
-      styleOverrides: {
-        root: {
-          backgroundColor: 'rgba(255, 255, 255, 0.8)',
-          backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-        },
-      },
-    },
   },
 })
 
 function StoreInitializer({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch()
+  const hasInitialized = useRef(false)
 
   useEffect(() => {
+    // Only run once on mount, not on every render
+    if (hasInitialized.current) return
+    hasInitialized.current = true
+
     // Check if user is logged in on app start
     const token = document.cookie
       .split('; ')
@@ -209,11 +160,30 @@ function StoreInitializer({ children }: { children: React.ReactNode }) {
     
     if (token) {
       dispatch(getCurrentUser())
+      // Trigger RTK Query to fetch user data
+      dispatch(apiSlice.endpoints.getCurrentUser.initiate())
     }
-  }, [dispatch])
+  }, [dispatch]) // Empty dependency array - run only once
 
   return <>{children}</>
 }
+
+function ThemedApp({ children }: { children: React.ReactNode }) {
+  const { mode } = useCustomTheme()
+  const theme = createAppTheme(mode)
+  
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <StoreInitializer>
+        {children}
+      </StoreInitializer>
+    </ThemeProvider>
+  )
+}
+
+// Client-side cache instance
+const clientSideEmotionCache = createEmotionCache()
 
 export default function ClientLayout({
   children,
@@ -221,18 +191,25 @@ export default function ClientLayout({
   children: React.ReactNode
 }) {
   const storeRef = useRef<AppStore | undefined>(undefined)
+  const persistorRef = useRef<any>(undefined)
+  const emotionCache = useMemo(() => clientSideEmotionCache, [])
+  
   if (!storeRef.current) {
     storeRef.current = makeStore()
+    persistorRef.current = makePersistor(storeRef.current)
   }
 
   return (
-    <Provider store={storeRef.current}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <StoreInitializer>
-          {children}
-        </StoreInitializer>
-      </ThemeProvider>
-    </Provider>
+    <CacheProvider value={emotionCache}>
+      <Provider store={storeRef.current}>
+        <PersistGate loading={<SimpleLoading />} persistor={persistorRef.current}>
+          <ThemeContextProvider>
+            <ThemedApp>
+              {children}
+            </ThemedApp>
+          </ThemeContextProvider>
+        </PersistGate>
+      </Provider>
+    </CacheProvider>
   )
 }

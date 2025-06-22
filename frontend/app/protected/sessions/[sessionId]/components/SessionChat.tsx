@@ -22,6 +22,7 @@ import {
   Circle as OnlineIcon
 } from '@mui/icons-material'
 import { SessionParticipant, SessionService } from '@/services/sessionService'
+import { SwipeTranslateSessionMessage } from './SwipeTranslateSessionMessage'
 
 interface Message {
   id: string
@@ -238,110 +239,18 @@ export default function SessionChat({
             {/* Messages for this date */}
             {dateMessages.map((message, index) => {
               const isCurrentUser = message.user_id === currentUser?.id
-              const isSystemMessage = message.message_type === 'system'
               const prevMessage = index > 0 ? dateMessages[index - 1] : null
-              const showAvatar = !prevMessage || prevMessage.user_id !== message.user_id || isSystemMessage
-
-              if (isSystemMessage) {
-                return (
-                  <Box key={message.id} sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
-                    <Chip
-                      label={message.content}
-                      size="small"
-                      sx={{
-                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                        color: '#a5b4fc',
-                        fontSize: '0.75rem'
-                      }}
-                    />
-                  </Box>
-                )
-              }
+              const showAvatar = !prevMessage || prevMessage.user_id !== message.user_id || message.message_type === 'system'
 
               return (
-                <Box
+                <SwipeTranslateSessionMessage
                   key={message.id}
-                  sx={{
-                    display: 'flex',
-                    flexDirection: isCurrentUser ? 'row-reverse' : 'row',
-                    mb: showAvatar ? 2 : 0.5,
-                    alignItems: 'flex-end'
-                  }}
-                >
-                  {/* Avatar */}
-                  {!isCurrentUser && (
-                    <Avatar
-                      sx={{
-                        width: showAvatar ? 32 : 32,
-                        height: showAvatar ? 32 : 32,
-                        mr: 1,
-                        backgroundColor: '#6366f1',
-                        fontSize: '0.875rem',
-                        visibility: showAvatar ? 'visible' : 'hidden'
-                      }}
-                    >
-                      {message.user?.name?.charAt(0) || 'U'}
-                    </Avatar>
-                  )}
-
-                  {/* Message Content */}
-                  <Box
-                    sx={{
-                      maxWidth: '70%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: isCurrentUser ? 'flex-end' : 'flex-start'
-                    }}
-                  >
-                    {/* Sender Name and Time */}
-                    {showAvatar && !isCurrentUser && (
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: 'rgba(255, 255, 255, 0.6)',
-                          mb: 0.5,
-                          ml: 0.5
-                        }}
-                      >
-                        {message.user?.name} • {formatTime(message.created_at)}
-                      </Typography>
-                    )}
-
-                    {/* Message Bubble */}
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        p: 1.5,
-                        backgroundColor: isCurrentUser 
-                          ? '#6366f1' 
-                          : 'rgba(255, 255, 255, 0.1)',
-                        color: 'white',
-                        borderRadius: 2,
-                        borderTopLeftRadius: !isCurrentUser && !showAvatar ? 1 : 2,
-                        borderTopRightRadius: isCurrentUser && !showAvatar ? 1 : 2,
-                        wordBreak: 'break-word'
-                      }}
-                    >
-                      <Typography variant="body2" sx={{ lineHeight: 1.4 }}>
-                        {message.content}
-                      </Typography>
-                    </Paper>
-
-                    {/* Time for current user messages */}
-                    {isCurrentUser && showAvatar && (
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: 'rgba(255, 255, 255, 0.6)',
-                          mt: 0.5,
-                          mr: 0.5
-                        }}
-                      >
-                        {formatTime(message.created_at)}
-                      </Typography>
-                    )}
-                  </Box>
-                </Box>
+                  message={message}
+                  isCurrentUser={isCurrentUser}
+                  showAvatar={showAvatar}
+                  formatTime={formatTime}
+                  enableTranslation={true}
+                />
               )
             })}
           </Box>

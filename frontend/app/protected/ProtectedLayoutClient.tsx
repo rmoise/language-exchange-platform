@@ -33,7 +33,7 @@ import UserAvatar from "@/components/ui/UserAvatar";
 
 // Main tab navigation items (subset of navigation items for header tabs)
 const tabNavigationItems = [
-  { text: "Home", href: "/protected/feed", icon: HomeIcon },
+  { text: "Dashboard", href: "/protected/dashboard", icon: HomeIcon },
   { text: "Community", href: "/protected/community", icon: PeopleIcon },
   { text: "Sessions", href: "/protected/sessions", icon: SessionsIcon },
   { text: "Messages", href: "/protected/conversations", icon: ChatIcon },
@@ -43,7 +43,7 @@ const tabNavigationItems = [
 
 // Bottom nav items for mobile (simplified main features)
 const bottomNavItems = [
-  { text: "Home", href: "/protected/feed", icon: HomeIcon },
+  { text: "Dashboard", href: "/protected/dashboard", icon: HomeIcon },
   { text: "Community", href: "/protected/community", icon: PeopleIcon },
   { text: "Sessions", href: "/protected/sessions", icon: SessionsIcon },
   { text: "Chat", href: "/protected/conversations", icon: ChatIcon, badge: 0 },

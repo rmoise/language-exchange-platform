@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Box,
   Tabs,
   Tab,
   Typography,
   Button,
+  CircularProgress,
 } from "@mui/material";
 import {
   LocationOn as LocationIcon,
@@ -42,6 +43,9 @@ export default function CommunityTabs({
   users,
 }: CommunityTabsProps) {
   const [activeTab, setActiveTab] = useState(0);
+  const [displayCount, setDisplayCount] = useState(20); // Start by showing 20 users
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
 
   console.log("CommunityTabs - users received:", users.length, users);
@@ -57,7 +61,50 @@ export default function CommunityTabs({
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
+    setDisplayCount(20); // Reset display count when changing tabs
   };
+
+  const handleLoadMore = useCallback(() => {
+    if (isLoadingMore) return;
+    
+    setIsLoadingMore(true);
+    // Simulate loading delay for smooth UX
+    setTimeout(() => {
+      setDisplayCount((prev) => prev + 20);
+      setIsLoadingMore(false);
+    }, 300);
+  }, [isLoadingMore]);
+
+  // Set up intersection observer for infinite scroll
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
+
+    const hasMoreUsers = activeTab === 0 
+      ? allUsers.length > displayCount 
+      : nearbyUsers.length > displayCount;
+
+    if (!hasMoreUsers) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoadingMore) {
+          handleLoadMore();
+        }
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '200px',
+      }
+    );
+
+    observer.observe(loadMoreRef.current);
+
+    return () => {
+      if (loadMoreRef.current) {
+        observer.unobserve(loadMoreRef.current);
+      }
+    };
+  }, [activeTab, displayCount, allUsers.length, nearbyUsers.length, isLoadingMore, handleLoadMore]);
 
   // Use ProfileCard instead of custom UserCard
 
@@ -128,7 +175,7 @@ export default function CommunityTabs({
                   justifyItems: "center",
                 }}
               >
-                {allUsers.map((user) => (
+                {allUsers.slice(0, displayCount).map((user) => (
                   <Box
                     key={user.id}
                     sx={{
@@ -198,7 +245,7 @@ export default function CommunityTabs({
                   justifyItems: "center",
                 }}
               >
-                {nearbyUsers.map((user) => (
+                {nearbyUsers.slice(0, displayCount).map((user) => (
                   <Box
                     key={user.id}
                     sx={{
@@ -270,26 +317,47 @@ export default function CommunityTabs({
         )}
       </Box>
 
-      {/* Load More Button */}
-      {((activeTab === 0 && allUsers.length > 0) ||
-        (activeTab === 1 && nearbyUsers.length > 0)) && (
-        <Box sx={{ textAlign: "center", mt: 4 }}>
-          <Button
-            variant="outlined"
-            sx={{
-              color: "white",
-              borderColor: "#374151",
-              textTransform: "none",
-              px: 4,
-              py: 1.5,
-              "&:hover": {
-                backgroundColor: "rgba(99, 102, 241, 0.1)",
-                borderColor: "#6366f1",
-              },
-            }}
-          >
-            Load More Members
-          </Button>
+      {/* Load More Trigger */}
+      {((activeTab === 0 && allUsers.length > displayCount) ||
+        (activeTab === 1 && nearbyUsers.length > displayCount)) && (
+        <Box 
+          ref={loadMoreRef}
+          sx={{ 
+            textAlign: "center", 
+            mt: 4,
+            minHeight: 80,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {isLoadingMore ? (
+            <CircularProgress 
+              size={40} 
+              sx={{ 
+                color: "#6366f1",
+              }} 
+            />
+          ) : (
+            <Button
+              variant="outlined"
+              onClick={handleLoadMore}
+              sx={{
+                color: "white",
+                borderColor: "#374151",
+                textTransform: "none",
+                px: 4,
+                py: 1.5,
+                "&:hover": {
+                  backgroundColor: "rgba(99, 102, 241, 0.1)",
+                  borderColor: "#6366f1",
+                },
+              }}
+            >
+              Load More
+            </Button>
+          )}
         </Box>
       )}
     </Box>

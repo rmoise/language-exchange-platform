@@ -21,12 +21,12 @@ func NewSessionRepository(db *database.DB) repository.SessionRepository {
 // Session management
 func (r *sessionRepository) CreateSession(ctx context.Context, session *models.LanguageSession) error {
 	query := `
-		INSERT INTO language_sessions (id, name, description, created_by, max_participants, session_type, target_language)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO language_sessions (id, name, description, created_by, invited_user_id, max_participants, session_type, target_language)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING created_at, updated_at`
 	
 	err := r.db.QueryRowContext(ctx, query,
-		session.ID, session.Name, session.Description, session.CreatedBy,
+		session.ID, session.Name, session.Description, session.CreatedBy, session.InvitedUserID,
 		session.MaxParticipants, session.SessionType, session.TargetLanguage,
 	).Scan(&session.CreatedAt, &session.UpdatedAt)
 	
@@ -47,24 +47,26 @@ func (r *sessionRepository) CreateSession(ctx context.Context, session *models.L
 
 func (r *sessionRepository) GetSessionByID(ctx context.Context, sessionID string) (*models.LanguageSession, error) {
 	query := `
-		SELECT s.id, s.name, s.description, s.created_by, s.status, s.max_participants,
+		SELECT s.id, s.name, s.description, s.created_by, s.invited_user_id, s.status, s.max_participants,
 			   s.session_type, s.target_language, s.created_at, s.ended_at, s.updated_at,
 			   u.name as creator_name, u.email as creator_email,
+			   iu.name as invited_user_name, iu.email as invited_user_email,
 			   COUNT(DISTINCT sp.id) as participant_count
 		FROM language_sessions s
 		LEFT JOIN users u ON s.created_by = u.id
+		LEFT JOIN users iu ON s.invited_user_id = iu.id
 		LEFT JOIN session_participants sp ON s.id = sp.session_id AND sp.is_active = true
 		WHERE s.id = $1
-		GROUP BY s.id, u.name, u.email`
+		GROUP BY s.id, u.name, u.email, iu.name, iu.email`
 	
 	session := &models.LanguageSession{}
-	var creatorName, creatorEmail sql.NullString
+	var creatorName, creatorEmail, invitedUserName, invitedUserEmail sql.NullString
 	
 	err := r.db.QueryRowContext(ctx, query, sessionID).Scan(
-		&session.ID, &session.Name, &session.Description, &session.CreatedBy,
+		&session.ID, &session.Name, &session.Description, &session.CreatedBy, &session.InvitedUserID,
 		&session.Status, &session.MaxParticipants, &session.SessionType,
 		&session.TargetLanguage, &session.CreatedAt, &session.EndedAt, &session.UpdatedAt,
-		&creatorName, &creatorEmail, &session.ParticipantCount,
+		&creatorName, &creatorEmail, &invitedUserName, &invitedUserEmail, &session.ParticipantCount,
 	)
 	
 	if err != nil {
@@ -80,6 +82,15 @@ func (r *sessionRepository) GetSessionByID(ctx context.Context, sessionID string
 			ID:    session.CreatedBy,
 			Name:  creatorName.String,
 			Email: creatorEmail.String,
+		}
+	}
+	
+	// Set invited user info if available
+	if invitedUserName.Valid && session.InvitedUserID != nil {
+		session.InvitedUser = &models.User{
+			ID:    *session.InvitedUserID,
+			Name:  invitedUserName.String,
+			Email: invitedUserEmail.String,
 		}
 	}
 	

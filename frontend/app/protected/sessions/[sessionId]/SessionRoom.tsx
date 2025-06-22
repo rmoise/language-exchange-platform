@@ -23,7 +23,7 @@ import {
 } from '@mui/icons-material'
 import { LanguageSession, SessionParticipant, SessionService } from '@/services/sessionService'
 import { useSessionWebSocket } from '@/hooks/useSessionWebSocket'
-import InteractiveWhiteboard from './components/InteractiveWhiteboard'
+import ExcalidrawWhiteboard from './components/ExcalidrawWhiteboard'
 import SessionChat from './components/SessionChat'
 
 interface SessionRoomProps {
@@ -106,9 +106,7 @@ export default function SessionRoom({ sessionId, initialSession, currentUser }: 
         await joinSession()
       } else {
         // User is already a participant, load messages directly
-        setTimeout(() => {
-          loadMessages()
-        }, 500)
+        loadMessages()
       }
     }
     
@@ -147,9 +145,7 @@ export default function SessionRoom({ sessionId, initialSession, currentUser }: 
       await SessionService.joinSession(sessionId)
       await loadParticipants()
       // Try to load messages after joining
-      setTimeout(() => {
-        loadMessages()
-      }, 1000)
+      loadMessages()
     } catch (err: any) {
       console.error('Failed to join session:', err)
       
@@ -202,7 +198,18 @@ export default function SessionRoom({ sessionId, initialSession, currentUser }: 
   const isCreator = currentUser?.id === session.created_by
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#0f0f0f' }}>
+    <Box sx={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      bgcolor: '#0f0f0f',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 1000
+    }}>
       {/* Header */}
       <AppBar 
         position="static" 
@@ -282,9 +289,27 @@ export default function SessionRoom({ sessionId, initialSession, currentUser }: 
 
           {/* Actions */}
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <IconButton sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-              <ShareIcon />
-            </IconButton>
+            <Tooltip title="Share session link">
+              <IconButton 
+                sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
+                onClick={async () => {
+                  const sessionUrl = `${window.location.origin}/protected/sessions/${sessionId}`
+                  
+                  try {
+                    await navigator.clipboard.writeText(sessionUrl)
+                    // You could add a toast notification here if you have one
+                    console.log('Session link copied to clipboard')
+                  } catch (error) {
+                    console.error('Failed to copy to clipboard:', error)
+                    // Fallback: show the URL in a temporary alert
+                    const message = `Share this link:\n${sessionUrl}`
+                    alert(message)
+                  }
+                }}
+              >
+                <ShareIcon />
+              </IconButton>
+            </Tooltip>
             
             {isCreator ? (
               <Button
@@ -359,11 +384,11 @@ export default function SessionRoom({ sessionId, initialSession, currentUser }: 
       {/* Connection Status */}
       {!isConnected && !wsError && (
         <Alert 
-          severity="warning"
+          severity="info"
           sx={{ 
-            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+            backgroundColor: 'rgba(33, 150, 243, 0.1)',
             color: 'white',
-            '& .MuiAlert-icon': { color: '#ffc107' }
+            '& .MuiAlert-icon': { color: '#2196f3' }
           }}
         >
           Connecting to session...
@@ -371,29 +396,41 @@ export default function SessionRoom({ sessionId, initialSession, currentUser }: 
       )}
 
       {/* Main Content Area */}
-      <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <Box sx={{ 
+        flex: 1, 
+        display: 'flex', 
+        overflow: 'hidden',
+        height: 'calc(100vh - 80px)' // Account for header height
+      }}>
         {/* Whiteboard Area */}
         <Box sx={{ 
           flex: 1, 
           display: 'flex', 
           flexDirection: 'column',
-          borderRight: '1px solid rgba(255, 255, 255, 0.15)'
+          borderRight: '1px solid rgba(255, 255, 255, 0.15)',
+          overflow: 'hidden'
         }}>
           <Box sx={{ 
             p: 2, 
             borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
-            backgroundColor: 'rgba(20, 20, 20, 0.5)'
+            backgroundColor: 'rgba(20, 20, 20, 0.5)',
+            flexShrink: 0
           }}>
             <Typography variant="h6" sx={{ color: 'white', fontWeight: 500 }}>
               Interactive Whiteboard
             </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-              Click anywhere to start typing, or use drawing tools
+              Use the toolbar to draw, write text, and collaborate in real-time
             </Typography>
           </Box>
           
-          <Box sx={{ flex: 1, position: 'relative' }}>
-            <InteractiveWhiteboard 
+          <Box sx={{ 
+            flex: 1, 
+            position: 'relative',
+            overflow: 'hidden',
+            minHeight: 0
+          }}>
+            <ExcalidrawWhiteboard 
               sessionId={sessionId}
               currentUser={currentUser}
               onCanvasOperation={handleCanvasOperation}

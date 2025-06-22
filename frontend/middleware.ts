@@ -5,9 +5,10 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
   const isAuthPage = request.nextUrl.pathname.startsWith("/auth");
   const isProtectedRoute = request.nextUrl.pathname.startsWith("/protected");
+  const isOnboardingRoute = request.nextUrl.pathname.startsWith("/onboarding");
 
-  // Redirect to login if accessing protected route without token
-  if (isProtectedRoute && !token) {
+  // Redirect to login if accessing protected route or onboarding without token
+  if ((isProtectedRoute || isOnboardingRoute) && !token) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
@@ -20,5 +21,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/auth/:path*", "/protected/:path*"],
+  matcher: ["/auth/:path*", "/protected/:path*", "/onboarding/:path*"],
 };

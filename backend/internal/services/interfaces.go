@@ -15,11 +15,22 @@ type AuthService interface {
 
 type UserService interface {
 	GetProfile(ctx context.Context, userID string) (*models.User, error)
+	GetUserByID(ctx context.Context, userID string) (*models.User, error)
 	UpdateLanguages(ctx context.Context, userID string, languages models.UpdateLanguagesInput) error
 	UpdateProfile(ctx context.Context, userID string, input models.UpdateProfileInput) error
+	UpdateProfileImage(ctx context.Context, userID string, imageURL string) error
+	UpdateCoverPhoto(ctx context.Context, userID string, imageURL string) error
+	AddPhoto(ctx context.Context, userID string, photoURL string) error
 	UpdatePreferences(ctx context.Context, userID string, input models.UpdatePreferencesInput) error
 	UpdateOnboardingStep(ctx context.Context, userID string, step int) error
 	SearchPartners(ctx context.Context, userID string, filters models.SearchFilters) ([]*models.User, error)
+}
+
+type UserServiceInterface interface {
+	GetUserByID(ctx context.Context, userID string) (*models.User, error)
+	UpdateProfileImage(ctx context.Context, userID string, imageURL string) error
+	UpdateCoverPhoto(ctx context.Context, userID string, imageURL string) error
+	AddPhoto(ctx context.Context, userID string, photoURL string) error
 }
 
 type MatchService interface {
@@ -68,4 +79,10 @@ type SessionService interface {
 	SendMessage(ctx context.Context, sessionID, userID string, input models.SendMessageInput) (*models.SessionMessage, error)
 	SaveMessage(ctx context.Context, message *models.SessionMessage) (*models.SessionMessage, error)
 	GetSessionMessages(ctx context.Context, sessionID string, limit, offset int) ([]*models.SessionMessage, error)
+}
+
+type TranslationService interface {
+	Translate(ctx context.Context, request models.TranslateRequest) (*models.TranslateResponse, error)
+	GetSupportedLanguages(ctx context.Context) (*models.LanguagesResponse, error)
+	IsLanguageSupported(languageCode string) bool
 }

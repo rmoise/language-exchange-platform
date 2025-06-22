@@ -217,7 +217,7 @@ export default async function UserProfilePage({
         >
           <ProfileHeader
             user={enhancedUser}
-            isUserProfile={true}
+            isUserProfile={false}
             actionButtons={
               <Box
                 sx={{
@@ -247,7 +247,7 @@ export default async function UserProfilePage({
                     },
                   }}
                 >
-                  Follow
+                  Connect
                 </Button>
                 <Button
                   startIcon={<MessageIcon />}

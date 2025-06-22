@@ -14,12 +14,14 @@ import (
 type sessionService struct {
 	sessionRepo repository.SessionRepository
 	userRepo    repository.UserRepository
+	matchRepo   repository.MatchRepository
 }
 
-func NewSessionService(sessionRepo repository.SessionRepository, userRepo repository.UserRepository) SessionService {
+func NewSessionService(sessionRepo repository.SessionRepository, userRepo repository.UserRepository, matchRepo repository.MatchRepository) SessionService {
 	return &sessionService{
 		sessionRepo: sessionRepo,
 		userRepo:    userRepo,
+		matchRepo:   matchRepo,
 	}
 }
 
@@ -29,6 +31,31 @@ func (s *sessionService) CreateSession(ctx context.Context, userID string, input
 	_, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify user: %w", err)
+	}
+	
+	// Verify invited user exists
+	_, err = s.userRepo.GetByID(ctx, input.InvitedUserID)
+	if err != nil {
+		return nil, models.NewAppError("INVITED_USER_NOT_FOUND", "Invited user not found", 404)
+	}
+	
+	// Verify that creator and invited user are matched
+	matches, err := s.matchRepo.GetMatchesByUser(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to verify match relationship: %w", err)
+	}
+	
+	isMatched := false
+	for _, match := range matches {
+		if (match.User1.ID == userID && match.User2.ID == input.InvitedUserID) ||
+		   (match.User2.ID == userID && match.User1.ID == input.InvitedUserID) {
+			isMatched = true
+			break
+		}
+	}
+	
+	if !isMatched {
+		return nil, models.NewAppError("NOT_MATCHED", "You can only invite users you are matched with", 403)
 	}
 	
 	var description *string
@@ -46,6 +73,7 @@ func (s *sessionService) CreateSession(ctx context.Context, userID string, input
 		Name:            input.Name,
 		Description:     description,
 		CreatedBy:       userID,
+		InvitedUserID:   &input.InvitedUserID,
 		Status:          models.SessionStatusActive,
 		MaxParticipants: input.MaxParticipants,
 		SessionType:     input.SessionType,
@@ -141,6 +169,16 @@ func (s *sessionService) JoinSession(ctx context.Context, sessionID, userID stri
 		return nil, models.ErrSessionEnded
 	}
 	
+	// Verify user is allowed to join (creator or invited user only)
+	isAuthorized := session.CreatedBy == userID
+	if !isAuthorized && session.InvitedUserID != nil {
+		isAuthorized = *session.InvitedUserID == userID
+	}
+	
+	if !isAuthorized {
+		return nil, models.NewAppError("NOT_INVITED", "You are not invited to this session", 403)
+	}
+	
 	// Check if user is already in session
 	isInSession, err := s.sessionRepo.IsUserInSession(ctx, sessionID, userID)
 	if err != nil {
@@ -165,11 +203,17 @@ func (s *sessionService) JoinSession(ctx context.Context, sessionID, userID stri
 		return nil, models.ErrSessionFull
 	}
 	
+	// Determine role based on whether user is creator
+	role := models.RoleParticipant
+	if session.CreatedBy == userID {
+		role = models.RoleCreator
+	}
+	
 	// Add participant
 	participant := &models.SessionParticipant{
 		SessionID: sessionID,
 		UserID:    userID,
-		Role:      models.RoleParticipant,
+		Role:      role,
 		IsActive:  true,
 	}
 	

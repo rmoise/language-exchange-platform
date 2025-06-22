@@ -5,6 +5,9 @@ export interface User {
   username?: string
   googleId?: string
   profileImage?: string
+  coverPhoto?: string
+  photos?: string[]
+  birthday?: string
   city?: string
   country?: string
   timezone?: string

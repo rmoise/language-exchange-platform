@@ -54,19 +54,27 @@ func main() {
 	matchService := services.NewMatchService(matchRepo, userRepo)
 	conversationService := services.NewConversationService(conversationRepo, userRepo, messageRepo, matchRepo)
 	messageService := services.NewMessageService(messageRepo, conversationRepo, userRepo, wsHub)
-	sessionService := services.NewSessionService(sessionRepo, userRepo)
+	sessionService := services.NewSessionService(sessionRepo, userRepo, matchRepo)
+	log.Println("DEBUG: Creating translation service with URL:", cfg.LibreTranslateURL)
+	translationService := services.NewTranslationService(cfg.LibreTranslateURL, cfg.LibreTranslateAPIKey)
+	log.Println("DEBUG: Creating upload service with dir:", cfg.UploadsDir, "max size:", cfg.MaxUploadSize)
+	uploadService := services.NewUploadService(cfg.UploadsDir, cfg.MaxUploadSize)
 	
 	// Set session service on the hub for database operations
 	wsHub.SetSessionService(sessionService)
 
 	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(authService)
+	authHandler := handlers.NewAuthHandler(authService, userService)
 	userHandler := handlers.NewUserHandler(userService)
 	matchHandler := handlers.NewMatchHandler(matchService)
 	conversationHandler := handlers.NewConversationHandler(conversationService)
 	messageHandler := handlers.NewMessageHandler(messageService, conversationService)
 	sessionHandler := handlers.NewSessionHandler(sessionService, wsHub)
 	wsHandler := handlers.NewWebSocketHandler(wsHub, sessionService)
+	log.Println("DEBUG: Creating translation handler")
+	translationHandler := handlers.NewTranslationHandler(translationService)
+	log.Println("DEBUG: Creating upload handler")
+	uploadHandler := handlers.NewUploadHandler(uploadService, userService)
 
 	// Setup Gin router
 	if cfg.Environment == "production" {
@@ -77,6 +85,9 @@ func main() {
 	router.Use(gin.Logger())
 	router.Use(handlers.ErrorHandlingMiddleware())
 	router.Use(handlers.CORSMiddleware())
+
+	// Serve static files (uploaded images)
+	router.Static("/uploads", cfg.UploadsDir)
 
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
@@ -159,6 +170,23 @@ func main() {
 				sessions.POST("/:sessionId/messages", sessionHandler.SendMessage)
 				sessions.GET("/:sessionId/canvas", sessionHandler.GetCanvasOperations)
 				sessions.POST("/:sessionId/canvas", sessionHandler.SaveCanvasOperation)
+			}
+
+			// Translation routes
+			translate := protected.Group("/translate")
+			{
+				translate.POST("", translationHandler.Translate)
+				translate.GET("/languages", translationHandler.GetSupportedLanguages)
+				translate.GET("/languages/check", translationHandler.CheckLanguageSupport)
+				translate.GET("/health", translationHandler.Health)
+				translate.GET("/info", translationHandler.GetServiceInfo)
+			}
+
+			// Upload routes
+			upload := protected.Group("/upload")
+			{
+				upload.POST("/image", uploadHandler.UploadImage)
+				upload.POST("/images", uploadHandler.UploadMultipleImages)
 			}
 
 			// WebSocket routes  

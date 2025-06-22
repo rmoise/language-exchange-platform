@@ -71,9 +71,9 @@ const SharedModal: React.FC<SharedModalProps> = ({
           ...titleSx,
         }}
       >
-        <Typography sx={{ fontWeight: 600, fontSize: "1rem" }}>
+        <Box component="span" sx={{ fontWeight: 600, fontSize: "1rem" }}>
           {title}
-        </Typography>
+        </Box>
         {showCloseButton && (
           <IconButton
             onClick={onClose}

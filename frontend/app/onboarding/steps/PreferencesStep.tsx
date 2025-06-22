@@ -12,7 +12,7 @@ import {
   FormControlLabel,
   Switch,
   Chip,
-  Grid,
+  useTheme,
 } from '@mui/material'
 import { 
   Settings as SettingsIcon,
@@ -35,6 +35,7 @@ export default function PreferencesStep({ user, onNext, onBack }: PreferencesSte
   const [preferredMeetingTypes, setPreferredMeetingTypes] = useState<string[]>(['online', 'in-person'])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const theme = useTheme()
 
   const meetingTypeOptions = [
     { value: 'online', label: 'Video Calls', icon: '💻' },
@@ -96,7 +97,7 @@ export default function PreferencesStep({ user, onNext, onBack }: PreferencesSte
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ step: 4 }),
+        body: JSON.stringify({ step: 5 }),
       })
 
       if (!stepResponse.ok) {
@@ -115,12 +116,6 @@ export default function PreferencesStep({ user, onNext, onBack }: PreferencesSte
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <IconButton onClick={onBack} sx={{ mr: 1 }}>
-          <ArrowBackIcon />
-        </IconButton>
-      </Box>
-
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
@@ -133,13 +128,17 @@ export default function PreferencesStep({ user, onNext, onBack }: PreferencesSte
         sx={{ 
           p: 3, 
           mb: 3, 
-          backgroundColor: 'rgba(102, 126, 234, 0.05)',
-          border: '1px solid rgba(102, 126, 234, 0.1)'
+          backgroundColor: theme.palette.mode === 'dark' 
+            ? 'rgba(139, 92, 246, 0.1)'
+            : 'rgba(102, 126, 234, 0.05)',
+          border: `1px solid ${theme.palette.mode === 'dark' 
+            ? 'rgba(139, 92, 246, 0.3)'
+            : 'rgba(102, 126, 234, 0.1)'}`
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <LocationIcon sx={{ color: '#667eea', mr: 1 }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a1a1a' }}>
+          <LocationIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             Location Preferences
           </Typography>
         </Box>
@@ -157,29 +156,59 @@ export default function PreferencesStep({ user, onNext, onBack }: PreferencesSte
         />
 
         {enableLocationMatching && (
-          <Box>
-            <Typography variant="body2" sx={{ color: '#666', mb: 2 }}>
-              Maximum distance: {maxDistance} km
+          <Box sx={{ px: 2, pt: 1 }}>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 3 }}>
+              Maximum distance: <strong>{maxDistance} km</strong>
             </Typography>
             <Slider
               value={maxDistance}
               onChange={(_, value) => setMaxDistance(value as number)}
+              valueLabelDisplay="auto"
               min={5}
               max={500}
               step={5}
               marks={[
                 { value: 5, label: '5km' },
-                { value: 50, label: '50km' },
                 { value: 100, label: '100km' },
+                { value: 250, label: '250km' },
                 { value: 500, label: '500km' },
               ]}
               sx={{
-                color: '#667eea',
+                color: theme.palette.primary.main,
                 '& .MuiSlider-thumb': {
-                  backgroundColor: '#667eea',
+                  backgroundColor: theme.palette.primary.main,
+                  width: 20,
+                  height: 20,
                 },
                 '& .MuiSlider-track': {
-                  backgroundColor: '#667eea',
+                  backgroundColor: theme.palette.primary.main,
+                  height: 6,
+                },
+                '& .MuiSlider-rail': {
+                  height: 6,
+                  backgroundColor: theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 255, 255, 0.2)'
+                    : 'rgba(0, 0, 0, 0.1)',
+                },
+                '& .MuiSlider-mark': {
+                  backgroundColor: theme.palette.divider,
+                  height: 10,
+                  width: 2,
+                  '&.MuiSlider-markActive': {
+                    opacity: 1,
+                    backgroundColor: 'currentColor',
+                  },
+                },
+                '& .MuiSlider-markLabel': {
+                  fontSize: '0.75rem',
+                  color: theme.palette.text.secondary,
+                  top: 34,
+                },
+                '& .MuiSlider-valueLabel': {
+                  lineHeight: 1.2,
+                  fontSize: 12,
+                  background: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
                 },
               }}
             />
@@ -193,40 +222,44 @@ export default function PreferencesStep({ user, onNext, onBack }: PreferencesSte
         sx={{ 
           p: 3, 
           mb: 3, 
-          backgroundColor: 'rgba(248, 250, 252, 0.8)',
-          border: '1px solid rgba(226, 232, 240, 0.8)'
+          backgroundColor: theme.palette.mode === 'dark'
+            ? 'rgba(45, 55, 72, 0.3)'
+            : 'rgba(248, 250, 252, 0.8)',
+          border: `1px solid ${theme.palette.mode === 'dark'
+            ? 'rgba(74, 85, 104, 0.5)'
+            : 'rgba(226, 232, 240, 0.8)'}`
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <PeopleIcon sx={{ color: '#667eea', mr: 1 }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a1a1a' }}>
+          <PeopleIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
             Preferred Meeting Types
           </Typography>
         </Box>
-        <Typography variant="body2" sx={{ color: '#666', mb: 3 }}>
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 3 }}>
           How would you like to practice languages with your partners?
         </Typography>
         
-        <Grid container spacing={2}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
           {meetingTypeOptions.map((option) => (
-            <Grid size={{ xs: 12, sm: 6 }} key={option.value}>
+            <Box key={option.value}>
               <Box
                 onClick={() => handleMeetingTypeToggle(option.value)}
                 sx={{
                   p: 2,
                   border: '2px solid',
                   borderColor: preferredMeetingTypes.includes(option.value) 
-                    ? '#667eea' 
-                    : 'rgba(226, 232, 240, 0.8)',
+                    ? theme.palette.primary.main 
+                    : theme.palette.mode === 'dark' ? 'rgba(74, 85, 104, 0.5)' : 'rgba(226, 232, 240, 0.8)',
                   borderRadius: 2,
                   backgroundColor: preferredMeetingTypes.includes(option.value) 
-                    ? 'rgba(102, 126, 234, 0.05)' 
-                    : 'white',
+                    ? theme.palette.mode === 'dark' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(102, 126, 234, 0.05)' 
+                    : theme.palette.background.paper,
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   '&:hover': {
-                    borderColor: '#667eea',
-                    backgroundColor: 'rgba(102, 126, 234, 0.05)',
+                    borderColor: theme.palette.primary.main,
+                    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(102, 126, 234, 0.05)',
                   },
                 }}
               >
@@ -244,20 +277,20 @@ export default function PreferencesStep({ user, onNext, onBack }: PreferencesSte
                   variant="body1" 
                   sx={{ 
                     fontWeight: 500, 
-                    color: '#1a1a1a',
+                    color: theme.palette.text.primary,
                     textAlign: 'center',
                   }}
                 >
                   {option.label}
                 </Typography>
               </Box>
-            </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Box>
 
         {preferredMeetingTypes.length > 0 && (
           <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" sx={{ color: '#667eea', fontWeight: 500, mb: 1 }}>
+            <Typography variant="body2" sx={{ color: theme.palette.primary.main, fontWeight: 500, mb: 1 }}>
               Selected:
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -283,37 +316,41 @@ export default function PreferencesStep({ user, onNext, onBack }: PreferencesSte
         sx={{ 
           p: 3, 
           mb: 4, 
-          backgroundColor: 'rgba(59, 130, 246, 0.05)',
-          border: '1px solid rgba(59, 130, 246, 0.2)',
+          backgroundColor: theme.palette.mode === 'dark'
+            ? 'rgba(59, 130, 246, 0.1)'
+            : 'rgba(59, 130, 246, 0.05)',
+          border: `1px solid ${theme.palette.mode === 'dark'
+            ? 'rgba(59, 130, 246, 0.3)'
+            : 'rgba(59, 130, 246, 0.2)'}`,
           borderRadius: 2,
         }}
       >
-        <Typography variant="body2" sx={{ color: '#1d4ed8', fontWeight: 500, mb: 1 }}>
+        <Typography variant="body2" sx={{ color: theme.palette.mode === 'dark' ? '#60a5fa' : '#1d4ed8', fontWeight: 500, mb: 1 }}>
           💡 Tip:
         </Typography>
-        <Typography variant="body2" sx={{ color: '#666' }}>
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
           You can always change these preferences later in your profile settings. 
           Having multiple meeting types selected will help you find more compatible partners!
         </Typography>
       </Box>
 
       {/* Navigation buttons */}
-      <Grid container spacing={2}>
-        <Grid size={6}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr' }, gap: 2 }}>
+        <Box>
           <Button
             fullWidth
             variant="outlined"
             onClick={onBack}
             sx={{
               py: 2,
-              borderColor: '#d1d5db',
-              color: '#6b7280',
+              borderColor: theme.palette.mode === 'dark' ? 'rgba(107, 114, 128, 0.5)' : '#d1d5db',
+              color: theme.palette.text.secondary,
             }}
           >
             Back
           </Button>
-        </Grid>
-        <Grid size={6}>
+        </Box>
+        <Box>
           <Button
             fullWidth
             variant="contained"
@@ -323,16 +360,16 @@ export default function PreferencesStep({ user, onNext, onBack }: PreferencesSte
               py: 2,
               fontSize: '1rem',
               fontWeight: 600,
-              backgroundColor: '#667eea',
+              backgroundColor: theme.palette.primary.main,
               '&:hover': {
-                backgroundColor: '#5a6fd8',
+                backgroundColor: theme.palette.primary.dark,
               },
             }}
           >
             {isLoading ? 'Saving...' : 'Continue'}
           </Button>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   )
 }

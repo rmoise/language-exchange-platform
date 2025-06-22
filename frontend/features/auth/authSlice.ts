@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { api } from "@/utils/api";
 import { API_ENDPOINTS } from "@/utils/constants";
+import { apiSlice } from "@/features/api/apiSlice";
 import type { User, ApiResponse } from "@/types/global";
 
 interface AuthState {
@@ -113,6 +114,11 @@ const authSlice = createSlice({
     updateUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
     },
+    updateCoverPhoto: (state, action: PayloadAction<string>) => {
+      if (state.user) {
+        state.user.coverPhoto = action.payload;
+      }
+    },
   },
   extraReducers: (builder) => {
     // Login
@@ -182,8 +188,17 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.error.message || "Google authentication failed";
       });
+    
+    // Update user when getCurrentUser succeeds
+    builder.addMatcher(
+      apiSlice.endpoints.getCurrentUser.matchFulfilled,
+      (state, action) => {
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      }
+    );
   },
 });
 
-export const { logout, clearError, updateUser } = authSlice.actions;
+export const { logout, clearError, updateUser, updateCoverPhoto } = authSlice.actions;
 export default authSlice.reducer;

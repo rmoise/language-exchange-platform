@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { Box, Modal, IconButton, Typography } from '@mui/material'
+import { useState, useEffect } from 'react'
+import { Box, Modal, IconButton, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material'
 import { 
   Close as CloseIcon,
   ArrowBackIos as ArrowBackIosIcon,
-  ArrowForwardIos as ArrowForwardIosIcon
+  ArrowForwardIos as ArrowForwardIosIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material'
 
 interface PhotoCarouselProps {
@@ -18,14 +19,16 @@ export function PhotoGrid({ photos, onPhotoClick }: PhotoCarouselProps) {
     <Box sx={{ 
       display: 'grid',
       gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: 1
+      gap: 1,
+      width: '100%'
     }}>
       {photos.map((photo, index) => (
         <Box 
           key={index} 
           onClick={() => onPhotoClick(index)}
           sx={{
-            aspectRatio: '1',
+            aspectRatio: '1/1',
+            width: '100%',
             backgroundColor: 'rgba(255, 255, 255, 0.15)',
             borderRadius: 1,
             overflow: 'hidden',
@@ -45,9 +48,13 @@ export function PhotoGrid({ photos, onPhotoClick }: PhotoCarouselProps) {
             src={photo}
             alt=""
             sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
               width: '100%',
               height: '100%',
-              objectFit: 'cover'
+              objectFit: 'contain',
+              objectPosition: 'center'
             }}
           />
         </Box>
@@ -61,10 +68,31 @@ interface PhotoCarouselModalProps {
   currentIndex: number
   open: boolean
   onClose: () => void
+  onDelete?: (photoUrl: string) => void
+  canDelete?: boolean
+  buttonPosition?: {
+    top?: number | string
+    right?: number | string
+    left?: number | string
+  }
 }
 
-export function PhotoCarouselModal({ photos, currentIndex, open, onClose }: PhotoCarouselModalProps) {
+export function PhotoCarouselModal({ 
+  photos, 
+  currentIndex, 
+  open, 
+  onClose, 
+  onDelete, 
+  canDelete = false,
+  buttonPosition = { top: 8, left: 'calc(100% - 8px)' }
+}: PhotoCarouselModalProps) {
   const [activeIndex, setActiveIndex] = useState(currentIndex)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+
+  // Sync activeIndex with currentIndex prop when it changes
+  useEffect(() => {
+    setActiveIndex(currentIndex)
+  }, [currentIndex])
 
   const goToPrevious = () => {
     setActiveIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1))
@@ -72,6 +100,33 @@ export function PhotoCarouselModal({ photos, currentIndex, open, onClose }: Phot
 
   const goToNext = () => {
     setActiveIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1))
+  }
+
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = () => {
+    if (onDelete && photos[activeIndex]) {
+      const photoToDelete = photos[activeIndex]
+      
+      // If this is the last photo, close the modal
+      if (photos.length === 1) {
+        onClose()
+      } else {
+        // Move to previous photo if possible, otherwise stay at same index
+        if (activeIndex > 0) {
+          setActiveIndex(activeIndex - 1)
+        }
+      }
+      
+      onDelete(photoToDelete)
+      setDeleteDialogOpen(false)
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false)
   }
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -85,6 +140,7 @@ export function PhotoCarouselModal({ photos, currentIndex, open, onClose }: Phot
   }
 
   return (
+    <>
     <Modal
       open={open}
       onClose={onClose}
@@ -102,23 +158,46 @@ export function PhotoCarouselModal({ photos, currentIndex, open, onClose }: Phot
         maxHeight: '90vh',
         outline: 'none'
       }}>
-        {/* Close Button */}
-        <IconButton
-          onClick={onClose}
-          sx={{
-            position: 'absolute',
-            top: -50,
-            right: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            color: 'white',
-            zIndex: 2,
-            '&:hover': {
-              backgroundColor: 'rgba(0, 0, 0, 0.8)'
-            }
-          }}
-        >
-          <CloseIcon />
-        </IconButton>
+        {/* Close and Delete Buttons */}
+        <Box sx={{
+          position: 'absolute',
+          top: buttonPosition.top,
+          left: buttonPosition.left,
+          right: buttonPosition.right,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+          zIndex: 2,
+        }}>
+          <IconButton
+            onClick={onClose}
+            sx={{
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)'
+              }
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+          
+          {/* Delete Button - positioned below X */}
+          {canDelete && onDelete && (
+            <IconButton
+              onClick={handleDeleteClick}
+              sx={{
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: 'rgba(220, 38, 38, 0.8)',
+                }
+              }}
+            >
+              <DeleteIcon />
+            </IconButton>
+          )}
+        </Box>
 
         {/* Image Counter - only show for multiple photos */}
         {photos.length > 1 && (
@@ -145,10 +224,10 @@ export function PhotoCarouselModal({ photos, currentIndex, open, onClose }: Phot
           borderRadius: 2,
           overflow: 'hidden',
           boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
-          width: photos.length === 1 ? '60vw' : '80vw',
-          height: photos.length === 1 ? '60vh' : '80vh',
-          maxWidth: photos.length === 1 ? '500px' : '800px',
-          maxHeight: photos.length === 1 ? '500px' : '600px'
+          width: '80vw',
+          height: '80vh',
+          maxWidth: '800px',
+          maxHeight: '600px'
         }}>
           <Box
             component="img"
@@ -157,10 +236,11 @@ export function PhotoCarouselModal({ photos, currentIndex, open, onClose }: Phot
             sx={{
               width: '100%',
               height: '100%',
-              objectFit: 'cover',
+              objectFit: 'contain',
               display: 'block'
             }}
           />
+
 
           {/* Previous Button */}
           {photos.length > 1 && (
@@ -238,7 +318,7 @@ export function PhotoCarouselModal({ photos, currentIndex, open, onClose }: Phot
                   sx={{
                     width: '100%',
                     height: '100%',
-                    objectFit: 'cover'
+                    objectFit: 'contain'
                   }}
                 />
               </Box>
@@ -247,5 +327,54 @@ export function PhotoCarouselModal({ photos, currentIndex, open, onClose }: Phot
         )}
       </Box>
     </Modal>
+
+    {/* Delete Confirmation Dialog */}
+    <Dialog
+      open={deleteDialogOpen}
+      onClose={handleDeleteCancel}
+      PaperProps={{
+        sx: {
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          border: '1px solid #374151',
+          borderRadius: 2,
+          backdropFilter: 'blur(10px)',
+        }
+      }}
+    >
+      <DialogTitle sx={{ color: 'white' }}>
+        Delete Photo?
+      </DialogTitle>
+      <DialogContent>
+        <Typography sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+          Are you sure you want to delete this photo? This action cannot be undone.
+        </Typography>
+      </DialogContent>
+      <DialogActions sx={{ p: 2 }}>
+        <Button 
+          onClick={handleDeleteCancel}
+          sx={{ 
+            color: 'rgba(255, 255, 255, 0.7)',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            }
+          }}
+        >
+          Cancel
+        </Button>
+        <Button 
+          onClick={handleDeleteConfirm}
+          variant="contained"
+          sx={{
+            backgroundColor: '#dc2626',
+            '&:hover': {
+              backgroundColor: '#b91c1c',
+            }
+          }}
+        >
+          Delete
+        </Button>
+      </DialogActions>
+    </Dialog>
+    </>
   )
 }

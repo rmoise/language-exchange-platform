@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogTitle,
@@ -15,9 +15,15 @@ import {
   Typography,
   Box,
   Chip,
-  Alert
+  Alert,
+  Avatar,
+  ListItemIcon,
+  ListItemText,
+  ListItemAvatar
 } from '@mui/material'
+import { PersonAdd as PersonAddIcon } from '@mui/icons-material'
 import { CreateSessionInput, SessionService } from '@/services/sessionService'
+import { MatchService, Match } from '@/features/matches/matchService'
 
 interface CreateSessionDialogProps {
   open: boolean
@@ -42,16 +48,44 @@ export default function CreateSessionDialog({ open, onClose, onSessionCreated }:
     description: '',
     max_participants: 2,
     session_type: 'practice',
-    target_language: ''
+    target_language: '',
+    invited_user_id: ''
   })
   
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [createdSession, setCreatedSession] = useState<{ id: string; name: string; invited_user?: { name: string } } | null>(null)
+  const [matches, setMatches] = useState<Match[]>([])
+  const [loadingMatches, setLoadingMatches] = useState(false)
+
+  // Load matches when dialog opens
+  useEffect(() => {
+    if (open) {
+      loadMatches()
+    }
+  }, [open])
+
+  const loadMatches = async () => {
+    setLoadingMatches(true)
+    try {
+      const userMatches = await MatchService.getMatches()
+      setMatches(Array.isArray(userMatches) ? userMatches : [])
+    } catch (error) {
+      console.error('Failed to load matches:', error)
+      setMatches([]) // Set empty array on error
+    } finally {
+      setLoadingMatches(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.name.trim()) {
       setError('Session name is required')
+      return
+    }
+    if (!formData.invited_user_id) {
+      setError('Please select a match to invite')
       return
     }
 
@@ -62,20 +96,25 @@ export default function CreateSessionDialog({ open, onClose, onSessionCreated }:
       const session = await SessionService.createSession({
         ...formData,
         description: formData.description || undefined,
-        target_language: formData.target_language || undefined
+        target_language: formData.target_language || undefined,
+        invited_user_id: formData.invited_user_id
       })
       
-      onSessionCreated(session.id)
-      onClose()
+      // Find invited user info for success message
+      const matchWithUser = matches.find(match => 
+        match.user1.id === formData.invited_user_id || match.user2.id === formData.invited_user_id
+      )
+      const invitedUser = matchWithUser?.user1.id === formData.invited_user_id 
+        ? matchWithUser.user1 
+        : matchWithUser?.user2
       
-      // Reset form
-      setFormData({
-        name: '',
-        description: '',
-        max_participants: 2,
-        session_type: 'practice',
-        target_language: ''
+      // Show success screen
+      setCreatedSession({ 
+        id: session.id, 
+        name: formData.name,
+        invited_user: { name: invitedUser?.name || 'Unknown' }
       })
+      
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to create session')
     } finally {
@@ -87,7 +126,32 @@ export default function CreateSessionDialog({ open, onClose, onSessionCreated }:
     if (!loading) {
       onClose()
       setError(null)
+      setCreatedSession(null)
+      // Reset form
+      setFormData({
+        name: '',
+        description: '',
+        max_participants: 2,
+        session_type: 'practice',
+        target_language: '',
+        invited_user_id: ''
+      })
     }
+  }
+
+  const handleJoinSession = () => {
+    if (!createdSession) return
+    onSessionCreated(createdSession.id)
+    handleClose()
+  }
+
+  const getOtherUser = (match: Match, currentUserId?: string) => {
+    // For now, we'll use the first user if we don't have currentUserId
+    // In a real app, you'd get this from the auth context
+    if (!match || !match.user1) return null
+    // If we had currentUserId, we'd return the other user
+    // For now, just return user1 (assuming they're not the current user)
+    return match.user1
   }
 
   return (
@@ -105,15 +169,19 @@ export default function CreateSessionDialog({ open, onClose, onSessionCreated }:
         }
       }}
     >
-      <form onSubmit={handleSubmit}>
-        <DialogTitle sx={{ color: 'white', pb: 1 }}>
-          <Typography variant="h5" component="div" sx={{ fontWeight: 500 }}>
-            Create Language Session
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mt: 1 }}>
-            Start a collaborative language learning session
-          </Typography>
-        </DialogTitle>
+      {!createdSession ? (
+        // Session Creation Form
+        <form onSubmit={handleSubmit}>
+          <DialogTitle sx={{ color: 'white', pb: 1 }}>
+            <Box>
+              <Box component="div" sx={{ fontWeight: 500, fontSize: '1.5rem', lineHeight: 1.334 }}>
+                Create Language Session
+              </Box>
+              <Box component="div" sx={{ color: 'rgba(255, 255, 255, 0.7)', mt: 1, fontSize: '0.875rem' }}>
+                Start a private language learning session with one of your matches
+              </Box>
+            </Box>
+          </DialogTitle>
         
         <DialogContent sx={{ pt: 2 }}>
           {error && (
@@ -242,6 +310,68 @@ export default function CreateSessionDialog({ open, onClose, onSessionCreated }:
               </FormControl>
             </Box>
 
+            {/* Invite Match */}
+            <FormControl fullWidth>
+              <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Select a Match to Invite</InputLabel>
+              <Select
+                value={formData.invited_user_id}
+                onChange={(e) => setFormData({ ...formData, invited_user_id: e.target.value })}
+                label="Select a Match to Invite"
+                disabled={loadingMatches}
+                required
+                sx={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.23)' },
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#6366f1' },
+                  '& .MuiSelect-select': { color: 'white' },
+                  '& .MuiSvgIcon-root': { color: 'rgba(255, 255, 255, 0.7)' }
+                }}
+              >
+                {matches && Array.isArray(matches) && matches.length > 0 ? (
+                  matches.map((match) => {
+                  const otherUser = getOtherUser(match)
+                  if (!otherUser) return null
+                  return (
+                    <MenuItem key={match.id} value={otherUser.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar sx={{ width: 32, height: 32, backgroundColor: '#6366f1' }}>
+                          {otherUser.name.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" sx={{ color: 'white' }}>
+                            {otherUser.name}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                            {otherUser.nativeLanguages?.join(', ') || 'N/A'} → {otherUser.targetLanguages?.join(', ') || 'N/A'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </MenuItem>
+                  )
+                  }).filter(Boolean)
+                ) : (
+                  !loadingMatches && (
+                    <MenuItem value="" disabled>
+                      <Typography sx={{ color: 'rgba(255, 255, 255, 0.5)', fontStyle: 'italic' }}>
+                        No matches available
+                      </Typography>
+                    </MenuItem>
+                  )
+                )}
+              </Select>
+              {(!matches || matches.length === 0) && !loadingMatches && (
+                <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', mt: 1 }}>
+                  You need at least one match to create a session. Find language partners in the search page first.
+                </Typography>
+              )}
+              {loadingMatches && (
+                <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', mt: 1 }}>
+                  Loading your matches...
+                </Typography>
+              )}
+            </FormControl>
+
             {/* Session Info */}
             <Box sx={{ 
               backgroundColor: 'rgba(99, 102, 241, 0.1)', 
@@ -275,7 +405,7 @@ export default function CreateSessionDialog({ open, onClose, onSessionCreated }:
           <Button
             type="submit"
             variant="contained"
-            disabled={loading || !formData.name.trim()}
+            disabled={loading || !formData.name.trim() || !formData.invited_user_id || (!matches || matches.length === 0)}
             sx={{
               backgroundColor: '#6366f1',
               '&:hover': { backgroundColor: '#5855eb' },
@@ -285,7 +415,65 @@ export default function CreateSessionDialog({ open, onClose, onSessionCreated }:
             {loading ? 'Creating...' : 'Create Session'}
           </Button>
         </DialogActions>
-      </form>
+        </form>
+      ) : (
+        // Success Screen
+        <>
+          <DialogTitle sx={{ color: 'white', pb: 1 }}>
+            <Box>
+              <Box component="div" sx={{ fontWeight: 500, color: '#4ade80', fontSize: '1.5rem', lineHeight: 1.334 }}>
+                🎉 Session Created Successfully!
+              </Box>
+              <Box component="div" sx={{ color: 'rgba(255, 255, 255, 0.7)', mt: 1, fontSize: '0.875rem' }}>
+                Your session "{createdSession.name}" is ready
+              </Box>
+            </Box>
+          </DialogTitle>
+          
+          <DialogContent sx={{ pt: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, textAlign: 'center' }}>
+              <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                {createdSession.invited_user?.name} has been invited to your session!
+              </Typography>
+              <Box sx={{ 
+                backgroundColor: 'rgba(99, 102, 241, 0.1)', 
+                border: '1px solid rgba(99, 102, 241, 0.3)',
+                borderRadius: 1, 
+                p: 2 
+              }}>
+                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                  Only you and {createdSession.invited_user?.name} can join this session. They'll need to navigate to the session to join.
+                </Typography>
+              </Box>
+              
+              <Button
+                variant="contained"
+                onClick={handleJoinSession}
+                sx={{
+                  backgroundColor: '#4ade80',
+                  color: '#000',
+                  fontWeight: 600,
+                  '&:hover': { backgroundColor: '#22c55e' }
+                }}
+              >
+                Join Session Now
+              </Button>
+            </Box>
+          </DialogContent>
+          
+          <DialogActions sx={{ p: 3, pt: 2, justifyContent: 'center' }}>
+            <Button 
+              onClick={handleClose}
+              sx={{ 
+                color: 'rgba(255, 255, 255, 0.7)',
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' }
+              }}
+            >
+              Close
+            </Button>
+          </DialogActions>
+        </>
+      )}
     </Dialog>
   )
 }

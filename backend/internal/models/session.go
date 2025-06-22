@@ -11,6 +11,7 @@ type LanguageSession struct {
 	Name            string    `json:"name" db:"name"`
 	Description     *string   `json:"description" db:"description"`
 	CreatedBy       string    `json:"created_by" db:"created_by"`
+	InvitedUserID   *string   `json:"invited_user_id" db:"invited_user_id"`
 	Status          string    `json:"status" db:"status"`
 	MaxParticipants int       `json:"max_participants" db:"max_participants"`
 	SessionType     string    `json:"session_type" db:"session_type"`
@@ -21,6 +22,7 @@ type LanguageSession struct {
 	
 	// Joined fields
 	Creator      *User                 `json:"creator,omitempty"`
+	InvitedUser  *User                 `json:"invited_user,omitempty"`
 	Participants []SessionParticipant  `json:"participants,omitempty"`
 	ParticipantCount int               `json:"participant_count,omitempty"`
 }
@@ -139,7 +141,7 @@ type SendMessageInput struct {
 }
 
 type CanvasOperationInput struct {
-	OperationType string          `json:"operation_type" binding:"required,oneof=text draw erase clear move delete"`
+	OperationType string          `json:"operation_type" binding:"required,oneof=text draw erase clear move delete excalidraw_update text_update"`
 	OperationData json.RawMessage `json:"operation_data" binding:"required"`
 }
 
@@ -165,12 +167,14 @@ const (
 
 // Operation types
 const (
-	OperationTypeText   = "text"
-	OperationTypeDraw   = "draw"
-	OperationTypeErase  = "erase"
-	OperationTypeClear  = "clear"
-	OperationTypeMove   = "move"
-	OperationTypeDelete = "delete"
+	OperationTypeText            = "text"
+	OperationTypeDraw            = "draw"
+	OperationTypeErase           = "erase"
+	OperationTypeClear           = "clear"
+	OperationTypeMove            = "move"
+	OperationTypeDelete          = "delete"
+	OperationTypeExcalidrawUpdate = "excalidraw_update"
+	OperationTypeTextUpdate      = "text_update"
 )
 
 // Session message types
@@ -190,6 +194,7 @@ type CreateSessionRequest struct {
 	SessionType     string  `json:"session_type" validate:"required,oneof=practice lesson conversation"`
 	TargetLanguage  string  `json:"target_language" validate:"max=10"`
 	MaxParticipants int     `json:"max_participants" validate:"min=2,max=50"`
+	InvitedUserID   string  `json:"invited_user_id" validate:"required"`
 }
 
 // SendSessionMessageRequest represents the request to send a session message

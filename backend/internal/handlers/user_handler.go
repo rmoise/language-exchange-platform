@@ -132,6 +132,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		errors.SendError(c, 400, "INVALID_INPUT", "Invalid request body")
 		return
 	}
+	
 
 	err := h.userService.UpdateProfile(c.Request.Context(), userID.(string), input)
 	if err != nil {
@@ -139,7 +140,14 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	errors.SendSuccess(c, gin.H{"message": "Profile updated successfully"})
+	// Get the updated user to return
+	user, err := h.userService.GetProfile(c.Request.Context(), userID.(string))
+	if err != nil {
+		errors.HandleError(c, err)
+		return
+	}
+
+	errors.SendSuccess(c, user)
 }
 
 func (h *UserHandler) UpdatePreferences(c *gin.Context) {

@@ -11,6 +11,7 @@ import {
 import { format, formatRelative } from 'date-fns';
 import { Message, MessageStatus } from '../types';
 import { MessageStatusIndicator } from './MessageStatusIndicator';
+import { SwipeTranslateMessageBubble } from './SwipeTranslateMessageBubble';
 
 interface MessageBubbleProps {
   message: Message;
@@ -19,6 +20,11 @@ interface MessageBubbleProps {
   isUnsendable?: boolean;
   isPendingUnsend?: boolean;
   onRegisterElement?: (messageId: string, element: HTMLElement | null) => void;
+  // Translation props
+  enableTranslation?: boolean;
+  useSwipeTranslation?: boolean;
+  sourceLang?: string;
+  targetLang?: string;
 }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
@@ -27,8 +33,28 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   showAvatar = true,
   isUnsendable = false,
   isPendingUnsend = false,
-  onRegisterElement
+  onRegisterElement,
+  enableTranslation = true,
+  useSwipeTranslation = true,
+  sourceLang,
+  targetLang
 }) => {
+  // Use SwipeTranslateMessageBubble if translation is enabled
+  if (enableTranslation && useSwipeTranslation) {
+    return (
+      <SwipeTranslateMessageBubble
+        message={message}
+        isOwnMessage={isOwnMessage}
+        showAvatar={showAvatar}
+        isUnsendable={isUnsendable}
+        isPendingUnsend={isPendingUnsend}
+        onRegisterElement={onRegisterElement}
+        enableTranslation={enableTranslation}
+        sourceLang={sourceLang}
+        targetLang={targetLang}
+      />
+    );
+  }
   const messageRef = useRef<HTMLDivElement>(null);
 
   // Register element for status tracking

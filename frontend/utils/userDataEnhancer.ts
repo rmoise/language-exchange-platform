@@ -1,5 +1,21 @@
 // Shared utility for enhancing user data with consistent mock data
 
+// Calculate age from birthday
+export function calculateAge(birthday: string | Date | null | undefined): number | null {
+  if (!birthday) return null;
+  
+  const birthDate = new Date(birthday);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  
+  return age;
+}
+
 export const mockLocations = [
   { city: 'New York', country: 'USA' },
   { city: 'London', country: 'UK' },
@@ -96,12 +112,14 @@ export function enhanceUserData(user: any, index?: number): any {
     city: user.city || mockLocation.city,
     country: user.country || mockLocation.country,
     
-    // Profile image
-    avatar: user.avatar || `https://randomuser.me/api/portraits/${genderRandom > 0.5 ? 'men' : 'women'}/${Math.floor(imageRandom * 100)}.jpg`,
+    // Profile image - check all possible field names from backend
+    avatar: user.avatar || user.profileImage || user.profile_image || user.profile_picture || undefined,
+    profileImage: user.profileImage || user.profile_image || user.profile_picture || user.avatar || undefined,
+    profile_image: user.profile_image || user.profileImage || user.profile_picture || user.avatar || undefined,
     
     // Bio and personal info
     bio: user.bio || mockBios[Math.floor(bioRandom * mockBios.length)],
-    age: user.age || Math.floor(18 + ageRandom * 40), // Random age between 18-58
+    age: user.age || calculateAge(user.birthday) || Math.floor(18 + ageRandom * 40), // Calculate from birthday first, then use existing age, then random
     
     // Activity data
     isOnline: onlineRandom > 0.7, // 30% chance of being online

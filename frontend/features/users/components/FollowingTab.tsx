@@ -31,67 +31,10 @@ interface FollowingTabProps {
   user: User;
 }
 
-// Mock data for demonstration
-const mockFollowingUsers = [
-  {
-    id: "1",
-    name: "Nina Schlote",
-    profileImage:
-      "https://images.unsplash.com/photo-1494790108755-2616b612b607?w=150&h=150&fit=crop&crop=face",
-    username: "nina_schlote",
-    mutualFriends: 17,
-    isFollowing: true,
-  },
-  {
-    id: "2",
-    name: "Brittnie Mae",
-    profileImage:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-    username: "brittnie_mae",
-    mutualFriends: 2,
-    isFollowing: true,
-  },
-  {
-    id: "3",
-    name: "Betty Kelly",
-    profileImage:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-    username: "betty_kelly",
-    mutualFriends: 1,
-    isFollowing: true,
-  },
-];
-
-const mockFollowers = [
-  {
-    id: "4",
-    name: "Alex Johnson",
-    profileImage:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-    username: "alex_music",
-    mutualFriends: 5,
-    isFollowing: false,
-  },
-  {
-    id: "5",
-    name: "Emma Wilson",
-    profileImage:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
-    username: "emma_travel",
-    mutualFriends: 8,
-    isFollowing: true,
-  },
-];
-
-const mockBlocked = [
-  {
-    id: "6",
-    name: "Blocked User",
-    profileImage: "https://placehold.co/50x50",
-    username: "blocked_user",
-    isBlocked: true,
-  },
-];
+// TODO: Replace with real data from API
+const mockFollowingUsers: any[] = [];
+const mockFollowers: any[] = [];
+const mockBlocked: any[] = [];
 
 export default function FollowingTab({ user }: FollowingTabProps) {
   const [activeSubTab, setActiveSubTab] = useState(0);
