@@ -18,28 +18,28 @@ func NewMatchService(matchRepo repository.MatchRepository, userRepo repository.U
 	}
 }
 
-func (s *matchService) SendRequest(ctx context.Context, senderID, recipientID string) error {
+func (s *matchService) SendRequest(ctx context.Context, senderID, recipientID string) (*models.MatchRequest, error) {
 	// Check if sender and recipient are the same
 	if senderID == recipientID {
-		return models.ErrCannotMatchSelf
+		return nil, models.ErrCannotMatchSelf
 	}
 
 	// Check if recipient exists
 	_, err := s.userRepo.GetByID(ctx, recipientID)
 	if err != nil {
-		return models.ErrUserNotFound
+		return nil, models.ErrUserNotFound
 	}
 
 	// Check if request already exists
 	existingRequest, err := s.matchRepo.GetRequestBetweenUsers(ctx, senderID, recipientID)
 	if err == nil && existingRequest != nil {
-		return models.ErrDuplicateRequest
+		return nil, models.ErrDuplicateRequest
 	}
 
 	// Check if reverse request exists
 	reverseRequest, err := s.matchRepo.GetRequestBetweenUsers(ctx, recipientID, senderID)
 	if err == nil && reverseRequest != nil {
-		return models.ErrDuplicateRequest
+		return nil, models.ErrDuplicateRequest
 	}
 
 	// Create new match request
@@ -49,7 +49,11 @@ func (s *matchService) SendRequest(ctx context.Context, senderID, recipientID st
 		Status:      models.RequestStatusPending,
 	}
 
-	return s.matchRepo.CreateRequest(ctx, request)
+	if err := s.matchRepo.CreateRequest(ctx, request); err != nil {
+		return nil, err
+	}
+
+	return request, nil
 }
 
 func (s *matchService) HandleRequest(ctx context.Context, requestID, userID string, accept bool) error {
@@ -121,4 +125,37 @@ func (s *matchService) GetMatches(ctx context.Context, userID string) ([]*models
 		return nil, models.ErrInternalServer
 	}
 	return matches, nil
+}
+
+func (s *matchService) CancelRequest(ctx context.Context, requestID, userID string) error {
+	// Get the request
+	request, err := s.matchRepo.GetRequestByID(ctx, requestID)
+	if err != nil {
+		return models.ErrRequestNotFound
+	}
+
+	// Check if user is the sender
+	if request.SenderID != userID {
+		return models.ErrRequestNotFound
+	}
+
+	// Check if request can be cancelled (only pending requests)
+	if request.Status != models.RequestStatusPending {
+		return models.ErrInvalidRequestStatus
+	}
+
+	// Delete the request
+	if err := s.matchRepo.DeleteRequest(ctx, requestID); err != nil {
+		return models.ErrInternalServer
+	}
+
+	return nil
+}
+
+func (s *matchService) GetRequest(ctx context.Context, requestID string) (*models.MatchRequest, error) {
+	request, err := s.matchRepo.GetRequestByID(ctx, requestID)
+	if err != nil {
+		return nil, models.ErrRequestNotFound
+	}
+	return request, nil
 }

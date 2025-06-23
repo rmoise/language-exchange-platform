@@ -1,0 +1,298 @@
+package handlers
+
+import (
+	"language-exchange/internal/models"
+	"language-exchange/internal/services"
+	"language-exchange/pkg/errors"
+	"language-exchange/pkg/validators"
+
+	"github.com/gin-gonic/gin"
+)
+
+type MatchHandlerWithAbusePrevention struct {
+	matchService      services.MatchService
+	abuseService      services.AbusePreventionService
+	userRateLimiter   *UserRateLimiter
+}
+
+func NewMatchHandlerWithAbusePrevention(
+	matchService services.MatchService,
+	abuseService services.AbusePreventionService,
+	userRateLimiter *UserRateLimiter,
+) *MatchHandlerWithAbusePrevention {
+	return &MatchHandlerWithAbusePrevention{
+		matchService:    matchService,
+		abuseService:    abuseService,
+		userRateLimiter: userRateLimiter,
+	}
+}
+
+func (h *MatchHandlerWithAbusePrevention) SendRequest(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		errors.HandleError(c, models.ErrInvalidToken)
+		return
+	}
+
+	var input models.SendRequestInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		errors.SendError(c, 400, "INVALID_INPUT", "Invalid request body")
+		return
+	}
+
+	// Validate recipient ID
+	if err := validators.ValidateUUID(input.RecipientID); err != nil {
+		errors.HandleValidationError(c, validators.ValidationErrors{*err})
+		return
+	}
+
+	userIDStr := userID.(string)
+
+	// Check if user is blocked
+	if err := h.abuseService.CheckUserBlocked(c.Request.Context(), userIDStr); err != nil {
+		errors.HandleError(c, err)
+		return
+	}
+
+	// Check rate limits
+	if err := h.userRateLimiter.CheckConnectionLimit(userIDStr, input.RecipientID); err != nil {
+		errors.HandleError(c, err)
+		return
+	}
+
+	// Send the request
+	err := h.matchService.SendRequest(c.Request.Context(), userIDStr, input.RecipientID)
+	if err != nil {
+		errors.HandleError(c, err)
+		return
+	}
+
+	// Record successful request
+	h.userRateLimiter.RecordConnectionRequest(userIDStr, input.RecipientID)
+
+	// Log the request
+	requestLog := &models.RequestLog{
+		UserID:      userIDStr,
+		RecipientID: input.RecipientID,
+		Action:      "sent",
+		IPAddress:   c.ClientIP(),
+		UserAgent:   c.GetHeader("User-Agent"),
+	}
+	
+	if err := h.abuseService.LogRequest(c.Request.Context(), requestLog); err != nil {
+		// Log error but don't fail the request
+		c.Error(err)
+	}
+
+	// Check if notification should be sent
+	shouldThrottle, err := h.abuseService.ShouldThrottleNotification(
+		c.Request.Context(), 
+		input.RecipientID, 
+		"connection_request",
+	)
+	if err != nil {
+		c.Error(err)
+	}
+
+	response := gin.H{"message": "Match request sent successfully"}
+	if !shouldThrottle {
+		// Record notification sent
+		h.abuseService.RecordNotificationSent(c.Request.Context(), input.RecipientID, "connection_request")
+		response["notification_sent"] = true
+	} else {
+		response["notification_sent"] = false
+	}
+
+	errors.SendCreated(c, response)
+}
+
+func (h *MatchHandlerWithAbusePrevention) CancelRequest(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		errors.HandleError(c, models.ErrInvalidToken)
+		return
+	}
+
+	requestID := c.Param("id")
+	if err := validators.ValidateUUID(requestID); err != nil {
+		errors.HandleValidationError(c, validators.ValidationErrors{*err})
+		return
+	}
+
+	userIDStr := userID.(string)
+
+	// Get request details before canceling
+	request, err := h.matchService.GetRequest(c.Request.Context(), requestID)
+	if err != nil {
+		errors.HandleError(c, err)
+		return
+	}
+
+	// Verify user owns this request
+	if request.SenderID != userIDStr {
+		errors.SendError(c, 403, "FORBIDDEN", "You can only cancel your own requests")
+		return
+	}
+
+	// Cancel the request
+	err = h.matchService.CancelRequest(c.Request.Context(), requestID, userIDStr)
+	if err != nil {
+		errors.HandleError(c, err)
+		return
+	}
+
+	// Log the cancellation
+	requestLog := &models.RequestLog{
+		UserID:      userIDStr,
+		RecipientID: request.RecipientID,
+		Action:      "cancelled",
+		IPAddress:   c.ClientIP(),
+		UserAgent:   c.GetHeader("User-Agent"),
+		RequestID:   requestID,
+	}
+	
+	if err := h.abuseService.LogRequest(c.Request.Context(), requestLog); err != nil {
+		c.Error(err)
+	}
+
+	errors.SendSuccess(c, gin.H{"message": "Match request cancelled successfully"})
+}
+
+func (h *MatchHandlerWithAbusePrevention) ReportUser(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		errors.HandleError(c, models.ErrInvalidToken)
+		return
+	}
+
+	var input struct {
+		ReportedID  string `json:"reported_id" binding:"required"`
+		Reason      string `json:"reason" binding:"required"`
+		Description string `json:"description"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		errors.SendError(c, 400, "INVALID_INPUT", "Invalid request body")
+		return
+	}
+
+	// Validate IDs
+	if err := validators.ValidateUUID(input.ReportedID); err != nil {
+		errors.HandleValidationError(c, validators.ValidationErrors{*err})
+		return
+	}
+
+	report := &models.AbuseReport{
+		ReporterID:  userID.(string),
+		ReportedID:  input.ReportedID,
+		Reason:      input.Reason,
+		Description: input.Description,
+	}
+
+	if err := h.abuseService.ReportAbuse(c.Request.Context(), report); err != nil {
+		errors.HandleError(c, err)
+		return
+	}
+
+	errors.SendCreated(c, gin.H{"message": "Report submitted successfully"})
+}
+
+// Keep other methods from original handler...
+func (h *MatchHandlerWithAbusePrevention) HandleRequest(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		errors.HandleError(c, models.ErrInvalidToken)
+		return
+	}
+
+	requestID := c.Param("id")
+	if err := validators.ValidateUUID(requestID); err != nil {
+		errors.HandleValidationError(c, validators.ValidationErrors{*err})
+		return
+	}
+
+	var input models.HandleRequestInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		errors.SendError(c, 400, "INVALID_INPUT", "Invalid request body")
+		return
+	}
+
+	err := h.matchService.HandleRequest(c.Request.Context(), requestID, userID.(string), input.Accept)
+	if err != nil {
+		errors.HandleError(c, err)
+		return
+	}
+
+	// Log the action
+	action := "declined"
+	if input.Accept {
+		action = "accepted"
+	}
+
+	requestLog := &models.RequestLog{
+		UserID:    userID.(string),
+		Action:    action,
+		IPAddress: c.ClientIP(),
+		UserAgent: c.GetHeader("User-Agent"),
+		RequestID: requestID,
+	}
+	
+	if err := h.abuseService.LogRequest(c.Request.Context(), requestLog); err != nil {
+		c.Error(err)
+	}
+
+	message := "Match request declined"
+	if input.Accept {
+		message = "Match request accepted"
+	}
+
+	errors.SendSuccess(c, gin.H{"message": message})
+}
+
+func (h *MatchHandlerWithAbusePrevention) GetIncomingRequests(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		errors.HandleError(c, models.ErrInvalidToken)
+		return
+	}
+
+	requests, err := h.matchService.GetIncomingRequests(c.Request.Context(), userID.(string))
+	if err != nil {
+		errors.HandleError(c, err)
+		return
+	}
+
+	errors.SendSuccess(c, requests)
+}
+
+func (h *MatchHandlerWithAbusePrevention) GetOutgoingRequests(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		errors.HandleError(c, models.ErrInvalidToken)
+		return
+	}
+
+	requests, err := h.matchService.GetOutgoingRequests(c.Request.Context(), userID.(string))
+	if err != nil {
+		errors.HandleError(c, err)
+		return
+	}
+
+	errors.SendSuccess(c, requests)
+}
+
+func (h *MatchHandlerWithAbusePrevention) GetMatches(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		errors.HandleError(c, models.ErrInvalidToken)
+		return
+	}
+
+	matches, err := h.matchService.GetMatches(c.Request.Context(), userID.(string))
+	if err != nil {
+		errors.HandleError(c, err)
+		return
+	}
+
+	errors.SendSuccess(c, matches)
+}

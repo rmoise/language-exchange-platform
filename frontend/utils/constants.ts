@@ -32,15 +32,16 @@ export const LANGUAGES = [
 ] as const
 
 export const ROUTES = {
-  HOME: '/',
+  LANDING: '/',
   LOGIN: '/auth/login',
   REGISTER: '/auth/register',
-  PROFILE: '/protected/profile',
-  COMMUNITY: '/protected/community',
-  FEED: '/protected/feed',
-  MATCHES: '/protected/matches',
-  INCOMING_REQUESTS: '/protected/requests/incoming',
-  OUTGOING_REQUESTS: '/protected/requests/outgoing',
+  HOME: '/app/home',
+  CONNECT: '/app/connect',
+  PROFILE: '/app/profile',
+  FEED: '/app/feed',
+  MATCHES: '/app/matches',
+  INCOMING_REQUESTS: '/app/requests/incoming',
+  OUTGOING_REQUESTS: '/app/requests/outgoing',
 } as const
 
 export const API_ENDPOINTS = {

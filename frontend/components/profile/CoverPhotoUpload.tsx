@@ -1,7 +1,7 @@
 'use client'
 
 import { Box } from '@mui/material'
-import ImageUpload from '@/app/protected/profile/ImageUpload'
+import ImageUpload from '@/app/app/profile/ImageUpload'
 import { useDispatch, useSelector } from 'react-redux'
 import { updateCoverPhoto } from '@/features/auth/authSlice'
 import { RootState } from '@/lib/store'

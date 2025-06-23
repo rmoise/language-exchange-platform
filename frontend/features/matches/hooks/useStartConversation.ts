@@ -24,7 +24,7 @@ export const useStartConversation = (options: UseStartConversationOptions = {}) 
         onSuccess?.(conversation.id);
         
         // Navigate to the conversation
-        router.push(`/protected/conversations/${conversation.id}` as any);
+        router.push(`/app/conversations/${conversation.id}` as any);
       } catch (error) {
         console.error('Failed to start conversation:', error);
         

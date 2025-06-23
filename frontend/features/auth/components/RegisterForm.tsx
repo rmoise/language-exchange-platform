@@ -27,7 +27,7 @@ export default function RegisterForm() {
     
     try {
       await dispatch(registerUser({ name, email, password })).unwrap()
-      router.push('/protected/profile')
+      router.push('/app/profile')
     } catch (error) {
       // Error is handled by the slice
     }

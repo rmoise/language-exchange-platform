@@ -34,8 +34,10 @@ type UserServiceInterface interface {
 }
 
 type MatchService interface {
-	SendRequest(ctx context.Context, senderID, recipientID string) error
+	SendRequest(ctx context.Context, senderID, recipientID string) (*models.MatchRequest, error)
 	HandleRequest(ctx context.Context, requestID, userID string, accept bool) error
+	CancelRequest(ctx context.Context, requestID, userID string) error
+	GetRequest(ctx context.Context, requestID string) (*models.MatchRequest, error)
 	GetIncomingRequests(ctx context.Context, userID string) ([]*models.MatchRequest, error)
 	GetOutgoingRequests(ctx context.Context, userID string) ([]*models.MatchRequest, error)
 	GetMatches(ctx context.Context, userID string) ([]*models.Match, error)

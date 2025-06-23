@@ -11,6 +11,7 @@ interface UserAvatarProps {
   showOnlineStatus?: boolean
   onClick?: () => void
   userName?: string // Allow passing name directly for cases where user object isn't available
+  showBorderForNonImage?: boolean // Add white border for non-image avatars
 }
 
 const getInitials = (name?: string): string => {
@@ -24,7 +25,7 @@ const getInitials = (name?: string): string => {
 }
 
 // Consistent avatar styling - single source of truth
-const getAvatarStyling = (size: number | object, hasImage: boolean = false) => {
+const getAvatarStyling = (size: number | object, hasImage: boolean = false, showBorderForNonImage: boolean = false) => {
   // Better font scaling for different avatar sizes
   const getFontSize = () => {
     if (typeof size === 'number') {
@@ -44,7 +45,7 @@ const getAvatarStyling = (size: number | object, hasImage: boolean = false) => {
     color: 'white',
     fontSize: getFontSize(),
     fontWeight: 600,
-    border: 'none', // Clean flat look
+    border: (!hasImage && showBorderForNonImage) ? '3px solid white' : 'none', // White border for non-image avatars when requested
     boxShadow: 'none', // Remove any shadows for flat design
     // Ensure crisp rendering
     WebkitFontSmoothing: 'antialiased',
@@ -58,7 +59,8 @@ export default function UserAvatar({
   sx,
   showOnlineStatus = true,
   onClick,
-  userName
+  userName,
+  showBorderForNonImage = false
 }: UserAvatarProps) {
   const displayName = user?.name || userName || 'User'
   
@@ -83,7 +85,7 @@ export default function UserAvatar({
             src={absoluteImageUrl}
             alt={displayName}
             sx={{
-              ...getAvatarStyling(size, true),
+              ...getAvatarStyling(size, true, showBorderForNonImage),
               width: '100%',
               height: '100%',
               transition: 'all 0.2s ease',
@@ -114,7 +116,7 @@ export default function UserAvatar({
       >
         <Avatar
           sx={{
-            ...getAvatarStyling(size, false),
+            ...getAvatarStyling(size, false, showBorderForNonImage),
             width: '100%',
             height: '100%',
             transition: 'all 0.2s ease',

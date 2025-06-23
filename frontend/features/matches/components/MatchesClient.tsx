@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Box, Tabs, Tab, Badge, Typography } from "@mui/material";
 import {
   FavoriteBorder as MatchIcon,
   MailOutline as IncomingIcon,
   Send as OutgoingIcon,
 } from "@mui/icons-material";
-import MatchList from "@/app/protected/matches/MatchList";
-import RequestList from "@/app/protected/requests/RequestList";
+import MatchList from "@/app/app/matches/MatchList";
+import RequestList from "@/app/app/requests/RequestList";
+import { useSearchParams } from "next/navigation";
 
 interface MatchesClientProps {
   matches: any[];
@@ -27,7 +28,25 @@ export default function MatchesClient({
   outgoingRequests,
   errors,
 }: MatchesClientProps) {
-  const [activeTab, setActiveTab] = useState(0);
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const highlightParam = searchParams.get('highlight');
+  
+  // Initialize tab from URL parameter if present
+  const [activeTab, setActiveTab] = useState(() => {
+    const tab = parseInt(tabParam || '0');
+    return tab >= 0 && tab <= 2 ? tab : 0;
+  });
+
+  // Update tab when URL changes
+  useEffect(() => {
+    if (tabParam) {
+      const tab = parseInt(tabParam);
+      if (tab >= 0 && tab <= 2) {
+        setActiveTab(tab);
+      }
+    }
+  }, [tabParam]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -146,7 +165,11 @@ export default function MatchesClient({
                   People who want to be your language exchange partner. Accept
                   or decline their requests.
                 </Typography>
-                <RequestList requests={incomingRequests} type="incoming" />
+                <RequestList 
+                  requests={incomingRequests} 
+                  type="incoming" 
+                  highlightId={highlightParam}
+                />
               </>
             )}
           </Box>

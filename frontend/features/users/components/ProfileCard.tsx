@@ -5,13 +5,14 @@ import {
     Typography, 
     Button, 
     Divider,
-    Collapse,
-    IconButton
+    Alert,
+    Snackbar
 } from "@mui/material";
-import { LocationOn, Close } from "@mui/icons-material";
+import { LocationOn } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { getAbsoluteImageUrl } from '@/utils/imageUrl';
 import UserAvatar from "@/components/ui/UserAvatar";
+import { MatchService } from "@/features/matches/matchService";
 
 // Helper function to map languages to emoji flags
 const getLanguageEmojiFlag = (language: string): string => {
@@ -87,6 +88,8 @@ interface ProfileCardProps {
   matchPercentage?: number;
   distance?: string;
   isFollowing?: boolean;
+  hasExistingRequest?: boolean;
+  existingRequestId?: string;
   darkMode?: boolean;
 }
 
@@ -95,10 +98,18 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   onFollow,
   onViewProfile,
   isFollowing = false,
+  hasExistingRequest = false,
+  existingRequestId,
   darkMode = false,
 }) => {
   const router = useRouter();
-  const [followExpanded, setFollowExpanded] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [hasRequestSent, setHasRequestSent] = useState(hasExistingRequest);
+  const [currentRequestId, setCurrentRequestId] = useState<string | undefined>(existingRequestId);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [lastActionTime, setLastActionTime] = useState<number>(0);
+  const [actionCount, setActionCount] = useState(0);
   
   // Helper function to truncate text
   const truncateText = (text: string, maxLength: number) => {
@@ -122,7 +133,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
 
   // Get first native and target language
   const nativeLanguages = user.nativeLanguages || user.native_languages || ["English"];
-  const targetLanguages = user.targetLanguages || user.learning_languages || user.target_languages || ["Spanish"];
+  const targetLanguages = user.targetLanguages || user.learning_languages || ["Spanish"];
   const firstNativeLanguage = nativeLanguages[0] || "English";
   const firstTargetLanguage = targetLanguages[0] || "Spanish";
 
@@ -147,31 +158,104 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     }
   };
 
-  const handleFollow = (e: React.MouseEvent) => {
+  const handleFollow = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isFollowing) {
-      // If already following, show unfollow confirmation
-      setFollowExpanded(true);
-    } else {
-      // If not following, show follow confirmation
-      setFollowExpanded(true);
+    
+    // Rate limiting: Prevent rapid actions
+    const now = Date.now();
+    const timeSinceLastAction = now - lastActionTime;
+    const COOLDOWN_MS = 3000; // 3 second cooldown
+    const MAX_ACTIONS_PER_MINUTE = 10;
+    
+    if (timeSinceLastAction < COOLDOWN_MS) {
+      setError(`Please wait ${Math.ceil((COOLDOWN_MS - timeSinceLastAction) / 1000)} seconds before trying again`);
+      return;
+    }
+    
+    // Check if user has exceeded rate limit
+    if (actionCount >= MAX_ACTIONS_PER_MINUTE) {
+      setError('Too many requests. Please try again in a minute.');
+      return;
+    }
+    
+    setLastActionTime(now);
+    setActionCount(prev => prev + 1);
+    
+    // Reset action count after 1 minute
+    setTimeout(() => setActionCount(prev => Math.max(0, prev - 1)), 60000);
+    
+    if (!isFollowing && !hasRequestSent) {
+      // Send connect request immediately
+      setIsConnecting(true);
+      try {
+        const response = await MatchService.sendMatchRequest(user.id);
+        console.log('Match request response:', response);
+        
+        // Store the request ID for potential cancellation
+        const requestId = response?.id;
+        if (requestId) {
+          setCurrentRequestId(requestId);
+          console.log('Stored request ID:', requestId);
+        } else {
+          console.warn('No request ID in response:', response);
+        }
+        
+        setSuccessMessage(`Connection request sent to ${profileData.name}!`);
+        setHasRequestSent(true);
+        onFollow?.(user.id);
+      } catch (err: any) {
+        console.error('Failed to send connect request:', err);
+        
+        // Handle specific error cases
+        if (err.response?.status === 409) {
+          // Conflict - request already exists
+          setError('A connection request already exists with this user.');
+          setHasRequestSent(true); // Update UI to show request exists
+        } else if (err.response?.data?.error) {
+          setError(err.response.data.error);
+        } else {
+          setError('Failed to send connection request. Please try again.');
+        }
+      } finally {
+        setIsConnecting(false);
+      }
+    } else if (hasRequestSent && !isFollowing) {
+      // Cancel the pending request
+      if (!currentRequestId) {
+        console.error('No request ID available for cancellation');
+        setError('Unable to cancel request. Please refresh the page.');
+        return;
+      }
+      
+      console.log('Canceling request with ID:', currentRequestId);
+      setIsConnecting(true);
+      try {
+        await MatchService.cancelMatchRequest(currentRequestId);
+        setHasRequestSent(false);
+        setCurrentRequestId(undefined);
+        setSuccessMessage('Connection request canceled');
+        onFollow?.(user.id);
+      } catch (err: any) {
+        console.error('Failed to cancel request:', err);
+        
+        if (err.response?.data?.error) {
+          setError(err.response.data.error);
+        } else {
+          setError('Failed to cancel request. Please try again.');
+        }
+      } finally {
+        setIsConnecting(false);
+      }
+    } else if (isFollowing) {
+      // For disconnecting from an accepted connection
+      onFollow?.(user.id);
     }
   };
 
-  const handleConfirmAction = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onFollow?.(user.id);
-    setFollowExpanded(false);
-  };
-
-  const handleCancelAction = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setFollowExpanded(false);
-  };
 
   const handleCardClick = () => {
     // Use router to navigate to user profile
-    router.push(`/protected/profile/${user.id}`);
+    router.push(`/app/profile/${user.id}`);
     
     // Also call the optional onViewProfile callback if provided
     onViewProfile?.(user.id);
@@ -214,7 +298,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         <Stack spacing={3.5} sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
           <Stack direction="row" spacing={3} alignItems="center">
             <UserAvatar
-              user={{ ...user, profileImage: profileData.profileImage }}
+              user={{ ...user, profileImage: profileData.profileImage || undefined }}
               size={94}
               showOnlineStatus={false}
             />
@@ -346,25 +430,42 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         <Stack direction="row" spacing={1.5} sx={{ mt: "auto" }}>
           <Button
             onClick={handleFollow}
-            variant="outlined"
+            variant={hasRequestSent && !isFollowing ? "contained" : "outlined"}
+            disabled={isConnecting || (Date.now() - lastActionTime < 3000)}
             sx={{
               width: 129,
               height: 41,
               borderRadius: "14px",
               borderColor: darkMode ? "#555" : "#d6d7dd",
-              color: darkMode ? "#ccc" : "#5e5d66",
+              color: hasRequestSent && !isFollowing 
+                ? "#ffffff" 
+                : (darkMode ? "#ccc" : "#5e5d66"),
+              backgroundColor: hasRequestSent && !isFollowing
+                ? (darkMode ? "#6366f1" : "#6366f1")
+                : "transparent",
               fontFamily: "Inter",
               fontWeight: 500,
               fontSize: "13.7px",
               letterSpacing: "-0.14px",
               textTransform: "none",
               "&:hover": {
-                borderColor: darkMode ? "#666" : "#d6d7dd",
-                backgroundColor: darkMode ? "rgba(85, 85, 85, 0.1)" : "rgba(214, 215, 221, 0.04)",
+                borderColor: hasRequestSent && !isFollowing 
+                  ? "transparent"
+                  : (darkMode ? "#666" : "#d6d7dd"),
+                backgroundColor: hasRequestSent && !isFollowing
+                  ? (darkMode ? "#5855eb" : "#5855eb")
+                  : (darkMode ? "rgba(85, 85, 85, 0.1)" : "rgba(214, 215, 221, 0.04)"),
+              },
+              "&:disabled": {
+                borderColor: darkMode ? "#444" : "#e0e0e0",
+                color: darkMode ? "#666" : "#aaa",
+                backgroundColor: darkMode ? "rgba(99, 102, 241, 0.3)" : "rgba(99, 102, 241, 0.3)",
               },
             }}
           >
-            {isFollowing ? "Connected" : "Connect"}
+            {isConnecting 
+              ? (hasRequestSent ? "Canceling..." : "Sending...") 
+              : (hasRequestSent ? "Cancel" : (isFollowing ? "Disconnect" : "Connect"))}
           </Button>
 
           <Button
@@ -390,113 +491,30 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         </Stack>
       </Box>
 
-      {/* Expandable Follow Confirmation */}
-      <Collapse in={followExpanded}>
-        <Box
-          sx={{
-            mt: 1,
-            backgroundColor: darkMode ? "rgba(0, 0, 0, 0.4)" : "white",
-            backdropFilter: darkMode ? "blur(10px)" : "none",
-            border: darkMode ? "1px solid #374151" : "1px solid #e0e0e0",
-            borderRadius: "16px",
-            p: 2.5,
-            width: 322,
-            boxShadow: darkMode ? "0 4px 20px rgba(99, 102, 241, 0.2)" : "0 2px 12px rgba(0,0,0,0.08)",
-          }}
-        >
-          <Stack spacing={2}>
-            {/* Header with close button */}
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Typography
-                sx={{
-                  fontFamily: "Inter",
-                  fontWeight: 600,
-                  fontSize: "16px",
-                  color: darkMode ? "#ffffff" : "#151515",
-                }}
-              >
-                {isFollowing ? "Disconnect" : "Connect"} {profileData.fullName}?
-              </Typography>
-              <IconButton
-                onClick={handleCancelAction}
-                size="small"
-                sx={{
-                  color: darkMode ? "#888" : "#666",
-                  "&:hover": {
-                    backgroundColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.04)",
-                  },
-                }}
-              >
-                <Close fontSize="small" />
-              </IconButton>
-            </Stack>
 
-            {/* Confirmation message */}
-            <Typography
-              sx={{
-                fontFamily: "Inter",
-                fontWeight: 400,
-                fontSize: "14px",
-                color: darkMode ? "#b0b0b0" : "#666",
-                lineHeight: 1.5,
-              }}
-            >
-              {isFollowing 
-                ? `You will stop seeing ${profileData.fullName}'s posts in your feed and they won't be notified of your activity.`
-                : `You'll see ${profileData.fullName}'s posts in your feed and they'll be notified that you followed them.`
-              }
-            </Typography>
+      {/* Success Snackbar */}
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={6000}
+        onClose={() => setSuccessMessage(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSuccessMessage(null)} severity="success" sx={{ width: '100%' }}>
+          {successMessage}
+        </Alert>
+      </Snackbar>
 
-            {/* Action buttons */}
-            <Stack direction="row" spacing={1.5} justifyContent="flex-end">
-              <Button
-                onClick={handleCancelAction}
-                sx={{
-                  minWidth: 80,
-                  height: 36,
-                  borderRadius: "12px",
-                  color: darkMode ? "#ccc" : "#666",
-                  fontFamily: "Inter",
-                  fontWeight: 500,
-                  fontSize: "13px",
-                  textTransform: "none",
-                  "&:hover": {
-                    backgroundColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.04)",
-                  },
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleConfirmAction}
-                variant="contained"
-                sx={{
-                  minWidth: 80,
-                  height: 36,
-                  borderRadius: "12px",
-                  backgroundColor: isFollowing 
-                    ? (darkMode ? "#dc2626" : "#ef4444")
-                    : (darkMode ? "#ffffff" : "#151515"),
-                  color: isFollowing 
-                    ? "#ffffff"
-                    : (darkMode ? "#151515" : "#ffffff"),
-                  fontFamily: "Inter",
-                  fontWeight: 500,
-                  fontSize: "13px",
-                  textTransform: "none",
-                  "&:hover": {
-                    backgroundColor: isFollowing 
-                      ? (darkMode ? "#b91c1c" : "#dc2626")
-                      : (darkMode ? "#f0f0f0" : "#2a2a2a"),
-                  },
-                }}
-              >
-                {isFollowing ? "Disconnect" : "Connect"}
-              </Button>
-            </Stack>
-          </Stack>
-        </Box>
-      </Collapse>
+      {/* Error Snackbar */}
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

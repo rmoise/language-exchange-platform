@@ -31,7 +31,7 @@ export default function LoginForm() {
           password: password.trim(),
         })
       ).unwrap();
-      router.push("/protected/feed");
+      router.push("/app/feed");
     } catch (error) {
       // Error is handled by the slice
     }

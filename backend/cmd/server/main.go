@@ -133,6 +133,7 @@ func main() {
 				matches.GET("/requests/incoming", matchHandler.GetIncomingRequests)
 				matches.GET("/requests/outgoing", matchHandler.GetOutgoingRequests)
 				matches.PUT("/requests/:id", matchHandler.HandleRequest)
+				matches.DELETE("/requests/:id", matchHandler.CancelRequest)
 				matches.GET("", matchHandler.GetMatches)
 				matches.POST("/:matchId/conversation", conversationHandler.StartConversationFromMatch)
 			}

@@ -79,7 +79,7 @@ export default function SessionCard({ session, onJoinSession, currentUserId }: S
   const isFull = session.participant_count >= session.max_participants
 
   const handleShare = async () => {
-    const sessionUrl = `${window.location.origin}/protected/sessions/${session.id}`
+    const sessionUrl = `${window.location.origin}/app/sessions/${session.id}`
     
     try {
       await navigator.clipboard.writeText(sessionUrl)

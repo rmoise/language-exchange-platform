@@ -110,13 +110,6 @@ const createAppTheme = (mode: 'light' | 'dark') => createTheme({
             ? '1px solid rgba(255, 255, 255, 0.1)'
             : '1px solid rgba(255, 255, 255, 0.05)',
           backdropFilter: 'blur(10px)',
-          '&:hover': {
-            boxShadow: mode === 'light' 
-              ? '0 4px 12px rgba(0, 0, 0, 0.15)'
-              : '0 4px 12px rgba(0, 0, 0, 0.6)',
-            transform: 'translateY(-2px)',
-          },
-          transition: 'all 0.3s ease-in-out',
         },
       },
     },

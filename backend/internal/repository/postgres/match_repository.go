@@ -87,7 +87,7 @@ func (r *matchRepository) GetRequestBetweenUsers(ctx context.Context, senderID, 
 	query := `
 		SELECT id, sender_id, recipient_id, status, created_at, updated_at
 		FROM match_requests
-		WHERE sender_id = $1 AND recipient_id = $2`
+		WHERE sender_id = $1 AND recipient_id = $2 AND status = 'pending'`
 
 	request := &models.MatchRequest{}
 	err := r.db.QueryRowContext(ctx, query, senderID, recipientID).Scan(

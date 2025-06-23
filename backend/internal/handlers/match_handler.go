@@ -38,13 +38,16 @@ func (h *MatchHandler) SendRequest(c *gin.Context) {
 		return
 	}
 
-	err := h.matchService.SendRequest(c.Request.Context(), userID.(string), input.RecipientID)
+	request, err := h.matchService.SendRequest(c.Request.Context(), userID.(string), input.RecipientID)
 	if err != nil {
 		errors.HandleError(c, err)
 		return
 	}
 
-	errors.SendCreated(c, gin.H{"message": "Match request sent successfully"})
+	errors.SendCreated(c, gin.H{
+		"message": "Match request sent successfully",
+		"id": request.ID,
+	})
 }
 
 func (h *MatchHandler) HandleRequest(c *gin.Context) {
@@ -126,4 +129,26 @@ func (h *MatchHandler) GetMatches(c *gin.Context) {
 	}
 
 	errors.SendSuccess(c, matches)
+}
+
+func (h *MatchHandler) CancelRequest(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		errors.HandleError(c, models.ErrInvalidToken)
+		return
+	}
+
+	requestID := c.Param("id")
+	if err := validators.ValidateUUID(requestID); err != nil {
+		errors.HandleValidationError(c, validators.ValidationErrors{*err})
+		return
+	}
+
+	err := h.matchService.CancelRequest(c.Request.Context(), requestID, userID.(string))
+	if err != nil {
+		errors.HandleError(c, err)
+		return
+	}
+
+	errors.SendSuccess(c, gin.H{"message": "Match request cancelled successfully"})
 }

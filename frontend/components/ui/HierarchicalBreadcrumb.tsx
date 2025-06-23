@@ -19,17 +19,17 @@ export default function HierarchicalBreadcrumb({
   const pathname = usePathname()
 
   const getBreadcrumbItems = () => {
-    // Remove /protected prefix and split path
-    const cleanPath = pathname.replace('/protected', '')
+    // Remove /app prefix and split path
+    const cleanPath = pathname.replace('/app', '')
     const segments = cleanPath.split('/').filter(Boolean)
     
     // Start with Home
     const items = [
-      { label: 'Home', href: '/protected' }
+      { label: 'Home', href: '/app' }
     ]
 
     // Build hierarchical path
-    let currentPath = '/protected'
+    let currentPath = '/app'
     
     for (let i = 0; i < segments.length; i++) {
       const segment = segments[i]
@@ -40,8 +40,17 @@ export default function HierarchicalBreadcrumb({
       const isLast = i === segments.length - 1
       
       switch (segment) {
+        case 'home':
+          label = 'Home'
+          break
+        case 'connect':
+          label = 'Connect'
+          break
         case 'community':
           label = 'Community'
+          break
+        case 'dashboard':
+          label = 'Dashboard'
           break
         case 'profile':
           // Check if this is a user profile (has ID after)

@@ -33,7 +33,7 @@ function CallbackHandler() {
 
         // Check if user needs onboarding
         // This will be handled by the protected route layout
-        router.push("/protected/feed");
+        router.push("/app/feed");
       } catch (error) {
         console.error("Google authentication failed:", error);
         router.push("/auth/login?error=oauth_failed");

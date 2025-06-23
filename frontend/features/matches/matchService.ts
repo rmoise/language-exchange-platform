@@ -45,8 +45,10 @@ export class MatchService {
     return Array.isArray(response.data) ? response.data : (response.data?.data || []);
   }
 
-  static async sendMatchRequest(recipientId: string): Promise<void> {
-    await api.post('/matches/requests', { recipientId });
+  static async sendMatchRequest(recipientId: string): Promise<{ id: string }> {
+    const response = await api.post('/matches/requests', { recipientId });
+    // Backend wraps response in 'data' field
+    return response.data.data || response.data;
   }
 
   static async getIncomingRequests(): Promise<MatchRequest[]> {
@@ -61,6 +63,10 @@ export class MatchService {
 
   static async handleRequest(requestId: string, accept: boolean): Promise<void> {
     await api.put(`/matches/requests/${requestId}`, { accept });
+  }
+
+  static async cancelMatchRequest(requestId: string): Promise<void> {
+    await api.delete(`/matches/requests/${requestId}`);
   }
 
   static async startConversationFromMatch(matchId: string): Promise<Conversation> {

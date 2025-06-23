@@ -105,9 +105,9 @@ export default function OnboardingFlow() {
         dispatch(initializeFromUser(userStep))
       }
 
-      // If user has completed onboarding, redirect to dashboard
+      // If user has completed onboarding, redirect to home
       if (userStep >= 6) {
-        router.push('/protected/dashboard')
+        router.push('/app/home')
         return
       }
     }

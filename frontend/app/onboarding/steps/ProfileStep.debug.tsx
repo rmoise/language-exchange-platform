@@ -24,7 +24,7 @@ import {
 import { User } from '@/types/global'
 import { API_ENDPOINTS } from '@/utils/constants'
 import { getAbsoluteImageUrl, getRelativeImageUrl } from '@/utils/imageUrl'
-import ImageUpload from '../../protected/profile/ImageUpload'
+import ImageUpload from '../../app/profile/ImageUpload'
 
 interface ProfileStepProps {
   user: User
