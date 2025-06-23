@@ -125,9 +125,9 @@ export function enhanceUserData(user: any, index?: number): any {
     isOnline: onlineRandom > 0.7, // 30% chance of being online
     lastActive: user.updatedAt || new Date(Date.now() - timeRandom * 7 * 24 * 60 * 60 * 1000).toISOString(),
     
-    // Topics and interests
-    topics: user.topics || mockTopics[Math.floor(getConsistentRandom(user.id, 8) * mockTopics.length)],
-    interests: user.interests || mockTopics[Math.floor(getConsistentRandom(user.id, 9) * mockTopics.length)],
+    // Topics and interests - ensure we always have something
+    topics: user.topics || user.interests || mockTopics[Math.floor(getConsistentRandom(user.id, 8) * mockTopics.length)],
+    interests: user.interests || user.topics || mockTopics[Math.floor(getConsistentRandom(user.id, 9) * mockTopics.length)],
     
     // About section for detailed profiles
     about: user.about || {

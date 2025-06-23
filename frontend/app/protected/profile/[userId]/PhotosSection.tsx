@@ -156,6 +156,9 @@ export default function PhotosSection({ userId, isOwnProfile = false }: PhotosSe
     return null;
   }
 
+  // Calculate dynamic padding based on content
+  const dynamicPadding = photos.length === 0 ? 2 : 3;
+
   return (
     <Box
       sx={{
@@ -164,6 +167,7 @@ export default function PhotosSection({ userId, isOwnProfile = false }: PhotosSe
         border: "1px solid #374151",
         borderRadius: 1.5,
         p: 3,
+        pb: dynamicPadding,
         color: "white",
         width: "100%",
       }}
@@ -197,15 +201,17 @@ export default function PhotosSection({ userId, isOwnProfile = false }: PhotosSe
       </Box>
 
       <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 2,
-          width: "100%",
-        }}
-      >
-        {/* Show existing photos */}
-        {photos.map((photo, index) => (
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 2,
+            width: "100%",
+            // Only show as many rows as needed
+            gridAutoRows: photos.length > 0 || isOwnProfile ? "1fr" : 0,
+          }}
+        >
+          {/* Show existing photos */}
+          {photos.map((photo, index) => (
           <Box
             key={index}
             sx={{
@@ -233,57 +239,57 @@ export default function PhotosSection({ userId, isOwnProfile = false }: PhotosSe
                 width: "auto",
                 height: "auto",
                 objectFit: "contain",
+                transition: "transform 0.2s ease",
+                "&:hover": {
+                  transform: "scale(1.05)",
+                },
               }}
             />
           </Box>
         ))}
         
-        {/* Show empty placeholders for remaining slots */}
-        {photos.length < 6 && Array.from({ length: 6 - photos.length }).map((_, index) => (
+        {/* Show empty placeholders for remaining slots on user's own profile */}
+        {isOwnProfile && photos.length < 6 && Array.from({ length: 6 - photos.length }).map((_, index) => (
           <Box
             key={`empty-${index}`}
-            onClick={isOwnProfile ? () => handleAddPhotoClick(photos.length + index) : undefined}
+            onClick={() => handleAddPhotoClick(photos.length + index)}
             sx={{
               position: "relative",
               aspectRatio: "1/1",
               width: "100%",
               minHeight: 0,
-              border: isOwnProfile ? "2px dashed rgba(255, 255, 255, 0.4)" : "1px solid rgba(255, 255, 255, 0.1)",
+              border: "2px dashed rgba(255, 255, 255, 0.4)",
               borderRadius: 1,
               backgroundColor: "rgba(255, 255, 255, 0.05)",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              cursor: isOwnProfile ? "pointer" : "default",
+              cursor: "pointer",
               transition: "all 0.2s ease",
-              "&:hover": isOwnProfile ? {
+              "&:hover": {
                 borderColor: "#6366f1",
                 backgroundColor: "rgba(99, 102, 241, 0.1)",
-              } : {},
+              },
             }}
           >
-            {isOwnProfile ? (
-              <>
-                <AddIcon
-                  sx={{
-                    fontSize: 24,
-                    color: "rgba(255, 255, 255, 0.5)",
-                    mb: 0.5,
-                  }}
-                />
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "rgba(255, 255, 255, 0.5)",
-                    fontSize: "0.7rem",
-                    textAlign: "center",
-                  }}
-                >
-                  Add Photo
-                </Typography>
-              </>
-            ) : null}
+            <AddIcon
+              sx={{
+                fontSize: 24,
+                color: "rgba(255, 255, 255, 0.5)",
+                mb: 0.5,
+              }}
+            />
+            <Typography
+              variant="caption"
+              sx={{
+                color: "rgba(255, 255, 255, 0.5)",
+                fontSize: "0.7rem",
+                textAlign: "center",
+              }}
+            >
+              Add Photo
+            </Typography>
           </Box>
         ))}
       </Box>

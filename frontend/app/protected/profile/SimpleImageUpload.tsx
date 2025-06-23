@@ -142,11 +142,29 @@ export default function SimpleImageUpload({
             sx={{
               width: 40,
               height: 40,
-              backgroundColor: 'background.paper',
+              backgroundColor: '#374151',
               border: '2px solid',
-              borderColor: 'background.paper',
+              borderColor: '#374151',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: '#000000',
+                opacity: 0,
+                transition: 'opacity 0.2s ease',
+                pointerEvents: 'none',
+              },
               '&:hover': {
-                backgroundColor: (theme) => theme.palette.mode === 'light' ? '#f5f5f5' : '#424242',
+                backgroundColor: '#1e293b',
+                borderColor: '#1e293b',
+                '&::after': {
+                  opacity: 0.2,
+                },
               },
             }}
           >
@@ -157,7 +175,7 @@ export default function SimpleImageUpload({
               type="file"
               onChange={handleFileSelect}
             />
-            <CameraAlt sx={{ fontSize: 20 }} />
+            <CameraAlt sx={{ fontSize: 20, position: 'relative', zIndex: 1, color: 'white' }} />
           </IconButton>
         }
       >

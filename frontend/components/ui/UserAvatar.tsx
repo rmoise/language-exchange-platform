@@ -69,34 +69,64 @@ export default function UserAvatar({
     
     if (absoluteImageUrl && absoluteImageUrl.trim() !== '') {
       return (
-        <Avatar
-          src={absoluteImageUrl}
-          alt={displayName}
+        <Box
           onClick={onClick}
           sx={{
-            ...getAvatarStyling(size, true),
+            width: typeof size === 'number' ? size : size,
+            height: typeof size === 'number' ? size : size,
+            borderRadius: '50%',
+            overflow: 'hidden',
             cursor: onClick ? 'pointer' : 'default',
-            ...sx
           }}
         >
-          {/* Fallback to initials if image fails to load */}
-          {getInitials(displayName)}
-        </Avatar>
+          <Avatar
+            src={absoluteImageUrl}
+            alt={displayName}
+            sx={{
+              ...getAvatarStyling(size, true),
+              width: '100%',
+              height: '100%',
+              transition: 'all 0.2s ease',
+              '&:hover': onClick ? {
+                transform: 'scale(1.05)',
+              } : {},
+              ...sx
+            }}
+          >
+            {/* Fallback to initials if image fails to load */}
+            {getInitials(displayName)}
+          </Avatar>
+        </Box>
       )
     }
 
     // Fallback to initials with consistent indigo background
     return (
-      <Avatar
+      <Box
         onClick={onClick}
         sx={{
-          ...getAvatarStyling(size, false),
+          width: typeof size === 'number' ? size : size,
+          height: typeof size === 'number' ? size : size,
+          borderRadius: '50%',
+          overflow: 'hidden',
           cursor: onClick ? 'pointer' : 'default',
-          ...sx
         }}
       >
-        {getInitials(displayName)}
-      </Avatar>
+        <Avatar
+          sx={{
+            ...getAvatarStyling(size, false),
+            width: '100%',
+            height: '100%',
+            transition: 'all 0.2s ease',
+            '&:hover': onClick ? {
+              transform: 'scale(1.05)',
+            } : {},
+            ...sx
+          }}
+        >
+          {getInitials(displayName)}
+        </Avatar>
+      </Box>
     )
   })()
 

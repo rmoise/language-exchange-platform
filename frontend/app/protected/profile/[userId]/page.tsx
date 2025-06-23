@@ -29,50 +29,50 @@ import ProfileHeader from "../ProfileHeader";
 import { enhanceUserData, getConsistentRandom } from "@/utils/userDataEnhancer";
 import HierarchicalBreadcrumb from "@/components/ui/HierarchicalBreadcrumb";
 
-// Helper function to map languages to country flags
-const getLanguageFlag = (language: string): string => {
-  const languageToCountry: { [key: string]: string } = {
-    English: "us",
-    Spanish: "es",
-    French: "fr",
-    German: "de",
-    Italian: "it",
-    Portuguese: "pt",
-    Russian: "ru",
-    Chinese: "cn",
-    Japanese: "jp",
-    Korean: "kr",
-    Arabic: "sa",
-    Hindi: "in",
-    Swedish: "se",
-    Dutch: "nl",
-    Norwegian: "no",
-    Danish: "dk",
-    Finnish: "fi",
-    Polish: "pl",
-    Czech: "cz",
-    Hungarian: "hu",
-    Romanian: "ro",
-    Bulgarian: "bg",
-    Greek: "gr",
-    Turkish: "tr",
-    Hebrew: "il",
-    Thai: "th",
-    Vietnamese: "vn",
-    Indonesian: "id",
-    Malay: "my",
-    Filipino: "ph",
-    Ukrainian: "ua",
-    Croatian: "hr",
-    Serbian: "rs",
-    Slovenian: "si",
-    Slovak: "sk",
-    Estonian: "ee",
-    Latvian: "lv",
-    Lithuanian: "lt",
+// Helper function to map languages to emoji flags
+const getLanguageEmojiFlag = (language: string): string => {
+  const languageToEmoji: { [key: string]: string } = {
+    English: "🇺🇸",
+    Spanish: "🇪🇸",
+    French: "🇫🇷",
+    German: "🇩🇪",
+    Italian: "🇮🇹",
+    Portuguese: "🇵🇹",
+    Russian: "🇷🇺",
+    Chinese: "🇨🇳",
+    Japanese: "🇯🇵",
+    Korean: "🇰🇷",
+    Arabic: "🇸🇦",
+    Hindi: "🇮🇳",
+    Swedish: "🇸🇪",
+    Dutch: "🇳🇱",
+    Norwegian: "🇳🇴",
+    Danish: "🇩🇰",
+    Finnish: "🇫🇮",
+    Polish: "🇵🇱",
+    Czech: "🇨🇿",
+    Hungarian: "🇭🇺",
+    Romanian: "🇷🇴",
+    Bulgarian: "🇧🇬",
+    Greek: "🇬🇷",
+    Turkish: "🇹🇷",
+    Hebrew: "🇮🇱",
+    Thai: "🇹🇭",
+    Vietnamese: "🇻🇳",
+    Indonesian: "🇮🇩",
+    Malay: "🇲🇾",
+    Filipino: "🇵🇭",
+    Ukrainian: "🇺🇦",
+    Croatian: "🇭🇷",
+    Serbian: "🇷🇸",
+    Slovenian: "🇸🇮",
+    Slovak: "🇸🇰",
+    Estonian: "🇪🇪",
+    Latvian: "🇱🇻",
+    Lithuanian: "🇱🇹",
   };
 
-  return languageToCountry[language] || "un";
+  return languageToEmoji[language] || "🌐";
 };
 
 async function getCurrentUser() {
@@ -364,19 +364,14 @@ export default async function UserProfilePage({
                             },
                           }}
                         >
-                          <Box
-                            component="img"
-                            src={`https://flagcdn.com/${getLanguageFlag(
-                              language
-                            )}.svg`}
-                            alt={`${language} Flag`}
+                          <Typography
                             sx={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: "4px",
-                              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                              fontSize: "24px",
+                              lineHeight: 1,
                             }}
-                          />
+                          >
+                            {getLanguageEmojiFlag(language)}
+                          </Typography>
                           <Box sx={{ flex: 1 }}>
                             <Typography
                               sx={{
@@ -441,19 +436,14 @@ export default async function UserProfilePage({
                             },
                           }}
                         >
-                          <Box
-                            component="img"
-                            src={`https://flagcdn.com/${getLanguageFlag(
-                              language
-                            )}.svg`}
-                            alt={`${language} Flag`}
+                          <Typography
                             sx={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: "4px",
-                              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                              fontSize: "24px",
+                              lineHeight: 1,
                             }}
-                          />
+                          >
+                            {getLanguageEmojiFlag(language)}
+                          </Typography>
                           <Box sx={{ flex: 1 }}>
                             <Typography
                               sx={{

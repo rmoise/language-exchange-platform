@@ -31,6 +31,8 @@ interface ProfileHeaderProps {
   onEditCover?: (imageUrl: string) => void;
   actionButtons?: React.ReactNode;
   isUserProfile?: boolean;
+  onPreviewToggle?: () => void;
+  isPreviewMode?: boolean;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
@@ -40,6 +42,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   onEditCover,
   actionButtons,
   isUserProfile = false,
+  onPreviewToggle,
+  isPreviewMode = false,
 }) => {
   const [carouselOpen, setCarouselOpen] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
@@ -98,29 +102,73 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
       }}
     >
-      {/* Cover Image Section */}
+      {/* Cover Image Section - Container */}
       <Box
-        onClick={displayCoverPhoto ? handleCoverClick : undefined}
         sx={{
           position: "relative",
           height: { xs: "180px", sm: "200px" },
-          background: displayCoverPhoto 
-            ? `url(${displayCoverPhoto})`
-            : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
           overflow: "hidden",
-          cursor: displayCoverPhoto ? "pointer" : "default",
-          transition: "all 0.2s ease",
-          "&:hover": displayCoverPhoto ? {
-            transform: "scale(1.01)",
-            filter: "brightness(1.1)",
-          } : {},
         }}
       >
-        {/* Geometric Pattern Overlay - only show if no cover photo */}
-        {!displayCoverPhoto && (
+        {/* Scaling Image Box */}
+        <Box
+          onClick={displayCoverPhoto ? handleCoverClick : undefined}
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: displayCoverPhoto 
+              ? `url(${displayCoverPhoto})`
+              : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            cursor: displayCoverPhoto ? "pointer" : "default",
+            transition: "all 0.2s ease",
+            "&:hover": displayCoverPhoto ? {
+              transform: "scale(1.05)",
+              filter: "brightness(1.1)",
+            } : {},
+          }}
+        >
+          {/* Geometric Pattern Overlay - only show if no cover photo */}
+          {!displayCoverPhoto && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundImage: `
+                  radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                  radial-gradient(circle at 75% 75%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                  linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.05) 50%, transparent 60%)
+                `,
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: "-50%",
+                  left: "-50%",
+                  width: "200%",
+                  height: "200%",
+                  background: `
+                    repeating-linear-gradient(
+                      45deg,
+                      transparent,
+                      transparent 20px,
+                      rgba(255,255,255,0.03) 20px,
+                      rgba(255,255,255,0.03) 40px
+                    )
+                  `,
+                },
+              }}
+            />
+          )}
+
+          {/* Dark overlay for better text readability */}
           <Box
             sx={{
               position: "absolute",
@@ -128,33 +176,15 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundImage: `
-                radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 75% 75%, rgba(255,255,255,0.08) 0%, transparent 50%),
-                linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.05) 50%, transparent 60%)
-              `,
-              "&::before": {
-                content: '""',
-                position: "absolute",
-                top: "-50%",
-                left: "-50%",
-                width: "200%",
-                height: "200%",
-                background: `
-                  repeating-linear-gradient(
-                    45deg,
-                    transparent,
-                    transparent 20px,
-                    rgba(255,255,255,0.03) 20px,
-                    rgba(255,255,255,0.03) 40px
-                  )
-                `,
-              },
+              background: displayCoverPhoto 
+                ? "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 100%)"
+                : "none",
+              zIndex: 1,
             }}
           />
-        )}
+        </Box>
 
-        {/* Cover Image Upload Button */}
+        {/* Cover Image Upload Button - Outside scaling box */}
         {onEditCover && (
           <Box
             sx={{
@@ -164,32 +194,20 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               bottom: 0,
               left: 0,
               zIndex: 3,
+              pointerEvents: "none", // Disable pointer events on container
             }}
           >
-            <SimpleImageUpload
-              currentImage={displayCoverPhoto}
-              userName={user.name || 'User'}
-              isProfilePicture={false}
-              onImageUpdate={onEditCover}
-              isOwnProfile={isUserProfile}
-            />
+            <Box sx={{ pointerEvents: "auto", position: "absolute", top: 16, right: 16 }}>
+              <SimpleImageUpload
+                currentImage={displayCoverPhoto}
+                userName={user.name || 'User'}
+                isProfilePicture={false}
+                onImageUpdate={onEditCover}
+                isOwnProfile={isUserProfile}
+              />
+            </Box>
           </Box>
         )}
-
-        {/* Dark overlay for better text readability */}
-        <Box
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: displayCoverPhoto 
-              ? "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 100%)"
-              : "none",
-            zIndex: 1,
-          }}
-        />
       </Box>
 
       {/* User Details Section */}
@@ -333,27 +351,36 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                     alignItems: "center",
                   }}
                 >
-                  <Button
-                    variant="contained"
-                    size="small"
-                    sx={{
-                      backgroundColor: "rgba(255, 255, 255, 0.2)",
-                      backdropFilter: "blur(10px)",
-                      border: "1px solid rgba(255, 255, 255, 0.3)",
-                      color: "white",
-                      textTransform: "none",
-                      fontWeight: 500,
-                      fontSize: "0.875rem",
-                      px: 2,
-                      py: 0.5,
-                      minWidth: "auto",
-                      "&:hover": {
-                        backgroundColor: "rgba(255, 255, 255, 0.3)",
-                      },
-                    }}
-                  >
-                    Preview
-                  </Button>
+                  {onPreviewToggle && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={onPreviewToggle}
+                      sx={{
+                        backgroundColor: isPreviewMode 
+                          ? "#6366f1" 
+                          : "rgba(255, 255, 255, 0.2)",
+                        backdropFilter: "blur(10px)",
+                        border: isPreviewMode 
+                          ? "1px solid #6366f1" 
+                          : "1px solid rgba(255, 255, 255, 0.3)",
+                        color: "white",
+                        textTransform: "none",
+                        fontWeight: 500,
+                        fontSize: "0.875rem",
+                        px: 2,
+                        py: 0.5,
+                        minWidth: "auto",
+                        "&:hover": {
+                          backgroundColor: isPreviewMode 
+                            ? "#5855eb" 
+                            : "rgba(255, 255, 255, 0.3)",
+                        },
+                      }}
+                    >
+                      {isPreviewMode ? "Exit Preview" : "Preview"}
+                    </Button>
+                  )}
                   <Button
                     variant="contained"
                     size="small"

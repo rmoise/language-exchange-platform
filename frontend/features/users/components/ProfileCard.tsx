@@ -13,6 +13,52 @@ import { useRouter } from "next/navigation";
 import { getAbsoluteImageUrl } from '@/utils/imageUrl';
 import UserAvatar from "@/components/ui/UserAvatar";
 
+// Helper function to map languages to emoji flags
+const getLanguageEmojiFlag = (language: string): string => {
+  const languageToEmoji: { [key: string]: string } = {
+    English: "🇺🇸",
+    Spanish: "🇪🇸",
+    French: "🇫🇷",
+    German: "🇩🇪",
+    Italian: "🇮🇹",
+    Portuguese: "🇵🇹",
+    Russian: "🇷🇺",
+    Chinese: "🇨🇳",
+    Japanese: "🇯🇵",
+    Korean: "🇰🇷",
+    Arabic: "🇸🇦",
+    Hindi: "🇮🇳",
+    Swedish: "🇸🇪",
+    Dutch: "🇳🇱",
+    Norwegian: "🇳🇴",
+    Danish: "🇩🇰",
+    Finnish: "🇫🇮",
+    Polish: "🇵🇱",
+    Czech: "🇨🇿",
+    Hungarian: "🇭🇺",
+    Romanian: "🇷🇴",
+    Bulgarian: "🇧🇬",
+    Greek: "🇬🇷",
+    Turkish: "🇹🇷",
+    Hebrew: "🇮🇱",
+    Thai: "🇹🇭",
+    Vietnamese: "🇻🇳",
+    Indonesian: "🇮🇩",
+    Malay: "🇲🇾",
+    Filipino: "🇵🇭",
+    Ukrainian: "🇺🇦",
+    Croatian: "🇭🇷",
+    Serbian: "🇷🇸",
+    Slovenian: "🇸🇮",
+    Slovak: "🇸🇰",
+    Estonian: "🇪🇪",
+    Latvian: "🇱🇻",
+    Lithuanian: "🇱🇹",
+  };
+
+  return languageToEmoji[language] || "🌐";
+};
+
 interface User {
   id: string;
   name: string;
@@ -74,6 +120,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     ? `${user.city}, ${user.country}` 
     : user.location || user.city || user.country || "Zurich, Switzerland";
 
+  // Get first native and target language
+  const nativeLanguages = user.nativeLanguages || user.native_languages || ["English"];
+  const targetLanguages = user.targetLanguages || user.learning_languages || user.target_languages || ["Spanish"];
+  const firstNativeLanguage = nativeLanguages[0] || "English";
+  const firstTargetLanguage = targetLanguages[0] || "Spanish";
+
   const profileData = {
     name: getFirstName(user.name || "Jay Vaughn"),
     fullName: user.name || "Jay Vaughn", // Keep full name for other uses
@@ -85,12 +137,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     profileImage: displayImage,
     languages: {
       fluent: {
-        flag: "🇩🇪",
-        count: (user.nativeLanguages || user.native_languages)?.length || 2
+        flag: getLanguageEmojiFlag(firstNativeLanguage),
+        count: nativeLanguages.length || 1
       },
       learning: {
-        flag: "🇦🇺", 
-        count: (user.targetLanguages || user.learning_languages)?.length || 1
+        flag: getLanguageEmojiFlag(firstTargetLanguage), 
+        count: targetLanguages.length || 1
       }
     }
   };

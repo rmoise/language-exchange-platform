@@ -50,50 +50,50 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
-// Helper function to map languages to country flags
-const getLanguageFlag = (language: string): string => {
-  const languageToCountry: { [key: string]: string } = {
-    English: "us",
-    Spanish: "es",
-    French: "fr",
-    German: "de",
-    Italian: "it",
-    Portuguese: "pt",
-    Russian: "ru",
-    Chinese: "cn",
-    Japanese: "jp",
-    Korean: "kr",
-    Arabic: "sa",
-    Hindi: "in",
-    Swedish: "se",
-    Dutch: "nl",
-    Norwegian: "no",
-    Danish: "dk",
-    Finnish: "fi",
-    Polish: "pl",
-    Czech: "cz",
-    Hungarian: "hu",
-    Romanian: "ro",
-    Bulgarian: "bg",
-    Greek: "gr",
-    Turkish: "tr",
-    Hebrew: "il",
-    Thai: "th",
-    Vietnamese: "vn",
-    Indonesian: "id",
-    Malay: "my",
-    Filipino: "ph",
-    Ukrainian: "ua",
-    Croatian: "hr",
-    Serbian: "rs",
-    Slovenian: "si",
-    Slovak: "sk",
-    Estonian: "ee",
-    Latvian: "lv",
-    Lithuanian: "lt",
+// Helper function to map languages to emoji flags
+const getLanguageEmojiFlag = (language: string): string => {
+  const languageToEmoji: { [key: string]: string } = {
+    English: "🇺🇸",
+    Spanish: "🇪🇸",
+    French: "🇫🇷",
+    German: "🇩🇪",
+    Italian: "🇮🇹",
+    Portuguese: "🇵🇹",
+    Russian: "🇷🇺",
+    Chinese: "🇨🇳",
+    Japanese: "🇯🇵",
+    Korean: "🇰🇷",
+    Arabic: "🇸🇦",
+    Hindi: "🇮🇳",
+    Swedish: "🇸🇪",
+    Dutch: "🇳🇱",
+    Norwegian: "🇳🇴",
+    Danish: "🇩🇰",
+    Finnish: "🇫🇮",
+    Polish: "🇵🇱",
+    Czech: "🇨🇿",
+    Hungarian: "🇭🇺",
+    Romanian: "🇷🇴",
+    Bulgarian: "🇧🇬",
+    Greek: "🇬🇷",
+    Turkish: "🇹🇷",
+    Hebrew: "🇮🇱",
+    Thai: "🇹🇭",
+    Vietnamese: "🇻🇳",
+    Indonesian: "🇮🇩",
+    Malay: "🇲🇾",
+    Filipino: "🇵🇭",
+    Ukrainian: "🇺🇦",
+    Croatian: "🇭🇷",
+    Serbian: "🇷🇸",
+    Slovenian: "🇸🇮",
+    Slovak: "🇸🇰",
+    Estonian: "🇪🇪",
+    Latvian: "🇱🇻",
+    Lithuanian: "🇱🇹",
   };
 
-  return languageToCountry[language] || "un";
+  return languageToEmoji[language] || "🌐";
 };
 
 export default function ProfilePage() {
@@ -105,6 +105,78 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [realUsers, setRealUsers] = useState<any[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+
+  // Hide header when in preview mode
+  useEffect(() => {
+    if (isPreviewMode) {
+      // Add a small delay to ensure DOM is ready
+      setTimeout(() => {
+        // Target the header by its content and structure
+        // Desktop header
+        const desktopHeader = document.querySelector('[style*="display: none"].MuiBox-root');
+        const nextSibling = desktopHeader?.nextElementSibling;
+        if (nextSibling && nextSibling.tagName === 'DIV' && (nextSibling as HTMLElement).style.position === 'sticky') {
+          (nextSibling as HTMLElement).style.display = 'none';
+        }
+        
+        // Mobile header - target by minHeight
+        const mobileHeaders = document.querySelectorAll('[style*="minHeight: 72px"]');
+        mobileHeaders.forEach(header => {
+          (header as HTMLElement).style.display = 'none';
+        });
+        
+        // Also hide any sticky elements at top 0
+        const allElements = document.querySelectorAll('*');
+        allElements.forEach(element => {
+          const el = element as HTMLElement;
+          const computedStyle = window.getComputedStyle(el);
+          if (computedStyle.position === 'sticky' && computedStyle.top === '0px' && !el.classList.contains('preview-banner')) {
+            el.style.display = 'none';
+            el.dataset.hiddenByPreview = 'true';
+          }
+        });
+        
+        // Hide bottom navigation
+        const bottomNavs = document.querySelectorAll('[style*="bottom: 20px"]');
+        bottomNavs.forEach(nav => {
+          (nav as HTMLElement).style.display = 'none';
+        });
+      }, 100);
+    } else {
+      // Show headers again
+      setTimeout(() => {
+        const hiddenElements = document.querySelectorAll('[data-hidden-by-preview="true"]');
+        hiddenElements.forEach(element => {
+          (element as HTMLElement).style.display = '';
+          delete (element as HTMLElement).dataset.hiddenByPreview;
+        });
+        
+        // Show mobile headers
+        const mobileHeaders = document.querySelectorAll('[style*="minHeight: 72px"]');
+        mobileHeaders.forEach(header => {
+          (header as HTMLElement).style.display = '';
+        });
+        
+        // Show bottom navigation
+        const bottomNavs = document.querySelectorAll('[style*="bottom: 20px"]');
+        bottomNavs.forEach(nav => {
+          (nav as HTMLElement).style.display = '';
+        });
+      }, 100);
+    }
+    
+    return () => {
+      // Cleanup
+      const hiddenElements = document.querySelectorAll('[data-hidden-by-preview="true"]');
+      hiddenElements.forEach(element => {
+        (element as HTMLElement).style.display = '';
+        delete (element as HTMLElement).dataset.hiddenByPreview;
+      });
+    };
+  }, [isPreviewMode]);
+
+
   
   // RTK Query hooks
   const [updateProfileImageCache] = useUpdateProfileImageCacheMutation();
@@ -631,13 +703,70 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        position: "relative",
-      }}
-    >
-      {/* Background Pattern */}
+    <>
+      {/* Spacer to compensate for hidden header */}
+      {isPreviewMode && (
+        <Box sx={{ height: 56, width: "100%" }} />
+      )}
+      
+      <Box
+        sx={{
+          minHeight: "100vh",
+          position: "relative",
+        }}
+      >
+        {/* Preview Mode Banner - Fixed at top */}
+        {isPreviewMode && (
+          <Box
+            className="preview-banner"
+            sx={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              backgroundColor: "rgba(99, 102, 241, 0.95)",
+              backdropFilter: "blur(10px)",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
+              py: 1.5,
+              px: 3,
+              zIndex: 2000, // Very high to ensure it's on top
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 2,
+              height: 56, // Fixed height
+            }}
+          >
+          <Typography
+            sx={{
+              color: "white",
+              fontWeight: 500,
+              fontSize: "0.875rem",
+            }}
+          >
+            You're viewing your profile as others see it
+          </Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => setIsPreviewMode(false)}
+            sx={{
+              color: "white",
+              borderColor: "rgba(255, 255, 255, 0.5)",
+              fontSize: "0.75rem",
+              py: 0.5,
+              px: 2,
+              "&:hover": {
+                borderColor: "white",
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+              },
+            }}
+          >
+            Exit Preview
+          </Button>
+        </Box>
+      )}
+        {/* Background Pattern */}
       <Box
         sx={{
           position: "absolute",
@@ -666,7 +795,7 @@ export default function ProfilePage() {
         >
           <ProfileHeader
             user={user}
-            onEditName={() => {
+            onEditName={!isPreviewMode ? () => {
               setEditName(user.name || "");
               setEditBirthday(user.birthday ? new Date(user.birthday) : null);
               const location = user.city && user.country 
@@ -674,10 +803,12 @@ export default function ProfilePage() {
                 : user.city || user.country || "";
               setEditLocation(location);
               setNameModalOpen(true);
-            }}
-            onEditAvatar={handleImageUpdate}
-            onEditCover={handleCoverPhotoUpdate}
-            isUserProfile={true}
+            } : undefined}
+            onEditAvatar={!isPreviewMode ? handleImageUpdate : undefined}
+            onEditCover={!isPreviewMode ? handleCoverPhotoUpdate : undefined}
+            isUserProfile={!isPreviewMode}
+            onPreviewToggle={() => setIsPreviewMode(!isPreviewMode)}
+            isPreviewMode={isPreviewMode}
           />
         </Box>
 
@@ -731,7 +862,7 @@ export default function ProfilePage() {
                   <Typography variant="h5" sx={{ fontWeight: 400 }}>
                     Languages
                   </Typography>
-                  <EditIconButton onClick={() => setLanguageModalOpen(true)} />
+                  {!isPreviewMode && <EditIconButton onClick={() => setLanguageModalOpen(true)} />}
                 </Box>
 
                 {/* Native Languages */}
@@ -762,19 +893,14 @@ export default function ProfilePage() {
                             },
                           }}
                         >
-                          <Box
-                            component="img"
-                            src={`https://flagcdn.com/${getLanguageFlag(
-                              language
-                            )}.svg`}
-                            alt={`${language} Flag`}
+                          <Typography
                             sx={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: "4px",
-                              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                              fontSize: "24px",
+                              lineHeight: 1,
                             }}
-                          />
+                          >
+                            {getLanguageEmojiFlag(language)}
+                          </Typography>
                           <Box sx={{ flex: 1 }}>
                             <Typography
                               sx={{
@@ -839,19 +965,14 @@ export default function ProfilePage() {
                             },
                           }}
                         >
-                          <Box
-                            component="img"
-                            src={`https://flagcdn.com/${getLanguageFlag(
-                              language
-                            )}.svg`}
-                            alt={`${language} Flag`}
+                          <Typography
                             sx={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: "4px",
-                              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                              fontSize: "24px",
+                              lineHeight: 1,
                             }}
-                          />
+                          >
+                            {getLanguageEmojiFlag(language)}
+                          </Typography>
                           <Box sx={{ flex: 1 }}>
                             <Typography
                               sx={{
@@ -947,9 +1068,9 @@ export default function ProfilePage() {
                   >
                     Learning Preferences
                   </Typography>
-                  <EditIconButton
+                  {!isPreviewMode && <EditIconButton
                     onClick={() => setLearningPreferencesModalOpen(true)}
-                  />
+                  />}
                 </Box>
 
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -1112,17 +1233,18 @@ export default function ProfilePage() {
                 </Box>
               </Box>
 
-              {/* Following Section */}
+              {/* Following Section - Hidden in preview mode */}
+              {!isPreviewMode && (
               <Box
-                sx={{
-                  backgroundColor: "rgba(0, 0, 0, 0.4)",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid #374151",
-                  borderRadius: 1.5,
-                  p: 3,
-                  color: "white",
-                }}
-              >
+                  sx={{
+                    backgroundColor: "rgba(0, 0, 0, 0.4)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid #374151",
+                    borderRadius: 1.5,
+                    p: 3,
+                    color: "white",
+                  }}
+                >
                 <Box
                   sx={{
                     display: "flex",
@@ -1136,7 +1258,7 @@ export default function ProfilePage() {
                       variant="h5"
                       sx={{ fontWeight: 400, color: "white" }}
                     >
-                      Following
+                      Connections
                     </Typography>
                     <Typography
                       variant="body2"
@@ -1148,7 +1270,7 @@ export default function ProfilePage() {
                       {realUsers.length} people
                     </Typography>
                   </Box>
-                  <EditIconButton onClick={() => setFollowingModalOpen(true)} />
+                  {!isPreviewMode && <EditIconButton onClick={() => setFollowingModalOpen(true)} />}
                 </Box>
 
                 {/* Following Preview - Show first 4 */}
@@ -1225,6 +1347,7 @@ export default function ProfilePage() {
                   )}
                 </Box>
               </Box>
+              )}
             </Box>
 
             {/* Right Column - All other sections stacked */}
@@ -1261,12 +1384,12 @@ export default function ProfilePage() {
                   >
                     About Me
                   </Typography>
-                  <EditIconButton
+                  {!isPreviewMode && <EditIconButton
                     onClick={() => {
                       setEditBio(user.bio || "");
                       setAboutModalOpen(true);
                     }}
-                  />
+                  />}
                 </Box>
 
                 {/* Bio Section */}
@@ -1308,12 +1431,12 @@ export default function ProfilePage() {
                   >
                     Topics
                   </Typography>
-                  <EditIconButton
+                  {!isPreviewMode && <EditIconButton
                     onClick={() => {
-                      setEditTopics(user.topics || []);
+                      setEditTopics(user.topics || user.interests || []);
                       setTopicsModalOpen(true);
                     }}
-                  />
+                  />}
                 </Box>
                 <Box
                   component="ul"
@@ -1325,31 +1448,43 @@ export default function ProfilePage() {
                     gap: 1,
                   }}
                 >
-                  {user.topics?.map((topic: string, index: number) => (
-                    <Box component="li" key={index}>
-                      <Typography
-                        sx={{
-                          backgroundColor: "rgba(99, 102, 241, 0.2)",
-                          color: "white",
-                          px: 2,
-                          py: 0.5,
-                          borderRadius: 1,
-                          fontSize: "0.875rem",
-                          border: "1px solid rgba(255, 255, 255, 0.15)",
-                          "&:hover": {
-                            backgroundColor: "rgba(99, 102, 241, 0.3)",
-                          },
-                        }}
-                      >
-                        {topic}
-                      </Typography>
-                    </Box>
-                  ))}
+                  {(user.topics || user.interests || []).length > 0 ? (
+                    (user.topics || user.interests || []).map((topic: string, index: number) => (
+                      <Box component="li" key={index}>
+                        <Typography
+                          sx={{
+                            backgroundColor: "rgba(99, 102, 241, 0.2)",
+                            color: "white",
+                            px: 2,
+                            py: 0.5,
+                            borderRadius: 1,
+                            fontSize: "0.875rem",
+                            border: "1px solid rgba(255, 255, 255, 0.15)",
+                            "&:hover": {
+                              backgroundColor: "rgba(99, 102, 241, 0.3)",
+                            },
+                          }}
+                        >
+                          {topic}
+                        </Typography>
+                      </Box>
+                    ))
+                  ) : (
+                    <Typography
+                      sx={{
+                        color: "rgba(255, 255, 255, 0.6)",
+                        fontSize: "0.875rem",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      No topics added yet. Click edit to add your interests!
+                    </Typography>
+                  )}
                 </Box>
               </Box>
 
               {/* Photos Section */}
-              <PhotosSection userId={user?.id} isOwnProfile={true} />
+              <PhotosSection userId={user?.id} isOwnProfile={!isPreviewMode} />
             </Box>
           </Box>
         </Box>
@@ -1750,7 +1885,7 @@ export default function ProfilePage() {
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <Box component="span" sx={{ fontWeight: 600, fontSize: "1rem" }}>
-              Following {realUsers.length} people
+              Connections {realUsers.length} people
             </Box>
             {selectedUsers.size > 0 && (
               <Box component="span" sx={{ 
@@ -2264,6 +2399,7 @@ export default function ProfilePage() {
         onSave={handlePreferencesSave}
       />
 
-    </Box>
+      </Box>
+    </>
   );
 }

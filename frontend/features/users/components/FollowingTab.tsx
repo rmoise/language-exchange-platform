@@ -213,7 +213,7 @@ export default function FollowingTab({ user }: FollowingTabProps) {
 
   const subTabs = [
     { label: "Following", count: mockFollowingUsers.length },
-    { label: "Followers", count: mockFollowers.length },
+    { label: "Connections", count: mockFollowers.length },
     { label: "Blocked", count: mockBlocked.length },
   ];
 
@@ -309,7 +309,7 @@ export default function FollowingTab({ user }: FollowingTabProps) {
             </Box>
           )}
 
-          {/* Followers Tab */}
+          {/* Connections Tab */}
           {activeSubTab === 1 && (
             <Box>
               {mockFollowers.length > 0
@@ -317,8 +317,8 @@ export default function FollowingTab({ user }: FollowingTabProps) {
                     renderUserCard(userData, true, false)
                   )
                 : renderEmptyState(
-                    "No Followers Yet",
-                    "Other users who follow you will appear here."
+                    "No Connections Yet",
+                    "Other users who connect with you will appear here."
                   )}
             </Box>
           )}
