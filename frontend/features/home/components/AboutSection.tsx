@@ -55,10 +55,16 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
     <Card
       sx={{
         mb: 2,
-        backgroundColor: darkMode ? "#1A1A1A" : "#FFFFFF",
+        backgroundColor: darkMode ? "rgba(0, 0, 0, 0.4)" : "#FFFFFF",
+        backdropFilter: darkMode ? "blur(10px)" : "none",
         boxShadow: "none",
-        border: `1px solid ${darkMode ? "#2A2A2A" : "#dbdbdb"}`,
+        border: `1px solid ${darkMode ? "#374151" : "#dbdbdb"}`,
         borderRadius: "16px",
+        transition: "all 0.3s ease",
+        "&:hover": darkMode ? {
+          borderColor: "#6366f1",
+          backgroundColor: "rgba(0, 0, 0, 0.6)",
+        } : {},
       }}
     >
       <CardContent sx={{ p: 3 }}>
@@ -68,7 +74,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
             sx={{
               fontSize: "19.7px",
               fontWeight: 400,
-              color: "#141417",
+              color: darkMode ? "white" : "#141417",
               letterSpacing: "-0.04px",
               lineHeight: "32px",
             }}
@@ -81,7 +87,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
             sx={{
               fontSize: "15.9px",
               fontWeight: 400,
-              color: "#141417",
+              color: darkMode ? "white" : "#141417",
               letterSpacing: "-0.08px",
               lineHeight: "26px",
             }}
@@ -103,7 +109,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                 p: 0,
                 justifyContent: "flex-start",
                 textTransform: "none",
-                color: "#141417",
+                color: darkMode ? "white" : "#141417",
                 fontSize: "16px",
                 fontWeight: 500,
                 letterSpacing: "-0.08px",
@@ -127,7 +133,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                     width: 48,
                     height: 48,
                     borderRadius: "50%",
-                    backgroundColor: item.iconBg,
+                    backgroundColor: darkMode ? "rgba(255, 255, 255, 0.1)" : item.iconBg,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -142,7 +148,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                     sx={{
                       fontSize: "15.9px",
                       fontWeight: 400,
-                      color: "#141417",
+                      color: darkMode ? "white" : "#141417",
                       letterSpacing: "-0.08px",
                       lineHeight: "26px",
                     }}
@@ -155,7 +161,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                       sx={{
                         fontSize: "12.7px",
                         fontWeight: 400,
-                        color: "#141417",
+                        color: darkMode ? "white" : "#141417",
                         letterSpacing: "0.12px",
                         lineHeight: "24px",
                         whiteSpace: "pre-line",
@@ -174,7 +180,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                 sx={{
                   fontSize: "15.9px",
                   fontWeight: 500,
-                  color: "#141417",
+                  color: darkMode ? "white" : "#141417",
                   letterSpacing: "-0.08px",
                   lineHeight: "26px",
                   alignSelf: "flex-start",
@@ -190,7 +196,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                     "& .MuiAvatar-root": {
                       width: 36,
                       height: 36,
-                      border: "2px solid white",
+                      border: darkMode ? "2px solid #000000" : "2px solid white",
                       marginLeft: "-8px",
                     },
                   }}
@@ -212,7 +218,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                   sx={{
                     fontSize: "15.8px",
                     fontWeight: 400,
-                    color: "#141417",
+                    color: darkMode ? "white" : "#141417",
                     letterSpacing: "-0.08px",
                     lineHeight: "26px",
                     textDecoration: "underline",
@@ -236,7 +242,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
               startIcon={<AddIcon />}
               sx={{
                 flex: 1,
-                backgroundColor: "#141417",
+                backgroundColor: darkMode ? "#6366f1" : "#141417",
                 color: "white",
                 borderRadius: "100px",
                 textTransform: "none",
@@ -247,7 +253,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                 py: 1,
                 px: 2,
                 "&:hover": {
-                  backgroundColor: "#2c2c2c",
+                  backgroundColor: darkMode ? "#5a5cf8" : "#2c2c2c",
                 },
               }}
             >

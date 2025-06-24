@@ -297,7 +297,8 @@ export default function HomePage() {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: mode === "dark" ? "#0A0A0A" : "#FFFFFF",
+        backgroundColor: mode === "dark" ? "#000000" : "#FFFFFF",
+        color: mode === "dark" ? "white" : "inherit",
       }}
     >
       <Box sx={{ maxWidth: 1100, mx: "auto", p: 3 }}>
@@ -305,6 +306,7 @@ export default function HomePage() {
         <LanguageLearningCommunityCard 
           memberCount={26905}
           onMembersClick={() => setMembersModalOpen(true)}
+          darkMode={mode === "dark"}
         />
 
         <Stack direction="row" spacing={3}>
@@ -339,6 +341,7 @@ export default function HomePage() {
                   // Handle post submission
                   console.log("Posting:", text);
                 }}
+                darkMode={mode === "dark"}
               />
             </Box>
 
@@ -360,6 +363,7 @@ export default function HomePage() {
                   onNestedReplySubmit={handleNestedReplySubmit}
                   replyFieldRefs={replyFieldRefs}
                   onPostReactionToggle={handlePostReactionToggle}
+                  darkMode={mode === "dark"}
                 />
               ))}
             </Stack>

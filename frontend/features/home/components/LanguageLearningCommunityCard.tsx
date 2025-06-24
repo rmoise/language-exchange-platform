@@ -11,24 +11,32 @@ import {
 interface LanguageLearningCommunityCardProps {
   memberCount: number;
   onMembersClick: () => void;
+  darkMode?: boolean;
 }
 
 export const LanguageLearningCommunityCard: React.FC<LanguageLearningCommunityCardProps> = ({ 
   memberCount, 
-  onMembersClick 
+  onMembersClick,
+  darkMode = false 
 }) => {
   return (
     <Box
       sx={{
         mb: 3,
-        backgroundColor: "#E3F2FD",
-        border: "1px solid #90CAF9",
+        backgroundColor: darkMode ? "rgba(0, 0, 0, 0.4)" : "#E3F2FD",
+        backdropFilter: darkMode ? "blur(10px)" : "none",
+        border: darkMode ? "1px solid #374151" : "1px solid #90CAF9",
         borderRadius: "12px",
         p: 3,
         py: 2.5,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
+        transition: "all 0.3s ease",
+        "&:hover": darkMode ? {
+          borderColor: "#6366f1",
+          backgroundColor: "rgba(0, 0, 0, 0.6)",
+        } : {},
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
@@ -36,7 +44,7 @@ export const LanguageLearningCommunityCard: React.FC<LanguageLearningCommunityCa
           sx={{
             width: 80,
             height: 80,
-            backgroundColor: "#2196F3",
+            backgroundColor: darkMode ? "#6366f1" : "#2196F3",
           }}
         >
           <ForumIcon sx={{ fontSize: 40, color: "#FFFFFF" }} />
@@ -46,7 +54,7 @@ export const LanguageLearningCommunityCard: React.FC<LanguageLearningCommunityCa
             variant="h5" 
             sx={{ 
               fontWeight: 400, 
-              color: "#000000",
+              color: darkMode ? "white" : "#000000",
               fontSize: "24px",
               lineHeight: "28px",
               mb: 0.75 
@@ -56,8 +64,8 @@ export const LanguageLearningCommunityCard: React.FC<LanguageLearningCommunityCa
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <PublicIcon sx={{ fontSize: 20, color: "#666666" }} />
-              <Typography variant="body2" sx={{ color: "#666666", fontSize: "15px" }}>
+              <PublicIcon sx={{ fontSize: 20, color: darkMode ? "#9ca3af" : "#666666" }} />
+              <Typography variant="body2" sx={{ color: darkMode ? "#9ca3af" : "#666666", fontSize: "15px" }}>
                 Public
               </Typography>
             </Box>
@@ -75,8 +83,8 @@ export const LanguageLearningCommunityCard: React.FC<LanguageLearningCommunityCa
               }}
               onClick={onMembersClick}
             >
-              <PeopleIcon sx={{ fontSize: 20, color: "#666666" }} />
-              <Typography variant="body2" sx={{ color: "#666666", fontSize: "15px" }}>
+              <PeopleIcon sx={{ fontSize: 20, color: darkMode ? "#9ca3af" : "#666666" }} />
+              <Typography variant="body2" sx={{ color: darkMode ? "#9ca3af" : "#666666", fontSize: "15px" }}>
                 {memberCount.toLocaleString()} members
               </Typography>
             </Box>
@@ -88,7 +96,7 @@ export const LanguageLearningCommunityCard: React.FC<LanguageLearningCommunityCa
           variant="contained"
           size="small"
           sx={{
-            backgroundColor: "#141417",
+            backgroundColor: darkMode ? "#6366f1" : "#141417",
             color: "white",
             textTransform: "none",
             borderRadius: "100px",

@@ -17,10 +17,16 @@ export const TrendingTopics: React.FC<TrendingTopicsProps> = ({ topics, darkMode
     <Card
       sx={{
         mb: 2,
-        backgroundColor: darkMode ? "#1A1A1A" : "#FFFFFF",
+        backgroundColor: darkMode ? "rgba(0, 0, 0, 0.4)" : "#FFFFFF",
+        backdropFilter: darkMode ? "blur(10px)" : "none",
         boxShadow: "none",
-        border: `1px solid ${darkMode ? "#2A2A2A" : "#dbdbdb"}`,
+        border: `1px solid ${darkMode ? "#374151" : "#dbdbdb"}`,
         borderRadius: "16px",
+        transition: "all 0.3s ease",
+        "&:hover": darkMode ? {
+          borderColor: "#6366f1",
+          backgroundColor: "rgba(0, 0, 0, 0.6)",
+        } : {},
       }}
     >
       <CardContent sx={{ p: 3 }}>
@@ -29,7 +35,7 @@ export const TrendingTopics: React.FC<TrendingTopicsProps> = ({ topics, darkMode
           sx={{
             fontFamily: "Inter",
             fontWeight: 400,
-            color: "#141417",
+            color: darkMode ? "white" : "#141417",
             fontSize: "19.8px",
             letterSpacing: "-0.04px",
             lineHeight: "32px",
@@ -46,13 +52,13 @@ export const TrendingTopics: React.FC<TrendingTopicsProps> = ({ topics, darkMode
               variant="text"
               sx={{
                 height: 72,
-                bgcolor: "#faf9f8",
+                bgcolor: darkMode ? "rgba(255, 255, 255, 0.05)" : "#faf9f8",
                 borderRadius: 3,
                 p: 1.5,
                 justifyContent: "flex-start",
                 textTransform: "none",
                 "&:hover": {
-                  bgcolor: "rgba(0, 0, 0, 0.04)",
+                  bgcolor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.04)",
                 },
               }}
             >
@@ -68,13 +74,13 @@ export const TrendingTopics: React.FC<TrendingTopicsProps> = ({ topics, darkMode
                   mr: 1.5,
                 }}
               >
-                <TagIcon sx={{ color: "#666", fontSize: 20 }} />
+                <TagIcon sx={{ color: darkMode ? "#9ca3af" : "#666", fontSize: 20 }} />
               </Box>
               <Typography
                 sx={{
                   fontFamily: "Inter",
                   fontWeight: 500,
-                  color: "#141417",
+                  color: darkMode ? "white" : "#141417",
                   fontSize: "16px",
                   letterSpacing: "-0.08px",
                   lineHeight: "26px",

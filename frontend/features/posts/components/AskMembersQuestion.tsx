@@ -16,12 +16,14 @@ interface AskMembersQuestionProps {
     onPost?: (text: string) => void;
     userAvatar?: string;
     placeholder?: string;
+    darkMode?: boolean;
 }
 
 export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = ({ 
     onPost,
     userAvatar = "/user-avatar.png",
-    placeholder = "Ask the members a question..."
+    placeholder = "Ask the members a question...",
+    darkMode = false
 }) => {
     const [text, setText] = useState("");
 
@@ -45,12 +47,18 @@ export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = ({
                 display: "flex",
                 alignItems: "flex-start",
                 p: 3,
-                bgcolor: "white",
+                bgcolor: darkMode ? "rgba(0, 0, 0, 0.4)" : "white",
+                backdropFilter: darkMode ? "blur(10px)" : "none",
                 borderRadius: 2,
                 border: 1,
-                borderColor: "#dbdbdb",
+                borderColor: darkMode ? "#374151" : "#dbdbdb",
                 overflow: "hidden",
                 gap: 2,
+                transition: "all 0.3s ease",
+                "&:hover": darkMode ? {
+                    borderColor: "#6366f1",
+                    backgroundColor: "rgba(0, 0, 0, 0.6)",
+                } : {},
             }}
         >
             <Avatar
@@ -79,7 +87,7 @@ export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = ({
                         disableUnderline: true,
                         sx: {
                             fontSize: "19.7px",
-                            color: "#3b3b3b",
+                            color: darkMode ? "white" : "#3b3b3b",
                             fontFamily: "Inter-Regular, Helvetica",
                             letterSpacing: "-0.04px",
                             lineHeight: "32px",

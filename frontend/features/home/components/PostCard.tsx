@@ -39,6 +39,7 @@ interface PostCardProps {
   onNestedReplySubmit: (postId: string, parentReplyId: string) => void;
   replyFieldRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | null }>;
   onPostReactionToggle: (post: Post, reaction: any) => void;
+  darkMode?: boolean;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({
@@ -55,6 +56,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   onNestedReplySubmit,
   replyFieldRefs,
   onPostReactionToggle,
+  darkMode = false,
 }) => {
   const replyInputRef = useRef<HTMLInputElement>(null);
 
@@ -64,9 +66,9 @@ export const PostCard: React.FC<PostCardProps> = ({
       {post.askingFor && (
         <Box
           sx={{
-            backgroundColor: "#faf9f8",
+            backgroundColor: darkMode ? "rgba(251, 191, 36, 0.1)" : "#faf9f8",
             borderRadius: "16px 16px 0 0",
-            border: "1px solid #efefee",
+            border: `1px solid ${darkMode ? "rgba(251, 191, 36, 0.3)" : "#efefee"}`,
             borderBottom: "none",
             px: 2,
             py: 1.5,
@@ -79,7 +81,7 @@ export const PostCard: React.FC<PostCardProps> = ({
               sx={{
                 fontSize: "12.7px",
                 letterSpacing: "0.12px",
-                color: "#141417",
+                color: darkMode ? "#fbbf24" : "#141417",
               }}
             >
               Asking for {post.askingFor}
@@ -91,8 +93,16 @@ export const PostCard: React.FC<PostCardProps> = ({
       <Card
         sx={{
           borderRadius: post.askingFor ? "0 0 16px 16px" : "16px",
-          border: "1px solid #efefee",
+          backgroundColor: darkMode ? "rgba(0, 0, 0, 0.4)" : "white",
+          backdropFilter: darkMode ? "blur(10px)" : "none",
+          border: `1px solid ${darkMode ? "#374151" : "#efefee"}`,
           boxShadow: "none",
+          color: darkMode ? "white" : "inherit",
+          transition: "all 0.3s ease",
+          "&:hover": darkMode ? {
+            borderColor: "#6366f1",
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+          } : {},
         }}
       >
         <CardContent sx={{ p: 2 }}>
@@ -123,7 +133,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                       sx={{
                         fontWeight: 500,
                         fontSize: "15.9px",
-                        color: "#141417",
+                        color: darkMode ? "white" : "#141417",
                       }}
                     >
                       {post.user.name}
@@ -131,7 +141,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     <Typography
                       variant="body2"
                       sx={{
-                        color: "#767676",
+                        color: darkMode ? "#9ca3af" : "#767676",
                         fontSize: "16px",
                       }}
                     >
@@ -140,7 +150,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     <Typography
                       variant="body2"
                       sx={{
-                        color: "#767676",
+                        color: darkMode ? "#9ca3af" : "#767676",
                         fontSize: "16px",
                       }}
                     >
@@ -149,7 +159,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     <Typography
                       variant="body2"
                       sx={{
-                        color: "#767676",
+                        color: darkMode ? "#9ca3af" : "#767676",
                         fontSize: "16px",
                       }}
                     >
@@ -158,7 +168,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     <Typography
                       variant="body2"
                       sx={{
-                        color: "#767676",
+                        color: darkMode ? "#9ca3af" : "#767676",
                         fontSize: "15.9px",
                       }}
                     >
@@ -174,7 +184,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                           variant="body2"
                           sx={{
                             fontSize: "15.6px",
-                            color: "#003742",
+                            color: darkMode ? "#a5b4fc" : "#003742",
                           }}
                         >
                           {post.category.text}
@@ -182,8 +192,8 @@ export const PostCard: React.FC<PostCardProps> = ({
                       </Stack>
                     }
                     sx={{
-                      backgroundColor: "#d7fbfc",
-                      color: "#003742",
+                      backgroundColor: darkMode ? "rgba(99, 102, 241, 0.2)" : "#d7fbfc",
+                      color: darkMode ? "#a5b4fc" : "#003742",
                       height: "auto",
                       py: 0.5,
                       px: 2,
@@ -196,7 +206,7 @@ export const PostCard: React.FC<PostCardProps> = ({
               </Stack>
 
               <IconButton sx={{ p: 1 }}>
-                <MoreIcon sx={{ fontSize: 18 }} />
+                <MoreIcon sx={{ fontSize: 18, color: darkMode ? "#9ca3af" : "inherit" }} />
               </IconButton>
             </Stack>
 
@@ -208,7 +218,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                   fontSize: "18px",
                   fontWeight: 500,
                   textDecoration: "underline",
-                  color: "#141417",
+                  color: darkMode ? "white" : "#141417",
                   lineHeight: 1.5,
                 }}
               >
@@ -220,7 +230,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                   variant="body1"
                   sx={{
                     fontSize: "16px",
-                    color: "#141417",
+                    color: darkMode ? "#e5e7eb" : "#141417",
                     lineHeight: 1.6,
                   }}
                 >
@@ -233,7 +243,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     variant="body1"
                     sx={{
                       fontSize: "16px",
-                      color: "#141417",
+                      color: darkMode ? "#e5e7eb" : "#141417",
                       lineHeight: 1.6,
                     }}
                   >
@@ -246,7 +256,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     variant="body1"
                     sx={{
                       fontSize: "16px",
-                      color: "#141417",
+                      color: darkMode ? "#e5e7eb" : "#141417",
                     }}
                   >
                     ·
@@ -256,8 +266,8 @@ export const PostCard: React.FC<PostCardProps> = ({
                     underline="always"
                     sx={{
                       fontSize: "16px",
-                      color: "#141417",
-                      textDecorationColor: "#141417",
+                      color: darkMode ? "#e5e7eb" : "#141417",
+                      textDecorationColor: darkMode ? "#e5e7eb" : "#141417",
                       cursor: "pointer",
                     }}
                   >
@@ -270,7 +280,7 @@ export const PostCard: React.FC<PostCardProps> = ({
               {post.attachment && (
                 <Box
                   sx={{
-                    backgroundColor: "#faf9f8",
+                    backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "#faf9f8",
                     borderRadius: 2,
                     p: 2,
                     maxWidth: 260,
@@ -281,7 +291,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                       sx={{
                         width: 64,
                         height: 64,
-                        backgroundColor: "#faf9f8",
+                        backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "#faf9f8",
                         borderRadius: 1,
                       }}
                     />
@@ -291,7 +301,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                         sx={{
                           fontWeight: 500,
                           fontSize: "16px",
-                          color: "#141417",
+                          color: darkMode ? "white" : "#141417",
                         }}
                       >
                         {post.attachment.title}
@@ -300,7 +310,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                         variant="body2"
                         sx={{
                           fontSize: "13px",
-                          color: "#3b3b3b",
+                          color: darkMode ? "#9ca3af" : "#3b3b3b",
                         }}
                       >
                         {post.attachment.url}
@@ -318,9 +328,9 @@ export const PostCard: React.FC<PostCardProps> = ({
                 startIcon={<BookmarkBorderIcon />}
                 sx={{
                   minWidth: 58,
-                  borderColor: "#e9e7e4",
-                  color: "#141417",
-                  backgroundColor: "white",
+                  borderColor: darkMode ? "#374151" : "#e9e7e4",
+                  color: darkMode ? "white" : "#141417",
+                  backgroundColor: darkMode ? "transparent" : "white",
                   textTransform: "none",
                   fontSize: "13px",
                   fontWeight: 500,
@@ -332,24 +342,32 @@ export const PostCard: React.FC<PostCardProps> = ({
               <IconButton
                 sx={{
                   minWidth: 58,
-                  border: "1px solid #e9e7e4",
+                  border: `1px solid ${darkMode ? "#374151" : "#e9e7e4"}`,
                   borderRadius: 1,
-                  backgroundColor: "white",
+                  backgroundColor: darkMode ? "transparent" : "white",
+                  color: darkMode ? "#9ca3af" : "inherit",
+                  "&:hover": {
+                    backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : undefined,
+                  },
                 }}
               >
-                <ShareIcon />
+                <ShareIcon sx={{ color: darkMode ? "#9ca3af" : "inherit" }} />
               </IconButton>
 
               <IconButton
                 onClick={(e) => onEmojiClick(e, `post-${post.id}`)}
                 sx={{
                   minWidth: 58,
-                  border: "1px solid #e9e7e4",
+                  border: `1px solid ${darkMode ? "#374151" : "#e9e7e4"}`,
                   borderRadius: 1,
-                  backgroundColor: "white",
+                  backgroundColor: darkMode ? "transparent" : "white",
+                  color: darkMode ? "#9ca3af" : "inherit",
+                  "&:hover": {
+                    backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : undefined,
+                  },
                 }}
               >
-                <SentimentSatisfiedIcon />
+                <SentimentSatisfiedIcon sx={{ color: darkMode ? "#9ca3af" : "inherit" }} />
               </IconButton>
             </Stack>
 
@@ -368,14 +386,14 @@ export const PostCard: React.FC<PostCardProps> = ({
                       size="small"
                       onClick={() => onPostReactionToggle(post, reaction)}
                       sx={{
-                        backgroundColor: reaction.hasReacted ? "rgba(88, 101, 242, 0.1)" : "#f5f5f5",
+                        backgroundColor: reaction.hasReacted ? "rgba(88, 101, 242, 0.1)" : darkMode ? "rgba(255, 255, 255, 0.05)" : "#f5f5f5",
                         border: reaction.hasReacted ? "1px solid #5865F2" : "1px solid transparent",
-                        color: reaction.hasReacted ? "#5865F2" : "#666",
+                        color: reaction.hasReacted ? "#5865F2" : darkMode ? "#9ca3af" : "#666",
                         cursor: "pointer",
                         fontSize: "14px",
                         height: "28px",
                         "&:hover": {
-                          backgroundColor: reaction.hasReacted ? "rgba(88, 101, 242, 0.2)" : "#e8e8e8",
+                          backgroundColor: reaction.hasReacted ? "rgba(88, 101, 242, 0.2)" : darkMode ? "rgba(255, 255, 255, 0.1)" : "#e8e8e8",
                         },
                         "& .MuiChip-label": {
                           px: 1.5,
@@ -391,11 +409,11 @@ export const PostCard: React.FC<PostCardProps> = ({
                     p: 0.5,
                     ml: 0.5,
                     "&:hover": {
-                      backgroundColor: "#f5f5f5",
+                      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "#f5f5f5",
                     },
                   }}
                 >
-                  <AddIcon sx={{ fontSize: 18, color: "#999" }} />
+                  <AddIcon sx={{ fontSize: 18, color: darkMode ? "#9ca3af" : "#999" }} />
                 </IconButton>
               </Stack>
             )}
@@ -408,7 +426,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                   alignItems: "center", 
                   gap: 1, 
                   mb: 1,
-                  color: "#141417",
+                  color: darkMode ? "white" : "#141417",
                   fontSize: "13px"
                 }}>
                   <Typography variant="body2" sx={{ fontSize: "13px" }}>
@@ -422,7 +440,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     }}
                     sx={{ p: 0.5 }}
                   >
-                    <CloseIcon sx={{ fontSize: 16 }} />
+                    <CloseIcon sx={{ fontSize: 16, color: darkMode ? "#9ca3af" : "inherit" }} />
                   </IconButton>
                 </Box>
               )}
@@ -445,7 +463,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                   sx={{
                     flex: 1,
                     height: 60,
-                    border: "1px solid #dbdbdb",
+                    border: `1px solid ${darkMode ? "#374151" : "#dbdbdb"}`,
                     borderRadius: 1,
                     px: 1,
                     py: 0.5,
@@ -468,10 +486,10 @@ export const PostCard: React.FC<PostCardProps> = ({
                       disableUnderline: true,
                       sx: {
                         fontSize: "15.5px",
-                        color: "#141417",
+                        color: darkMode ? "white" : "#141417",
                         fontFamily: "Inter-Regular, Helvetica",
                         "& input::placeholder": {
-                          color: "#999999",
+                          color: darkMode ? "#6b7280" : "#999999",
                           opacity: 1,
                         },
                       },
@@ -494,7 +512,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     disabled={!replyTexts[post.id]?.trim()}
                     sx={{
                       minWidth: 64,
-                      backgroundColor: "#141417 !important",
+                      backgroundColor: darkMode ? "#6366f1 !important" : "#141417 !important",
                       color: "white !important",
                       borderRadius: "10px",
                       px: 2,
@@ -506,12 +524,12 @@ export const PostCard: React.FC<PostCardProps> = ({
                       textTransform: "none",
                       boxShadow: "none",
                       "&:hover": {
-                        backgroundColor: "#141417 !important",
+                        backgroundColor: darkMode ? "#5a5cf8 !important" : "#141417 !important",
                         boxShadow: "none",
                       },
                       "&.Mui-disabled": {
-                        backgroundColor: "#e0e0e0 !important",
-                        color: "#999999 !important",
+                        backgroundColor: darkMode ? "#374151 !important" : "#e0e0e0 !important",
+                        color: darkMode ? "#6b7280 !important" : "#999999 !important",
                       },
                     }}
                   >
@@ -524,7 +542,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             {/* Replies Display */}
             {post.replies && post.replies.length > 0 && (
               <Stack spacing={2} sx={{ mt: 2, mb: 2, position: "relative", overflow: "visible" }}>
-                <Divider sx={{ borderColor: "#e9e7e4" }} />
+                <Divider sx={{ borderColor: darkMode ? "#374151" : "#e9e7e4" }} />
                 
                 {buildReplyTree(post.replies).map((reply) => (
                   <ReplyItem
@@ -541,6 +559,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     onNestedReplySubmit={onNestedReplySubmit}
                     replyFieldRefs={replyFieldRefs}
                     formatReactionTooltip={formatReactionTooltip}
+                    darkMode={darkMode}
                   />
                 ))}
               </Stack>

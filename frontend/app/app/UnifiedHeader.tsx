@@ -17,6 +17,8 @@ import {
   VideoCall as SessionsIcon,
   HomeOutlined as HomeIcon,
   Search as SearchIcon,
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon,
 } from "@mui/icons-material";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -24,6 +26,7 @@ import NotificationIcon from "@/components/notifications/NotificationIcon";
 import UserAvatar from "@/components/ui/UserAvatar";
 import type { Notification } from "@/app/actions/notifications";
 import { useAppSelector } from "@/lib/hooks";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // Main tab navigation items
 const tabNavigationItems = [
@@ -49,6 +52,7 @@ export default function UnifiedHeader({
   const pathname = usePathname();
   const router = useRouter();
   const user = useAppSelector((state) => state.auth.user);
+  const { mode, toggleTheme } = useTheme();
 
   // Handle search functionality
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -189,6 +193,22 @@ export default function UnifiedHeader({
               gap: 1.5,
             }}
           >
+            <IconButton
+              onClick={toggleTheme}
+              sx={{
+                color: "#9ca3af",
+                "&:hover": {
+                  backgroundColor: "rgba(99, 102, 241, 0.1)",
+                  color: "#6366f1",
+                },
+              }}
+            >
+              {mode === "dark" ? (
+                <LightModeIcon sx={{ fontSize: 20 }} />
+              ) : (
+                <DarkModeIcon sx={{ fontSize: 20 }} />
+              )}
+            </IconButton>
             <NotificationIcon
               initialNotifications={initialNotifications}
               initialUnreadCount={initialUnreadCount}
@@ -373,6 +393,22 @@ export default function UnifiedHeader({
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <IconButton
+            onClick={toggleTheme}
+            sx={{
+              color: "#9ca3af",
+              "&:hover": {
+                backgroundColor: "rgba(99, 102, 241, 0.1)",
+                color: "#6366f1",
+              },
+            }}
+          >
+            {mode === "dark" ? (
+              <LightModeIcon sx={{ fontSize: 20 }} />
+            ) : (
+              <DarkModeIcon sx={{ fontSize: 20 }} />
+            )}
+          </IconButton>
           <NotificationIcon
             initialNotifications={initialNotifications}
             initialUnreadCount={initialUnreadCount}
