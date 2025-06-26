@@ -58,9 +58,14 @@ func (h *TranslationHandler) Translate(c *gin.Context) {
 		return
 	}
 
-	if request.SourceLang == "" || request.TargetLang == "" {
-		errors.SendError(c, http.StatusBadRequest, "INVALID_INPUT", "Source and target languages are required")
+	if request.TargetLang == "" {
+		errors.SendError(c, http.StatusBadRequest, "INVALID_INPUT", "Target language is required")
 		return
+	}
+	
+	// Allow empty source language to default to "auto"
+	if request.SourceLang == "" {
+		request.SourceLang = "auto"
 	}
 
 	// Perform translation

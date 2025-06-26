@@ -77,13 +77,13 @@ func (s *translationService) Translate(ctx context.Context, request models.Trans
 		return nil, err
 	}
 
-	// Check if source and target languages are the same
-	if request.SourceLang == request.TargetLang {
+	// Check if source and target languages are the same (skip if source is "auto")
+	if request.SourceLang != "auto" && request.SourceLang == request.TargetLang {
 		return nil, models.ErrSameLanguage
 	}
 
-	// Check if languages are supported
-	if !s.IsLanguageSupported(request.SourceLang) || !s.IsLanguageSupported(request.TargetLang) {
+	// Check if languages are supported (allow "auto" for source language)
+	if (request.SourceLang != "auto" && !s.IsLanguageSupported(request.SourceLang)) || !s.IsLanguageSupported(request.TargetLang) {
 		return nil, models.ErrUnsupportedLanguage
 	}
 
@@ -226,6 +226,10 @@ func (s *translationService) fetchLanguagesFromLibreTranslate(ctx context.Contex
 
 // IsLanguageSupported checks if a language code is supported
 func (s *translationService) IsLanguageSupported(languageCode string) bool {
+	// Allow "auto" for automatic language detection
+	if languageCode == "auto" {
+		return true
+	}
 	languageCode = strings.ToLower(languageCode)
 	_, exists := s.supportedLanguages[languageCode]
 	return exists

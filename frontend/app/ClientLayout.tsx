@@ -133,6 +133,88 @@ const createAppTheme = (mode: 'light' | 'dark') => createTheme({
         },
       },
     },
+    MuiTooltip: {
+      defaultProps: {
+        disableInteractive: false,
+        followCursor: false,
+        PopperProps: {
+          modifiers: [
+            {
+              name: 'flip',
+              enabled: true,
+              options: {
+                fallbackPlacements: ['top', 'left', 'right', 'bottom'],
+                altBoundary: true,
+              },
+            },
+            {
+              name: 'preventOverflow',
+              enabled: true,
+              options: {
+                boundary: 'window',
+                padding: 16,
+                altBoundary: false,
+                tether: false,
+              },
+            },
+            {
+              name: 'offset',
+              enabled: true,
+              options: {
+                offset: [0, 12],
+              },
+            },
+            {
+              name: 'computeStyles',
+              options: {
+                gpuAcceleration: false,
+                adaptive: false,
+              },
+            },
+          ],
+          strategy: 'fixed',
+          placement: 'top',
+        },
+      },
+      styleOverrides: {
+        tooltip: {
+          backgroundColor: mode === 'light' ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+          color: mode === 'light' ? '#fff' : '#000',
+          fontSize: '0.875rem',
+          fontWeight: 500,
+          padding: '8px 12px',
+          borderRadius: 8,
+          boxShadow: mode === 'light' 
+            ? '0 4px 12px rgba(0, 0, 0, 0.15)'
+            : '0 4px 12px rgba(0, 0, 0, 0.5)',
+          maxWidth: 300,
+          wordWrap: 'break-word',
+          position: 'relative',
+          transform: 'none !important',
+        },
+        arrow: {
+          color: mode === 'light' ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+          '&::before': {
+            backgroundColor: mode === 'light' ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+          },
+        },
+        popper: {
+          zIndex: 9999,
+          '&[data-popper-reference-hidden="true"]': {
+            visibility: 'hidden',
+            pointerEvents: 'none',
+          },
+        },
+        popperInteractive: {
+          zIndex: 9999,
+        },
+        popperArrow: {
+          '&[data-popper-reference-hidden="true"]': {
+            visibility: 'hidden',
+          },
+        },
+      },
+    },
   },
 })
 

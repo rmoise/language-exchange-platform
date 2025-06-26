@@ -49,6 +49,7 @@ interface ReplyItemProps {
   onNestedReplySubmit: (postId: string, parentReplyId: string) => void;
   replyFieldRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | null }>;
   formatReactionTooltip: (users: string[]) => string;
+  darkMode?: boolean;
 }
 
 export const ReplyItem: React.FC<ReplyItemProps> = ({
@@ -65,6 +66,7 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
   onNestedReplySubmit,
   replyFieldRefs,
   formatReactionTooltip,
+  darkMode = false,
 }) => {
   const isNested = level > 0;
   const maxNestingLevel = 2; // Limit nesting depth
@@ -101,7 +103,7 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
               <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "14px" }}>
                 {reply.user.name}
               </Typography>
-              <Typography variant="body2" sx={{ color: "#141417", fontSize: "14px" }}>
+              <Typography variant="body2" sx={{ color: darkMode ? "#9ca3af" : "#141417", fontSize: "14px" }}>
                 {reply.timeAgo}
               </Typography>
             </Stack>
@@ -125,15 +127,15 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
                   onClick={() => onReplyClick(postId, reply.id, reply.user.name)}
                   sx={{
                     textTransform: "none",
-                    color: "#141417",
+                    color: darkMode ? "#e5e7eb" : "#141417",
                     fontSize: "13px",
                     fontWeight: 500,
                     px: 1.5,
                     py: 0.5,
                     minWidth: "auto",
                     "&:hover": {
-                      backgroundColor: "#f5f5f5",
-                      color: "#141417",
+                      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "#f5f5f5",
+                      color: darkMode ? "white" : "#141417",
                     },
                   }}
                 >
@@ -147,15 +149,15 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
                 onClick={(e) => onEmojiClick(e, `reply-${postId}-${reply.id}`)}
                 sx={{
                   textTransform: "none",
-                  color: "#141417",
+                  color: darkMode ? "#e5e7eb" : "#141417",
                   fontSize: "13px",
                   fontWeight: 500,
                   px: 1.5,
                   py: 0.5,
                   minWidth: "auto",
                   "&:hover": {
-                    backgroundColor: "#f5f5f5",
-                    color: "#141417",
+                    backgroundColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "#f5f5f5",
+                    color: darkMode ? "white" : "#141417",
                   },
                 }}
               >
@@ -165,27 +167,33 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
               {/* Reactions Display */}
               {reply.reactions && reply.reactions.length > 0 && (
                 <>
-                  <Box sx={{ width: "1px", height: 20, backgroundColor: "#e0e0e0", mx: 0.5 }} />
+                  <Box sx={{ width: "1px", height: 20, backgroundColor: darkMode ? "#374151" : "#e0e0e0", mx: 0.5 }} />
                   {reply.reactions.map((reaction, index) => (
                     <Tooltip
                       key={index}
                       title={formatReactionTooltip(reaction.users || [])}
                       placement="top"
                       arrow
+                      PopperProps={{
+                        keepMounted: false,
+                        popperOptions: {
+                          strategy: 'fixed',
+                        },
+                      }}
                     >
                       <Chip
                         label={`${reaction.emoji} ${reaction.count}`}
                         size="small"
                         onClick={() => onReactionToggle(postId, reply.id, reaction)}
                         sx={{
-                          backgroundColor: reaction.hasReacted ? "rgba(88, 101, 242, 0.1)" : "#f5f5f5",
+                          backgroundColor: reaction.hasReacted ? "rgba(88, 101, 242, 0.1)" : darkMode ? "rgba(255, 255, 255, 0.05)" : "#f5f5f5",
                           border: reaction.hasReacted ? "1px solid #5865F2" : "1px solid transparent",
-                          color: reaction.hasReacted ? "#5865F2" : "#141417",
+                          color: reaction.hasReacted ? "#5865F2" : darkMode ? "#9ca3af" : "#141417",
                           cursor: "pointer",
                           fontSize: "12px",
                           height: "24px",
                           "&:hover": {
-                            backgroundColor: reaction.hasReacted ? "rgba(88, 101, 242, 0.2)" : "#e8e8e8",
+                            backgroundColor: reaction.hasReacted ? "rgba(88, 101, 242, 0.2)" : darkMode ? "rgba(255, 255, 255, 0.1)" : "#e8e8e8",
                           },
                           "& .MuiChip-label": {
                             px: 1,
@@ -215,8 +223,8 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
                   spacing={1} 
                   sx={{ 
                     flex: 1,
-                    backgroundColor: "transparent",
-                    border: "1px solid #dbdbdb",
+                    backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "transparent",
+                    border: `1px solid ${darkMode ? "#374151" : "#dbdbdb"}`,
                     borderRadius: "20px",
                     px: 2,
                     py: 1,
@@ -246,6 +254,11 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
                       disableUnderline: true,
                       sx: {
                         fontSize: "14px",
+                        color: darkMode ? "white" : "inherit",
+                        "& input::placeholder": {
+                          color: darkMode ? "#6b7280" : "#999999",
+                          opacity: 1,
+                        },
                       },
                     }}
                     sx={{
@@ -260,12 +273,12 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
                     disabled={!replyTexts[`${postId}-${reply.id}`]?.trim()}
                     sx={{
                       p: 0.5,
-                      color: replyTexts[`${postId}-${reply.id}`]?.trim() ? "#5865F2" : "#999",
+                      color: replyTexts[`${postId}-${reply.id}`]?.trim() ? "#5865F2" : darkMode ? "#6b7280" : "#999",
                       "&:hover": {
                         backgroundColor: "rgba(88, 101, 242, 0.1)",
                       },
                       "&:disabled": {
-                        color: "#999",
+                        color: darkMode ? "#6b7280" : "#999",
                       },
                     }}
                   >
@@ -297,6 +310,7 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
               onNestedReplySubmit={onNestedReplySubmit}
               replyFieldRefs={replyFieldRefs}
               formatReactionTooltip={formatReactionTooltip}
+              darkMode={darkMode}
             />
           ))}
         </Stack>

@@ -380,6 +380,12 @@ export const PostCard: React.FC<PostCardProps> = ({
                     title={formatReactionTooltip(reaction.users || [])}
                     placement="top"
                     arrow
+                    PopperProps={{
+                      keepMounted: false,
+                      popperOptions: {
+                        strategy: 'fixed',
+                      },
+                    }}
                   >
                     <Chip
                       label={`${reaction.emoji} ${reaction.count}`}

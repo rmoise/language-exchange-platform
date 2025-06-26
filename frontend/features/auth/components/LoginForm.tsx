@@ -31,7 +31,7 @@ export default function LoginForm() {
           password: password.trim(),
         })
       ).unwrap();
-      router.push("/app/feed");
+      router.push("/app/home");
     } catch (error) {
       // Error is handled by the slice
     }

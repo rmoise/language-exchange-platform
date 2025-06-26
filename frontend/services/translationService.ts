@@ -21,7 +21,9 @@ export class TranslationService {
       throw new Error('Text is required for translation');
     }
 
-    if (request.source_lang === request.target_lang) {
+    // Only check for same language if source is not 'auto'
+    if (request.source_lang !== 'auto' && request.source_lang === request.target_lang) {
+      console.warn('Source and target languages are the same:', request.source_lang);
       throw new Error('Source and target languages cannot be the same');
     }
 
@@ -34,17 +36,48 @@ export class TranslationService {
     }
 
     try {
+      console.log('Sending translation API request:', request);
+      console.log('Request details:', {
+        text: request.text,
+        source_lang: request.source_lang,
+        target_lang: request.target_lang
+      });
       const response = await api.post('/translate', request);
-      const translationResponse = response.data as TranslateResponse;
+      console.log('API response:', response.data);
+      console.log('Full response structure:', JSON.stringify(response.data, null, 2));
+      // The backend wraps the response in a data object
+      const translationResponse = response.data.data as TranslateResponse;
 
       // Cache the result
       this.addToCache(cacheKey, translationResponse);
 
       return translationResponse;
     } catch (error: any) {
+      console.error('API Error:', error.response?.status, error.response?.data);
+      console.error('Failed request was:', request);
+      if (error.response?.data) {
+        console.error('Error details:', {
+          message: error.response.data.message,
+          error: error.response.data.error,
+          code: error.response.data.code
+        });
+      }
       // Handle specific API errors
       if (error.response?.data) {
         const errorData = error.response.data;
+        
+        // Handle unsupported language pair error from LibreTranslate
+        if (errorData.message && errorData.message.includes('is not available as a target language')) {
+          // Return original text with a note about unsupported translation
+          return {
+            original_text: request.text,
+            translated_text: `[Translation not available for ${request.source_lang} → ${request.target_lang}]`,
+            source_lang: request.source_lang,
+            target_lang: request.target_lang,
+            provider: 'libretranslate'
+          };
+        }
+        
         throw new Error(errorData.message || 'Translation failed');
       }
       
@@ -304,4 +337,139 @@ export class TranslationService {
     const language = languages.languages.find(lang => lang.code.toLowerCase() === code.toLowerCase());
     return language?.name || code.toUpperCase();
   }
+
+  /**
+   * Simple wrapper method for text translation (for compatibility)
+   */
+  static async translateText(
+    text: string, 
+    sourceLang: string, 
+    targetLang: string
+  ): Promise<{ translatedText: string }> {
+    try {
+      console.log('Translation request:', { text, sourceLang, targetLang });
+      
+      // Normalize language codes
+      const normalizedSource = sourceLang.toLowerCase();
+      const normalizedTarget = targetLang.toLowerCase();
+      
+      // Skip translation for very short text that might be noise
+      if (text.trim().length <= 1) {
+        console.log('Text too short for translation');
+        return {
+          translatedText: text
+        };
+      }
+      
+      // More specific language code checking - only skip if truly the same
+      const isSameLanguage = (
+        normalizedSource === normalizedTarget ||
+        (normalizedSource === 'en' && normalizedTarget === 'eng') ||
+        (normalizedSource === 'eng' && normalizedTarget === 'en') ||
+        (normalizedSource === 'de' && normalizedTarget === 'deu') ||
+        (normalizedSource === 'deu' && normalizedTarget === 'de')
+      );
+      
+      if (isSameLanguage) {
+        console.log('Same language detected, returning original text with language tag');
+        return {
+          translatedText: `(${normalizedSource}) ${text}`
+        };
+      }
+      
+      // Force language detection for problematic cases
+      // If source is detected as 'eng' but text looks German, force German detection
+      let finalSourceLang = normalizedSource;
+      console.log('Original source language:', normalizedSource, 'for text:', text);
+      
+      if (normalizedSource === 'eng' || normalizedSource === 'en') {
+        const germanPattern = /\b(der|die|das|und|oder|mit|für|in|auf|von|zu|ist|war|bin|sind|hat|haben|sein|werden|wird|wurde|ein|eine|einer|ich|du|er|sie|es|wir|ihr|mein|dein|sein|ihr|unser|euer|dieser|diese|dieses|alle|viele|mehr|auch|noch|schon|immer|heute|morgen|gestern|hier|dort|wo|wann|wie|was|wer|warum|nicht|kein|keine|können|sollen|müssen|wollen|dürfen|mögen|warten|gehen|kommen|sehen|sagen|machen|geben|nehmen|finden|denken|fühlen|leben|arbeiten|spielen|sprechen|hören|lesen|schreiben|essen|trinken|schlafen|wohnen|fahren|laufen|unterricht|schule|lernen|student|lehrer|buch|haus|auto|zeit|jahr|tag|nacht|mann|frau|kind|familie|freund|liebe|arbeit|geld|land|stadt|welt|leben|wasser|essen|trinken|gut|schlecht|groß|klein|neu|alt|jung|schön|schwer|leicht|schnell|langsam|hoch|niedrig|weiß|schwarz|rot|blau|grün|gelb)\b/i;
+        
+        console.log('Testing German pattern against:', text.toLowerCase());
+        const isGermanMatch = germanPattern.test(text.toLowerCase());
+        console.log('German pattern match result:', isGermanMatch);
+        
+        if (isGermanMatch) {
+          console.log('FORCING German source language for:', text);
+          finalSourceLang = 'de';
+        }
+      }
+      
+      console.log('Final source language after checks:', finalSourceLang);
+      
+      const request: TranslateRequest = {
+        text: text.trim(),
+        source_lang: finalSourceLang,
+        target_lang: normalizedTarget
+      };
+      
+      const response = await this.translate(request);
+      console.log('Translation response:', response);
+      console.log('Checking translated_text field:', response.translated_text);
+      
+      const translatedText = response.translated_text?.trim();
+      
+      // If translation is empty, return error message
+      if (!translatedText) {
+        console.warn('Translation returned empty text');
+        return {
+          translatedText: `[Translation failed: ${text}]`
+        };
+      }
+      
+      // If translation is exactly the same as input and we forced a different source language, 
+      // it likely means the original detection was correct and translation failed
+      if (translatedText === text.trim() && finalSourceLang !== normalizedSource) {
+        console.warn('Translation with forced language returned same text, trying with original detection');
+        // Retry with original source language
+        const retryRequest: TranslateRequest = {
+          text: text.trim(),
+          source_lang: normalizedSource,
+          target_lang: normalizedTarget
+        };
+        
+        try {
+          const retryResponse = await this.translate(retryRequest);
+          const retryTranslatedText = retryResponse.translated_text?.trim();
+          
+          if (retryTranslatedText && retryTranslatedText !== text.trim()) {
+            return {
+              translatedText: retryTranslatedText
+            };
+          }
+        } catch (retryError) {
+          console.warn('Retry translation failed:', retryError);
+        }
+      }
+      
+      // If translation is exactly the same as input, it might indicate detection issues
+      if (translatedText === text.trim()) {
+        console.warn('Translation returned identical text - likely same language or detection failure');
+        return {
+          translatedText: `(auto-detected same) ${text}`
+        };
+      }
+      
+      return {
+        translatedText: translatedText
+      };
+    } catch (error: any) {
+      console.error('Translation error:', error);
+      
+      // If it's an unsupported language pair, show a clearer message
+      if (error.message && error.message.includes('Translation not available')) {
+        return {
+          translatedText: `[Cannot translate from ${sourceLang} to ${targetLang}]`
+        };
+      }
+      
+      // Return error message instead of original text to make issues visible
+      return {
+        translatedText: `[Translation Error: ${text}]`
+      };
+    }
+  }
 }
+
+// Export an instance for easier usage
+export const translationService = TranslationService;

@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Box, Stack } from "@mui/material";
 import { useTheme as useCustomTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/hooks/useAuth";
 import MembersModal from "@/components/ui/MembersModal";
 import { EmojiPicker } from "@/features/emoji";
 import { ReplyItem, buildReplyTree, formatReactionTooltip, type Reply, type Post } from "@/features/comments";
@@ -17,12 +18,17 @@ import {
   aboutData,
   trendingTopics,
 } from "@/features/home";
+import { LearningDashboard, TextSelectionHandler, SidebarLearningWidget } from "@/features/flashcards";
+import { ImageTranslationFAB, ImageTranslationModal } from "@/features/image-translation";
+import { getLanguageCode } from "@/utils/languageMapping";
 
 
 export default function HomePage() {
   const { mode } = useCustomTheme();
+  const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [membersModalOpen, setMembersModalOpen] = useState(false);
+  const [imageTranslationOpen, setImageTranslationOpen] = useState(false);
   const [emojiPickerAnchor, setEmojiPickerAnchor] = useState<HTMLElement | null>(null);
   const [activeEmojiTarget, setActiveEmojiTarget] = useState<'main' | string>('main');
   const [postsState, setPostsState] = useState<Post[]>(mockPosts as Post[]);
@@ -302,6 +308,12 @@ export default function HomePage() {
       }}
     >
       <Box sx={{ maxWidth: 1100, mx: "auto", p: 3 }}>
+        {/* Learning Dashboard - Collapsible */}
+        <LearningDashboard 
+          darkMode={mode === "dark"}
+          defaultExpanded={false}
+        />
+
         {/* Language Learning Community Card - Full Width */}
         <LanguageLearningCommunityCard 
           memberCount={26905}
@@ -316,6 +328,11 @@ export default function HomePage() {
             <AboutSection 
               memberCount={aboutData.memberCount}
               onMembersClick={() => setMembersModalOpen(true)}
+              darkMode={mode === "dark"}
+            />
+
+            {/* Learning Widget */}
+            <SidebarLearningWidget 
               darkMode={mode === "dark"}
             />
 
@@ -384,6 +401,27 @@ export default function HomePage() {
         open={Boolean(emojiPickerAnchor)}
         onClose={handleEmojiClose}
         onSelectEmoji={handleEmojiSelect}
+      />
+      
+      {/* Text Selection Handler for word capture */}
+      <TextSelectionHandler 
+        darkMode={mode === "dark"}
+        targetLanguage={getLanguageCode(user?.targetLanguages?.[0] || "en")}
+        nativeLanguage={getLanguageCode(user?.nativeLanguages?.[0] || "es")}
+      />
+      
+      {/* Image Translation FAB */}
+      <ImageTranslationFAB 
+        onClick={() => setImageTranslationOpen(true)}
+        darkMode={mode === "dark"}
+      />
+      
+      {/* Image Translation Modal */}
+      <ImageTranslationModal
+        open={imageTranslationOpen}
+        onClose={() => setImageTranslationOpen(false)}
+        darkMode={mode === "dark"}
+        nativeLanguage={getLanguageCode(user?.nativeLanguages?.[0] || "en")}
       />
     </Box>
   );
