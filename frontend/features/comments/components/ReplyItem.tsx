@@ -14,6 +14,8 @@ import {
   ChatBubbleOutline as ChatBubbleOutlineIcon,
   EmojiEmotions as EmojiEmotionsIcon,
   Send as SendIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 
 export interface Reply {
@@ -49,6 +51,8 @@ interface ReplyItemProps {
   onNestedReplySubmit: (postId: string, parentReplyId: string) => void;
   replyFieldRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | null }>;
   formatReactionTooltip: (users: string[]) => string;
+  collapsedReplies: { [replyId: string]: boolean };
+  onToggleReplyCollapse: (replyId: string) => void;
   darkMode?: boolean;
 }
 
@@ -66,44 +70,47 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
   onNestedReplySubmit,
   replyFieldRefs,
   formatReactionTooltip,
+  collapsedReplies,
+  onToggleReplyCollapse,
   darkMode = false,
 }) => {
   const isNested = level > 0;
   const maxNestingLevel = 2; // Limit nesting depth
   const canReply = level < maxNestingLevel;
   const hasChildren = reply.children && reply.children.length > 0;
+  const isCollapsed = collapsedReplies[reply.id] || false;
 
   return (
     <Box sx={{ position: "relative", overflow: "visible" }}>
-      <Stack spacing={1} sx={{ pl: isNested ? 6 : 0, position: "relative" }}>
+      <Stack spacing={0.5} sx={{ pl: isNested ? 4 : 0, position: "relative" }}>
         <Stack 
           direction="row" 
-          spacing={2} 
+          spacing={1} 
           alignItems="flex-start"
           sx={{ 
             position: "relative",
-            minHeight: isNested ? 32 : 40, // Ensure minimum height for proper line alignment
+            minHeight: isNested ? 24 : 28,
           }}
         >
           
           <Avatar
             sx={{
-              width: isNested ? 32 : 40,
-              height: isNested ? 32 : 40,
+              width: isNested ? 28 : 32,
+              height: isNested ? 28 : 32,
               backgroundColor: reply.user.avatarColor,
-              fontSize: isNested ? "12px" : "14px",
+              fontSize: isNested ? "12px" : "13px",
               flexShrink: 0,
               position: "relative",
             }}
           >
             {reply.user.initials}
           </Avatar>
-          <Stack spacing={1} sx={{ flex: 1 }}>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "14px" }}>
+          <Stack spacing={0.25} sx={{ flex: 1 }}>
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "14px", lineHeight: 1.3 }}>
                 {reply.user.name}
               </Typography>
-              <Typography variant="body2" sx={{ color: darkMode ? "#9ca3af" : "#141417", fontSize: "14px" }}>
+              <Typography variant="body2" sx={{ color: darkMode ? "#9ca3af" : "#141417", fontSize: "13px" }}>
                 {reply.timeAgo}
               </Typography>
             </Stack>
@@ -111,15 +118,37 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
               backgroundColor: "transparent", 
               borderRadius: 0,
               p: 0,
-              mt: 0.5,
+              mt: 0,
             }}>
-              <Typography variant="body2" sx={{ fontSize: isNested ? "14px" : "15px", lineHeight: 1.5 }}>
+              <Typography variant="body2" sx={{ fontSize: isNested ? "13px" : "14px", lineHeight: 1.5, color: darkMode ? "#e5e7eb" : "#3b3b3b" }}>
                 {reply.content}
               </Typography>
             </Box>
           
             {/* Reply Actions and Reactions */}
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1 }}>
+            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5 }}>
+              {hasChildren && (
+                <Button
+                  size="small"
+                  startIcon={isCollapsed ? <ExpandMoreIcon sx={{ fontSize: 16 }} /> : <ExpandLessIcon sx={{ fontSize: 16 }} />}
+                  onClick={() => onToggleReplyCollapse(reply.id)}
+                  sx={{
+                    textTransform: "none",
+                    color: darkMode ? "#a5b4fc" : "#1976d2",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    px: 1,
+                    py: 0.25,
+                    minWidth: "auto",
+                    "&:hover": {
+                      backgroundColor: darkMode ? "rgba(99, 102, 241, 0.1)" : "rgba(25, 118, 210, 0.1)",
+                      color: darkMode ? "#a5b4fc" : "#1976d2",
+                    },
+                  }}
+                >
+                  {isCollapsed ? `Show ${reply.children.length} ${reply.children.length === 1 ? 'reply' : 'replies'}` : 'Hide replies'}
+                </Button>
+              )}
               {canReply && (
                 <Button
                   size="small"
@@ -145,7 +174,7 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
               
               <Button
                 size="small"
-                startIcon={<EmojiEmotionsIcon sx={{ fontSize: 16 }} />}
+                startIcon={<EmojiEmotionsIcon sx={{ fontSize: 14 }} />}
                 onClick={(e) => onEmojiClick(e, `reply-${postId}-${reply.id}`)}
                 sx={{
                   textTransform: "none",
@@ -191,7 +220,7 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
                           color: reaction.hasReacted ? "#5865F2" : darkMode ? "#9ca3af" : "#141417",
                           cursor: "pointer",
                           fontSize: "12px",
-                          height: "24px",
+                          height: "22px",
                           "&:hover": {
                             backgroundColor: reaction.hasReacted ? "rgba(88, 101, 242, 0.2)" : darkMode ? "rgba(255, 255, 255, 0.1)" : "#e8e8e8",
                           },
@@ -210,24 +239,24 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
             {canReply && activeReplyFields[`${postId}-${reply.id}`] && (
               <Stack 
                 direction="row" 
-                spacing={1} 
+                spacing={0.75} 
                 alignItems="flex-start" 
                 sx={{ 
-                  mt: 1,
+                  mt: 0.75,
                   ml: -0.5,
                 }}
               >
-                <Avatar sx={{ width: 32, height: 32 }}>Y</Avatar>
+                <Avatar sx={{ width: 24, height: 24, fontSize: '11px' }}>Y</Avatar>
                 <Stack 
                   direction="row" 
-                  spacing={1} 
+                  spacing={0.75} 
                   sx={{ 
                     flex: 1,
                     backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "transparent",
                     border: `1px solid ${darkMode ? "#374151" : "#dbdbdb"}`,
-                    borderRadius: "20px",
-                    px: 2,
-                    py: 1,
+                    borderRadius: "16px",
+                    px: 1.5,
+                    py: 0.5,
                     alignItems: "center",
                   }}
                 >
@@ -253,7 +282,7 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
                     InputProps={{
                       disableUnderline: true,
                       sx: {
-                        fontSize: "14px",
+                        fontSize: "12px",
                         color: darkMode ? "white" : "inherit",
                         "& input::placeholder": {
                           color: darkMode ? "#6b7280" : "#999999",
@@ -282,7 +311,7 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
                       },
                     }}
                   >
-                    <SendIcon sx={{ fontSize: 18 }} />
+                    <SendIcon sx={{ fontSize: 16 }} />
                   </IconButton>
                 </Stack>
               </Stack>
@@ -292,8 +321,8 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
       </Stack>
       
       {/* Render child replies */}
-      {reply.children && reply.children.length > 0 && (
-        <Stack spacing={2} sx={{ mt: 2 }}>
+      {reply.children && reply.children.length > 0 && !isCollapsed && (
+        <Stack spacing={0.5} sx={{ mt: 0.5 }}>
           {reply.children.map((childReply, index) => (
             <ReplyItem
               key={childReply.id}
@@ -310,6 +339,8 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
               onNestedReplySubmit={onNestedReplySubmit}
               replyFieldRefs={replyFieldRefs}
               formatReactionTooltip={formatReactionTooltip}
+              collapsedReplies={collapsedReplies}
+              onToggleReplyCollapse={onToggleReplyCollapse}
               darkMode={darkMode}
             />
           ))}

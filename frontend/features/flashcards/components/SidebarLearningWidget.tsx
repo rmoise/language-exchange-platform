@@ -134,13 +134,13 @@ export const SidebarLearningWidget: React.FC<SidebarLearningWidgetProps> = ({
 
   return (
     <>
-      <Paper
-        elevation={0}
+      <Box
         sx={{
-          p: 2,
-          backgroundColor: darkMode ? '#1a1a1a' : '#ffffff',
-          border: `1px solid ${darkMode ? '#333' : '#e0e0e0'}`,
-          borderRadius: 2,
+          p: 2.5,
+          backgroundColor: darkMode ? 'rgba(30, 30, 30, 0.5)' : 'white',
+          border: '1px solid',
+          borderColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+          borderRadius: '12px',
           mb: 3
         }}
       >
@@ -149,7 +149,7 @@ export const SidebarLearningWidget: React.FC<SidebarLearningWidgetProps> = ({
           <Stack direction="row" alignItems="center" justifyContent="space-between">
             <Stack direction="row" alignItems="center" spacing={1}>
               <School sx={{ color: '#6366f1', fontSize: 20 }} />
-              <Typography variant="subtitle2" fontWeight={600}>
+              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '16px' }}>
                 Your Learning
               </Typography>
             </Stack>
@@ -176,9 +176,9 @@ export const SidebarLearningWidget: React.FC<SidebarLearningWidgetProps> = ({
                 <Box
                   sx={{
                     p: 2,
-                    backgroundColor: darkMode ? '#0f0f0f' : '#f8f9fa',
-                    borderRadius: 1,
-                    border: `1px solid ${darkMode ? '#333' : '#e0e0e0'}`
+                    backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
+                    borderRadius: '8px',
+                    border: 'none'
                   }}
                 >
                   <Stack spacing={1.5}>
@@ -324,7 +324,7 @@ export const SidebarLearningWidget: React.FC<SidebarLearningWidgetProps> = ({
             </>
           )}
         </Stack>
-      </Paper>
+      </Box>
 
       {/* Review Dialog */}
       <Dialog

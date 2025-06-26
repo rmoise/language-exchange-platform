@@ -204,14 +204,14 @@ export const aboutData = {
 };
 
 export const trendingTopics = [
-  { name: "pronunciation", color: "#e3f2fd" },
-  { name: "grammar", color: "#fff3e0" },
-  { name: "vocabulary", color: "#f1f8e9" },
-  { name: "conversation", color: "#f3e5f5" },
-  { name: "languageexchange", color: "#fffde7" },
-  { name: "studytips", color: "#e0f2f1" },
-  { name: "beginnerhelp", color: "#e8eaf6" },
-  { name: "nativespeaker", color: "#fff8e1" },
-  { name: "culturaltips", color: "#e8f5e8" },
-  { name: "resources", color: "#f3e5f5" },
+  { name: "pronunciation", color: "#e3f2fd", icon: "🗣️" },
+  { name: "grammar", color: "#fff3e0", icon: "📝" },
+  { name: "vocabulary", color: "#f1f8e9", icon: "📚" },
+  { name: "conversation", color: "#f3e5f5", icon: "💬" },
+  { name: "languageexchange", color: "#fffde7", icon: "🌍" },
+  { name: "studytips", color: "#e0f2f1", icon: "💡" },
+  { name: "beginnerhelp", color: "#e8eaf6", icon: "🌱" },
+  { name: "nativespeaker", color: "#fff8e1", icon: "🏆" },
+  { name: "culturaltips", color: "#e8f5e8", icon: "🎭" },
+  { name: "resources", color: "#f3e5f5", icon: "📖" },
 ];

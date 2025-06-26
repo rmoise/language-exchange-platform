@@ -40,11 +40,13 @@ import { motion } from 'framer-motion';
 interface LearningDashboardProps {
   darkMode?: boolean;
   defaultExpanded?: boolean;
+  compact?: boolean;
 }
 
 export const LearningDashboard: React.FC<LearningDashboardProps> = ({
   darkMode = false,
-  defaultExpanded = true
+  defaultExpanded = true,
+  compact = false
 }) => {
   const { user } = useAuth();
   const [expanded, setExpanded] = useState(defaultExpanded);
@@ -123,6 +125,88 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
   const dailyProgress = profile.dailyGoal > 0 
     ? Math.min(100, (todayStats.reviewed / profile.dailyGoal) * 100)
     : 0;
+
+  if (compact) {
+    // Compact mode - just show key stats in a small card
+    return (
+      <Box
+        sx={{
+          flex: { xs: '1', md: '0 0 35%' },
+          backgroundColor: darkMode ? 'rgba(30, 30, 30, 0.8)' : '#f8f9fa',
+          backdropFilter: 'blur(10px)',
+          border: darkMode ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.08)',
+          borderRadius: '16px',
+          p: 2.5,
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            transform: 'translateY(-1px)',
+            boxShadow: darkMode 
+              ? '0 4px 20px rgba(99, 102, 241, 0.1)' 
+              : '0 4px 20px rgba(0, 0, 0, 0.05)',
+          },
+        }}
+      >
+        <Stack spacing={2}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Typography variant="h6" sx={{ fontSize: '16px', fontWeight: 600 }}>
+              Today's Progress
+            </Typography>
+            <Chip
+              icon={<LocalFireDepartment sx={{ color: getStreakColor(profile.currentStreak), fontSize: 16 }} />}
+              label={`${profile.currentStreak}d`}
+              size="small"
+              sx={{ height: 24 }}
+            />
+          </Stack>
+          
+          <Stack spacing={1}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Typography variant="caption" color="text.secondary">
+                Daily Goal
+              </Typography>
+              <Typography variant="caption" fontWeight={600}>
+                {todayStats.reviewed}/{profile.dailyGoal}
+              </Typography>
+            </Stack>
+            <LinearProgress
+              variant="determinate"
+              value={dailyProgress}
+              sx={{
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: getProgressColor(dailyProgress),
+                  borderRadius: 3,
+                }
+              }}
+            />
+          </Stack>
+
+          {deck.dueToday > 0 && (
+            <Button
+              fullWidth
+              variant="contained"
+              size="small"
+              startIcon={<PlayArrow sx={{ fontSize: 18 }} />}
+              onClick={() => startReview(deck.cards.filter(c => c.dueDate && new Date(c.dueDate) <= new Date()))}
+              sx={{
+                backgroundColor: '#6366f1',
+                color: 'white',
+                textTransform: 'none',
+                py: 1,
+                fontSize: '14px',
+                fontWeight: 500,
+                '&:hover': { backgroundColor: '#5558d9' }
+              }}
+            >
+              Review {deck.dueToday} cards
+            </Button>
+          )}
+        </Stack>
+      </Box>
+    );
+  }
 
   return (
     <>

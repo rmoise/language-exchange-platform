@@ -18,12 +18,13 @@ import {
   MoreHoriz as MoreIcon,
   Share as ShareIcon,
   BookmarkBorder as BookmarkBorderIcon,
-  SentimentSatisfied as SentimentSatisfiedIcon,
   Send as SendIcon,
   Add as AddIcon,
   Close as CloseIcon,
+  EmojiEmotions as EmojiEmotionsIcon,
 } from "@mui/icons-material";
 import { ReplyItem, buildReplyTree, formatReactionTooltip, type Reply, type Post } from "@/features/comments";
+import { LinkPreview } from "@/components/ui/LinkPreview";
 
 interface PostCardProps {
   post: Post;
@@ -39,6 +40,8 @@ interface PostCardProps {
   onNestedReplySubmit: (postId: string, parentReplyId: string) => void;
   replyFieldRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | null }>;
   onPostReactionToggle: (post: Post, reaction: any) => void;
+  collapsedReplies: { [replyId: string]: boolean };
+  onToggleReplyCollapse: (replyId: string) => void;
   darkMode?: boolean;
 }
 
@@ -56,9 +59,33 @@ export const PostCard: React.FC<PostCardProps> = ({
   onNestedReplySubmit,
   replyFieldRefs,
   onPostReactionToggle,
+  collapsedReplies,
+  onToggleReplyCollapse,
   darkMode = false,
 }) => {
   const replyInputRef = useRef<HTMLInputElement>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [truncateLength, setTruncateLength] = useState(150);
+  
+  // Make truncation responsive based on viewport width
+  React.useEffect(() => {
+    const updateTruncateLength = () => {
+      const width = window.innerWidth;
+      if (width < 600) {
+        setTruncateLength(100); // Mobile
+      } else if (width < 900) {
+        setTruncateLength(150); // Tablet
+      } else if (width < 1200) {
+        setTruncateLength(200); // Small desktop
+      } else {
+        setTruncateLength(250); // Large desktop
+      }
+    };
+
+    updateTruncateLength();
+    window.addEventListener('resize', updateTruncateLength);
+    return () => window.removeEventListener('resize', updateTruncateLength);
+  }, []);
 
   return (
     <Stack spacing={0}>
@@ -67,11 +94,11 @@ export const PostCard: React.FC<PostCardProps> = ({
         <Box
           sx={{
             backgroundColor: darkMode ? "rgba(251, 191, 36, 0.1)" : "#faf9f8",
-            borderRadius: "16px 16px 0 0",
-            border: `1px solid ${darkMode ? "rgba(251, 191, 36, 0.3)" : "#efefee"}`,
+            borderRadius: "12px 12px 0 0",
+            border: darkMode ? "1px solid rgba(251, 191, 36, 0.2)" : "1px solid rgba(0, 0, 0, 0.08)",
             borderBottom: "none",
             px: 2,
-            py: 1.5,
+            py: 1,
           }}
         >
           <Stack direction="row" alignItems="center" spacing={1}>
@@ -90,50 +117,51 @@ export const PostCard: React.FC<PostCardProps> = ({
         </Box>
       )}
 
-      <Card
+      <Box
         sx={{
-          borderRadius: post.askingFor ? "0 0 16px 16px" : "16px",
-          backgroundColor: darkMode ? "rgba(0, 0, 0, 0.4)" : "white",
-          backdropFilter: darkMode ? "blur(10px)" : "none",
-          border: `1px solid ${darkMode ? "#374151" : "#efefee"}`,
-          boxShadow: "none",
-          color: darkMode ? "white" : "inherit",
-          transition: "all 0.3s ease",
-          "&:hover": darkMode ? {
-            borderColor: "#6366f1",
-            backgroundColor: "rgba(0, 0, 0, 0.6)",
-          } : {},
+          backgroundColor: darkMode ? "rgba(30, 30, 30, 0.5)" : "white",
+          border: "1px solid",
+          borderColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.06)",
+          borderRadius: post.askingFor ? "0 0 12px 12px" : "12px",
+          borderTop: post.askingFor ? "none" : undefined,
+          transition: "box-shadow 0.3s ease",
+          "&:hover": {
+            boxShadow: darkMode
+              ? "0 0 0 1px #6366f1"
+              : "0 0 0 1px #1976d2",
+          },
         }}
       >
-        <CardContent sx={{ p: 2 }}>
-          <Stack spacing={2}>
+        <CardContent sx={{ p: { xs: 2, sm: 3 }, pb: { xs: 3, sm: 4 } }}>
+          <Stack spacing={1}>
             {/* Post Header */}
             <Stack
               direction="row"
               justifyContent="space-between"
               alignItems="flex-start"
             >
-              <Stack direction="row" spacing={2} sx={{ flex: 1 }}>
+              <Stack direction="row" spacing={1.5} sx={{ flex: 1 }}>
                 <Avatar
                   sx={{
-                    width: 48,
-                    height: 48,
+                    width: 36,
+                    height: 36,
                     backgroundColor: post.user.avatarColor,
-                    fontSize: "15.8px",
-                    fontWeight: 400,
+                    fontSize: "13px",
+                    fontWeight: 500,
                   }}
                 >
                   {post.user.initials}
                 </Avatar>
 
-                <Stack spacing={0.5}>
+                <Stack spacing={0.25}>
                   <Stack direction="row" alignItems="center" spacing={0.5}>
                     <Typography
                       variant="body1"
                       sx={{
                         fontWeight: 500,
-                        fontSize: "15.9px",
+                        fontSize: "14px",
                         color: darkMode ? "white" : "#141417",
+                        lineHeight: 1.3,
                       }}
                     >
                       {post.user.name}
@@ -142,7 +170,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                       variant="body2"
                       sx={{
                         color: darkMode ? "#9ca3af" : "#767676",
-                        fontSize: "16px",
+                        fontSize: "13px",
                       }}
                     >
                       ·
@@ -151,7 +179,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                       variant="body2"
                       sx={{
                         color: darkMode ? "#9ca3af" : "#767676",
-                        fontSize: "16px",
+                        fontSize: "13px",
                       }}
                     >
                       {post.user.department}
@@ -160,7 +188,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                       variant="body2"
                       sx={{
                         color: darkMode ? "#9ca3af" : "#767676",
-                        fontSize: "16px",
+                        fontSize: "13px",
                       }}
                     >
                       ·
@@ -169,57 +197,48 @@ export const PostCard: React.FC<PostCardProps> = ({
                       variant="body2"
                       sx={{
                         color: darkMode ? "#9ca3af" : "#767676",
-                        fontSize: "15.9px",
+                        fontSize: "13px",
                       }}
                     >
                       {post.user.timeAgo}
                     </Typography>
                   </Stack>
 
-                  <Chip
-                    label={
-                      <Stack direction="row" alignItems="center" spacing={0.5}>
-                        <Typography variant="body2">{post.category.emoji}</Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontSize: "15.6px",
-                            color: darkMode ? "#a5b4fc" : "#003742",
-                          }}
-                        >
-                          {post.category.text}
-                        </Typography>
-                      </Stack>
-                    }
-                    sx={{
-                      backgroundColor: darkMode ? "rgba(99, 102, 241, 0.2)" : "#d7fbfc",
-                      color: darkMode ? "#a5b4fc" : "#003742",
-                      height: "auto",
-                      py: 0.5,
-                      px: 2,
-                      "& .MuiChip-label": {
-                        px: 0,
-                      },
-                    }}
-                  />
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Typography sx={{ fontSize: "13px" }}>
+                      {post.category.emoji}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: "12px",
+                        color: darkMode ? "#9ca3af" : "#6b7280",
+                      }}
+                    >
+                      {post.category.text}
+                    </Typography>
+                  </Stack>
                 </Stack>
               </Stack>
 
-              <IconButton sx={{ p: 1 }}>
-                <MoreIcon sx={{ fontSize: 18, color: darkMode ? "#9ca3af" : "inherit" }} />
+              <IconButton sx={{ p: 0.5 }}>
+                <MoreIcon sx={{ fontSize: 16, color: darkMode ? "#9ca3af" : "inherit" }} />
               </IconButton>
             </Stack>
 
             {/* Post Content */}
-            <Stack spacing={1}>
+            <Stack spacing={0.75}>
               <Typography
                 variant="h6"
                 sx={{
                   fontSize: "18px",
-                  fontWeight: 500,
-                  textDecoration: "underline",
-                  color: darkMode ? "white" : "#141417",
-                  lineHeight: 1.5,
+                  fontWeight: 600,
+                  color: darkMode ? "white" : "#1a1a1a",
+                  lineHeight: 1.4,
+                  cursor: "pointer",
+                  "&:hover": {
+                    color: darkMode ? "#a5b4fc" : "#1976d2",
+                  },
                 }}
               >
                 {post.title}
@@ -229,203 +248,203 @@ export const PostCard: React.FC<PostCardProps> = ({
                 <Typography
                   variant="body1"
                   sx={{
-                    fontSize: "16px",
+                    fontSize: "15px",
                     color: darkMode ? "#e5e7eb" : "#141417",
-                    lineHeight: 1.6,
+                    lineHeight: 1.7,
+                    letterSpacing: "0.01em",
                   }}
                 >
                   {post.content.greeting}
                 </Typography>
 
-                {post.content.paragraphs.map((paragraph, index) => (
+                {isExpanded ? (
+                  // Show all paragraphs when expanded
+                  post.content.paragraphs.map((paragraph, index) => (
+                    <Typography
+                      key={index}
+                      variant="body1"
+                      sx={{
+                        fontSize: "15px",
+                        color: darkMode ? "#e5e7eb" : "#141417",
+                        lineHeight: 1.7,
+                        letterSpacing: "0.01em",
+                        mb: index < post.content.paragraphs.length - 1 ? 2 : 0,
+                      }}
+                    >
+                      {paragraph}
+                    </Typography>
+                  ))
+                ) : (
+                  // Show only first paragraph truncated when collapsed
                   <Typography
-                    key={index}
                     variant="body1"
                     sx={{
-                      fontSize: "16px",
+                      fontSize: "15px",
                       color: darkMode ? "#e5e7eb" : "#141417",
-                      lineHeight: 1.6,
+                      lineHeight: 1.7,
+                      letterSpacing: "0.01em",
+                      wordBreak: "break-word",
+                      overflowWrap: "break-word",
                     }}
                   >
-                    {paragraph}
+                    {post.content.paragraphs[0]?.substring(0, truncateLength)}
+                    {post.content.paragraphs[0]?.length > truncateLength || post.content.paragraphs.length > 1 ? '...' : ''}
                   </Typography>
-                ))}
+                )}
 
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      fontSize: "16px",
-                      color: darkMode ? "#e5e7eb" : "#141417",
-                    }}
-                  >
-                    ·
-                  </Typography>
-                  <Link
-                    href="#"
-                    underline="always"
-                    sx={{
-                      fontSize: "16px",
-                      color: darkMode ? "#e5e7eb" : "#141417",
-                      textDecorationColor: darkMode ? "#e5e7eb" : "#141417",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Read more
-                  </Link>
-                </Stack>
+                {/* Show Read more/less only if content is long */}
+                {(post.content.paragraphs[0]?.length > truncateLength || post.content.paragraphs.length > 1) && (
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Link
+                      component="button"
+                      underline="always"
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      sx={{
+                        fontSize: "13px",
+                        color: darkMode ? "#e5e7eb" : "#141417",
+                        textDecorationColor: darkMode ? "#e5e7eb" : "#141417",
+                        cursor: "pointer",
+                        background: "none",
+                        border: "none",
+                        padding: 0,
+                        font: "inherit",
+                      }}
+                    >
+                      {isExpanded ? 'Show less' : 'Read more'}
+                    </Link>
+                  </Stack>
+                )}
               </Stack>
 
               {/* Attachment */}
               {post.attachment && (
-                <Box
-                  sx={{
-                    backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "#faf9f8",
-                    borderRadius: 2,
-                    p: 2,
-                    maxWidth: 260,
-                  }}
-                >
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Box
-                      sx={{
-                        width: 64,
-                        height: 64,
-                        backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "#faf9f8",
-                        borderRadius: 1,
-                      }}
-                    />
-                    <Stack spacing={0.5}>
-                      <Typography
-                        variant="body1"
-                        sx={{
-                          fontWeight: 500,
-                          fontSize: "16px",
-                          color: darkMode ? "white" : "#141417",
-                        }}
-                      >
-                        {post.attachment.title}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontSize: "13px",
-                          color: darkMode ? "#9ca3af" : "#3b3b3b",
-                        }}
-                      >
-                        {post.attachment.url}
-                      </Typography>
-                    </Stack>
-                  </Stack>
-                </Box>
+                <LinkPreview
+                  title={post.attachment.title}
+                  url={post.attachment.url}
+                  darkMode={darkMode}
+                  onClick={() => window.open(post.attachment.url, '_blank')}
+                />
               )}
             </Stack>
 
-            {/* Post Actions */}
-            <Stack direction="row" justifyContent="flex-end" spacing={1}>
-              <Button
-                variant="outlined"
-                startIcon={<BookmarkBorderIcon />}
-                sx={{
-                  minWidth: 58,
-                  borderColor: darkMode ? "#374151" : "#e9e7e4",
-                  color: darkMode ? "white" : "#141417",
-                  backgroundColor: darkMode ? "transparent" : "white",
-                  textTransform: "none",
-                  fontSize: "13px",
-                  fontWeight: 500,
-                }}
-              >
-                {post.stats.bookmarks}
-              </Button>
-
-              <IconButton
-                sx={{
-                  minWidth: 58,
-                  border: `1px solid ${darkMode ? "#374151" : "#e9e7e4"}`,
-                  borderRadius: 1,
-                  backgroundColor: darkMode ? "transparent" : "white",
-                  color: darkMode ? "#9ca3af" : "inherit",
-                  "&:hover": {
-                    backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : undefined,
-                  },
-                }}
-              >
-                <ShareIcon sx={{ color: darkMode ? "#9ca3af" : "inherit" }} />
-              </IconButton>
-
-              <IconButton
-                onClick={(e) => onEmojiClick(e, `post-${post.id}`)}
-                sx={{
-                  minWidth: 58,
-                  border: `1px solid ${darkMode ? "#374151" : "#e9e7e4"}`,
-                  borderRadius: 1,
-                  backgroundColor: darkMode ? "transparent" : "white",
-                  color: darkMode ? "#9ca3af" : "inherit",
-                  "&:hover": {
-                    backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : undefined,
-                  },
-                }}
-              >
-                <SentimentSatisfiedIcon sx={{ color: darkMode ? "#9ca3af" : "inherit" }} />
-              </IconButton>
-            </Stack>
-
-            {/* Reactions Display */}
-            {post.reactions && post.reactions.length > 0 && (
-              <Stack direction="row" spacing={0.5} sx={{ mt: 1, mb: 1 }}>
-                {post.reactions.map((reaction, index) => (
-                  <Tooltip
-                    key={index}
-                    title={formatReactionTooltip(reaction.users || [])}
-                    placement="top"
-                    arrow
-                    PopperProps={{
-                      keepMounted: false,
-                      popperOptions: {
-                        strategy: 'fixed',
-                      },
-                    }}
-                  >
-                    <Chip
-                      label={`${reaction.emoji} ${reaction.count}`}
+            {/* Post Actions and Reactions */}
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 1 }}>
+              {/* Reactions Display */}
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                {post.reactions && post.reactions.length > 0 && (
+                  <>
+                    {post.reactions.map((reaction, index) => (
+                      <Tooltip
+                        key={index}
+                        title={formatReactionTooltip(reaction.users || [])}
+                        placement="top"
+                        arrow
+                        PopperProps={{
+                          keepMounted: false,
+                          popperOptions: {
+                            strategy: 'fixed',
+                          },
+                        }}
+                      >
+                        <Chip
+                          label={`${reaction.emoji} ${reaction.count}`}
+                          size="small"
+                          onClick={() => onPostReactionToggle(post, reaction)}
+                          sx={{
+                            backgroundColor: reaction.hasReacted ? "rgba(88, 101, 242, 0.1)" : darkMode ? "rgba(255, 255, 255, 0.05)" : "#f5f5f5",
+                            border: reaction.hasReacted ? "1px solid #5865F2" : "1px solid transparent",
+                            color: reaction.hasReacted ? "#5865F2" : darkMode ? "#9ca3af" : "#666",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            height: "24px",
+                            "&:hover": {
+                              backgroundColor: reaction.hasReacted ? "rgba(88, 101, 242, 0.2)" : darkMode ? "rgba(255, 255, 255, 0.1)" : "#e8e8e8",
+                            },
+                            "& .MuiChip-label": {
+                              px: 1.5,
+                            },
+                          }}
+                        />
+                      </Tooltip>
+                    ))}
+                    <IconButton
                       size="small"
-                      onClick={() => onPostReactionToggle(post, reaction)}
+                      onClick={(e) => onEmojiClick(e, `post-${post.id}`)}
                       sx={{
-                        backgroundColor: reaction.hasReacted ? "rgba(88, 101, 242, 0.1)" : darkMode ? "rgba(255, 255, 255, 0.05)" : "#f5f5f5",
-                        border: reaction.hasReacted ? "1px solid #5865F2" : "1px solid transparent",
-                        color: reaction.hasReacted ? "#5865F2" : darkMode ? "#9ca3af" : "#666",
-                        cursor: "pointer",
-                        fontSize: "14px",
-                        height: "28px",
+                        p: 0.25,
+                        ml: 0.5,
                         "&:hover": {
-                          backgroundColor: reaction.hasReacted ? "rgba(88, 101, 242, 0.2)" : darkMode ? "rgba(255, 255, 255, 0.1)" : "#e8e8e8",
-                        },
-                        "& .MuiChip-label": {
-                          px: 1.5,
+                          backgroundColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "#f5f5f5",
                         },
                       }}
-                    />
-                  </Tooltip>
-                ))}
+                    >
+                      <AddIcon sx={{ fontSize: 16, color: darkMode ? "#9ca3af" : "#999" }} />
+                    </IconButton>
+                  </>
+                )}
+              </Stack>
+
+              {/* Action Buttons */}
+              <Stack direction="row" spacing={0.75}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<BookmarkBorderIcon sx={{ fontSize: 16, color: darkMode ? "#9ca3af" : "inherit" }} />}
+                  sx={{
+                    minWidth: 48,
+                    borderColor: darkMode ? "#374151" : "#e9e7e4",
+                    color: darkMode ? "#9ca3af" : "inherit",
+                    backgroundColor: darkMode ? "transparent" : "white",
+                    textTransform: "none",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    py: 0.5,
+                    px: 1,
+                    "&:hover": {
+                      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : undefined,
+                    },
+                  }}
+                >
+                  {post.stats.bookmarks}
+                </Button>
+
+                <IconButton
+                  size="small"
+                  sx={{
+                    border: `1px solid ${darkMode ? "#374151" : "#e9e7e4"}`,
+                    borderRadius: 1,
+                    backgroundColor: darkMode ? "transparent" : "white",
+                    color: darkMode ? "#9ca3af" : "inherit",
+                    p: 0.75,
+                    "&:hover": {
+                      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : undefined,
+                    },
+                  }}
+                >
+                  <ShareIcon sx={{ fontSize: 18, color: darkMode ? "#9ca3af" : "inherit" }} />
+                </IconButton>
+
                 <IconButton
                   size="small"
                   onClick={(e) => onEmojiClick(e, `post-${post.id}`)}
                   sx={{
-                    p: 0.5,
-                    ml: 0.5,
+                    border: `1px solid ${darkMode ? "#374151" : "#e9e7e4"}`,
+                    borderRadius: 1,
+                    backgroundColor: darkMode ? "transparent" : "white",
+                    color: darkMode ? "#9ca3af" : "inherit",
+                    p: 0.75,
                     "&:hover": {
-                      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "#f5f5f5",
+                      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : undefined,
                     },
                   }}
                 >
-                  <AddIcon sx={{ fontSize: 18, color: darkMode ? "#9ca3af" : "#999" }} />
+                  <EmojiEmotionsIcon sx={{ fontSize: 18, color: darkMode ? "#9ca3af" : "inherit" }} />
                 </IconButton>
               </Stack>
-            )}
+            </Stack>
 
             {/* Reply Input Section */}
-            <Box sx={{ width: "100%", position: "relative" }}>
+            <Box sx={{ width: "100%", position: "relative", pb: 2, mt: 1.5 }}>
               {replyingTo && (
                 <Box sx={{ 
                   display: "flex", 
@@ -453,10 +472,10 @@ export const PostCard: React.FC<PostCardProps> = ({
               <Stack direction="row" spacing={1} alignItems="flex-start">
                 <Avatar
                   sx={{
-                    width: 48,
-                    height: 48,
+                    width: 32,
+                    height: 32,
                     bgcolor: "#1976d2",
-                    fontSize: "20px",
+                    fontSize: "14px",
                   }}
                 >
                   U
@@ -464,14 +483,15 @@ export const PostCard: React.FC<PostCardProps> = ({
 
                 <Stack
                   direction="row"
-                  spacing={2}
+                  spacing={1}
                   alignItems="center"
                   sx={{
                     flex: 1,
-                    height: 60,
+                    minHeight: 40,
                     border: `1px solid ${darkMode ? "#374151" : "#dbdbdb"}`,
                     borderRadius: 1,
-                    px: 1,
+                    pl: 1.5,
+                    pr: 0.75,
                     py: 0.5,
                   }}
                 >
@@ -491,7 +511,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     InputProps={{
                       disableUnderline: true,
                       sx: {
-                        fontSize: "15.5px",
+                        fontSize: "13px",
                         color: darkMode ? "white" : "#141417",
                         fontFamily: "Inter-Regular, Helvetica",
                         "& input::placeholder": {
@@ -514,16 +534,17 @@ export const PostCard: React.FC<PostCardProps> = ({
 
                   <Button
                     variant="contained"
+                    size="small"
                     onClick={() => onReplySubmit(post.id)}
                     disabled={!replyTexts[post.id]?.trim()}
                     sx={{
-                      minWidth: 64,
+                      minWidth: 56,
                       backgroundColor: darkMode ? "#6366f1 !important" : "#141417 !important",
                       color: "white !important",
-                      borderRadius: "10px",
-                      px: 2,
-                      py: 1,
-                      fontSize: "16px",
+                      borderRadius: 1,
+                      py: 0.5,
+                      px: 1.5,
+                      fontSize: "13px",
                       fontFamily: "Inter-Medium, Helvetica",
                       fontWeight: 500,
                       letterSpacing: "-0.08px",
@@ -547,10 +568,11 @@ export const PostCard: React.FC<PostCardProps> = ({
 
             {/* Replies Display */}
             {post.replies && post.replies.length > 0 && (
-              <Stack spacing={2} sx={{ mt: 2, mb: 2, position: "relative", overflow: "visible" }}>
+              <Stack spacing={0.5} sx={{ mt: 1, mb: 0.5, position: "relative", overflow: "visible" }}>
                 <Divider sx={{ borderColor: darkMode ? "#374151" : "#e9e7e4" }} />
                 
-                {buildReplyTree(post.replies).map((reply) => (
+                <Box sx={{ pt: 1.5 }}>
+                  {buildReplyTree(post.replies).map((reply) => (
                   <ReplyItem
                     key={reply.id}
                     reply={reply}
@@ -565,14 +587,17 @@ export const PostCard: React.FC<PostCardProps> = ({
                     onNestedReplySubmit={onNestedReplySubmit}
                     replyFieldRefs={replyFieldRefs}
                     formatReactionTooltip={formatReactionTooltip}
+                    collapsedReplies={collapsedReplies}
+                    onToggleReplyCollapse={onToggleReplyCollapse}
                     darkMode={darkMode}
                   />
-                ))}
+                  ))}
+                </Box>
               </Stack>
             )}
           </Stack>
         </CardContent>
-      </Card>
+      </Box>
     </Stack>
   );
 };
