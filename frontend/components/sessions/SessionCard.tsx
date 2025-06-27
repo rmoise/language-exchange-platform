@@ -10,16 +10,21 @@ import {
   Button,
   Avatar,
   AvatarGroup,
-  Tooltip
+  Tooltip,
+  Stack
 } from '@mui/material'
 import {
   People as PeopleIcon,
   AccessTime as TimeIcon,
   Language as LanguageIcon,
   PlayArrow as JoinIcon,
-  Share as ShareIcon
+  Share as ShareIcon,
+  School,
+  Chat,
+  Forum
 } from '@mui/icons-material'
 import { LanguageSession, SessionService } from '@/services/sessionService'
+import { useTheme as useCustomTheme } from '@/contexts/ThemeContext'
 
 interface SessionCardProps {
   session: LanguageSession
@@ -28,6 +33,8 @@ interface SessionCardProps {
 }
 
 export default function SessionCard({ session, onJoinSession, currentUserId }: SessionCardProps) {
+  const { mode } = useCustomTheme()
+  const darkMode = mode === 'dark'
   const [joining, setJoining] = useState(false)
   const [shareSuccess, setShareSuccess] = useState(false)
 
@@ -57,21 +64,32 @@ export default function SessionCard({ session, onJoinSession, currentUserId }: S
     return date.toLocaleDateString()
   }
 
-  const getSessionTypeColor = (type: string) => {
+  const getSessionTypeConfig = (type: string) => {
     switch (type) {
-      case 'practice': return '#22c55e'
-      case 'lesson': return '#f59e0b'
-      case 'conversation': return '#6366f1'
-      default: return '#6b7280'
-    }
-  }
-
-  const getSessionTypeLabel = (type: string) => {
-    switch (type) {
-      case 'practice': return 'Practice'
-      case 'lesson': return 'Lesson'
-      case 'conversation': return 'Conversation'
-      default: return type
+      case 'practice': 
+        return { 
+          color: '#6366f1', 
+          label: 'Practice', 
+          icon: <Chat sx={{ fontSize: 16 }} /> 
+        }
+      case 'lesson': 
+        return { 
+          color: '#22c55e', 
+          label: 'Lesson', 
+          icon: <School sx={{ fontSize: 16 }} /> 
+        }
+      case 'conversation': 
+        return { 
+          color: '#f59e0b', 
+          label: 'Conversation', 
+          icon: <Forum sx={{ fontSize: 16 }} /> 
+        }
+      default: 
+        return { 
+          color: '#6b7280', 
+          label: type, 
+          icon: <Chat sx={{ fontSize: 16 }} /> 
+        }
     }
   }
 
@@ -92,18 +110,27 @@ export default function SessionCard({ session, onJoinSession, currentUserId }: S
     }
   }
 
+  const typeConfig = getSessionTypeConfig(session.session_type)
+
   return (
     <Card
       sx={{
-        backgroundColor: 'rgba(20, 20, 20, 0.6)',
-        backdropFilter: 'blur(16px)',
-        border: '1px solid rgba(255, 255, 255, 0.15)',
-        borderRadius: 2,
+        backgroundColor: darkMode ? 'rgba(30, 30, 30, 0.5)' : 'rgba(255, 255, 255, 0.8)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid',
+        borderColor: darkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+        borderRadius: '16px',
+        overflow: 'hidden',
         transition: 'all 0.3s ease',
+        boxShadow: darkMode
+          ? '0 20px 40px -12px rgba(0, 0, 0, 0.3)'
+          : '0 20px 40px -12px rgba(0, 0, 0, 0.08)',
         '&:hover': {
-          borderColor: 'rgba(99, 102, 241, 0.5)',
-          transform: 'translateY(-2px)',
-          boxShadow: '0 8px 32px rgba(99, 102, 241, 0.2)'
+          borderColor: darkMode ? 'rgba(99, 102, 241, 0.3)' : 'rgba(99, 102, 241, 0.2)',
+          transform: 'translateY(-4px)',
+          boxShadow: darkMode 
+            ? '0 12px 32px rgba(99, 102, 241, 0.25)'
+            : '0 12px 32px rgba(99, 102, 241, 0.15)'
         }
       }}
     >
@@ -111,18 +138,28 @@ export default function SessionCard({ session, onJoinSession, currentUserId }: S
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
           <Box sx={{ flex: 1 }}>
-            <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, mb: 1 }}>
+            <Typography variant="h6" sx={{ 
+              color: darkMode ? 'white' : '#1a1a1a', 
+              fontWeight: 600, 
+              mb: 1,
+              fontSize: '1.1rem'
+            }}>
               {session.name}
             </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <Stack direction="row" spacing={1} alignItems="center">
               <Chip
-                label={getSessionTypeLabel(session.session_type)}
+                icon={typeConfig.icon}
+                label={typeConfig.label}
                 size="small"
                 sx={{
-                  backgroundColor: `${getSessionTypeColor(session.session_type)}20`,
-                  color: getSessionTypeColor(session.session_type),
-                  border: `1px solid ${getSessionTypeColor(session.session_type)}40`,
-                  fontSize: '0.75rem'
+                  backgroundColor: `${typeConfig.color}15`,
+                  color: typeConfig.color,
+                  border: `1px solid ${typeConfig.color}30`,
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  '& .MuiChip-icon': {
+                    color: typeConfig.color
+                  }
                 }}
               />
               {session.target_language && (
@@ -131,20 +168,31 @@ export default function SessionCard({ session, onJoinSession, currentUserId }: S
                   label={session.target_language}
                   size="small"
                   sx={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    color: 'white',
+                    backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                    color: darkMode ? 'white' : '#1a1a1a',
                     fontSize: '0.75rem'
                   }}
                 />
               )}
-            </Box>
+            </Stack>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Tooltip title={`${session.participant_count} / ${session.max_participants} participants`}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <PeopleIcon sx={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.7)' }} />
-                <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 0.5,
+                px: 1.5,
+                py: 0.5,
+                borderRadius: '20px',
+                backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'
+              }}>
+                <PeopleIcon sx={{ fontSize: 16, color: darkMode ? 'rgba(255, 255, 255, 0.7)' : '#6b7280' }} />
+                <Typography variant="caption" sx={{ 
+                  color: darkMode ? 'rgba(255, 255, 255, 0.7)' : '#6b7280',
+                  fontWeight: 600 
+                }}>
                   {session.participant_count}/{session.max_participants}
                 </Typography>
               </Box>
@@ -154,7 +202,11 @@ export default function SessionCard({ session, onJoinSession, currentUserId }: S
 
         {/* Description */}
         {session.description && (
-          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', mb: 2, lineHeight: 1.5 }}>
+          <Typography variant="body2" sx={{ 
+            color: darkMode ? 'rgba(255, 255, 255, 0.8)' : '#4b5563', 
+            mb: 2, 
+            lineHeight: 1.6 
+          }}>
             {session.description}
           </Typography>
         )}
@@ -162,17 +214,25 @@ export default function SessionCard({ session, onJoinSession, currentUserId }: S
         {/* Creator and Time */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-              Created by
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'white', fontWeight: 500 }}>
+            <Avatar sx={{ 
+              width: 24, 
+              height: 24, 
+              fontSize: '0.75rem',
+              backgroundColor: '#6366f1' 
+            }}>
+              {session.creator?.name?.charAt(0) || 'U'}
+            </Avatar>
+            <Typography variant="caption" sx={{ 
+              color: darkMode ? 'rgba(255, 255, 255, 0.7)' : '#6b7280', 
+              fontWeight: 500 
+            }}>
               {session.creator?.name || 'Unknown'}
             </Typography>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <TimeIcon sx={{ fontSize: 14, color: 'rgba(255, 255, 255, 0.6)' }} />
-            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+            <TimeIcon sx={{ fontSize: 14, color: darkMode ? 'rgba(255, 255, 255, 0.6)' : '#9ca3af' }} />
+            <Typography variant="caption" sx={{ color: darkMode ? 'rgba(255, 255, 255, 0.6)' : '#9ca3af' }}>
               {formatTimeAgo(session.created_at)}
             </Typography>
           </Box>
@@ -180,19 +240,37 @@ export default function SessionCard({ session, onJoinSession, currentUserId }: S
 
         {/* Participants Preview */}
         {session.participants && session.participants.length > 0 && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-              Participants:
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1.5, 
+            mb: 3,
+            p: 1.5,
+            borderRadius: '12px',
+            backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
+          }}>
+            <Typography variant="caption" sx={{ 
+              color: darkMode ? 'rgba(255, 255, 255, 0.6)' : '#6b7280',
+              fontWeight: 500 
+            }}>
+              Active now:
             </Typography>
-            <AvatarGroup max={4} sx={{ '& .MuiAvatar-root': { width: 24, height: 24, fontSize: '0.75rem' } }}>
+            <AvatarGroup max={4} sx={{ 
+              '& .MuiAvatar-root': { 
+                width: 28, 
+                height: 28, 
+                fontSize: '0.8rem',
+                border: `2px solid ${darkMode ? '#0f0f0f' : '#fff'}` 
+              } 
+            }}>
               {session.participants.map((participant) => (
                 <Avatar
                   key={participant.id}
                   sx={{
                     backgroundColor: '#6366f1',
-                    width: 24,
-                    height: 24,
-                    fontSize: '0.75rem'
+                    width: 28,
+                    height: 28,
+                    fontSize: '0.8rem'
                   }}
                 >
                   {participant.user?.name?.charAt(0) || 'U'}
@@ -212,11 +290,16 @@ export default function SessionCard({ session, onJoinSession, currentUserId }: S
               startIcon={<JoinIcon />}
               onClick={() => onJoinSession(session.id)}
               sx={{
-                backgroundColor: '#22c55e',
-                '&:hover': { backgroundColor: '#16a34a' }
+                borderRadius: '8px',
+                py: 1.2,
+                fontWeight: 600,
+                background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                '&:hover': { 
+                  background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' 
+                }
               }}
             >
-              Enter Session
+              Enter Your Session
             </Button>
           ) : (
             <Button
@@ -226,15 +309,26 @@ export default function SessionCard({ session, onJoinSession, currentUserId }: S
               onClick={handleJoin}
               disabled={joining || isFull}
               sx={{
-                backgroundColor: isFull ? 'transparent' : '#6366f1',
-                borderColor: isFull ? 'rgba(255, 255, 255, 0.3)' : '#6366f1',
-                color: isFull ? 'rgba(255, 255, 255, 0.5)' : 'white',
-                '&:hover': {
-                  backgroundColor: isFull ? 'rgba(255, 255, 255, 0.1)' : '#5855eb'
-                },
+                borderRadius: '8px',
+                py: 1.2,
+                fontWeight: 600,
+                ...(isFull ? {
+                  backgroundColor: 'transparent',
+                  borderColor: darkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)',
+                  color: darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                  '&:hover': {
+                    backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
+                  }
+                } : {
+                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                  color: 'white',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5558d9 0%, #7c4ed8 100%)'
+                  }
+                }),
                 '&:disabled': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: 'rgba(255, 255, 255, 0.3)'
+                  backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                  color: darkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'
                 }
               }}
             >
@@ -251,11 +345,14 @@ export default function SessionCard({ session, onJoinSession, currentUserId }: S
                 minWidth: 'auto',
                 width: 48,
                 height: 48,
-                borderColor: shareSuccess ? '#22c55e' : 'rgba(255, 255, 255, 0.3)',
-                color: shareSuccess ? '#22c55e' : 'rgba(255, 255, 255, 0.7)',
+                borderRadius: '8px',
+                borderColor: shareSuccess ? '#22c55e' : (darkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)'),
+                color: shareSuccess ? '#22c55e' : (darkMode ? 'rgba(255, 255, 255, 0.7)' : '#6b7280'),
                 '&:hover': {
-                  borderColor: shareSuccess ? '#16a34a' : 'rgba(255, 255, 255, 0.5)',
-                  backgroundColor: shareSuccess ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.1)'
+                  borderColor: shareSuccess ? '#16a34a' : (darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.3)'),
+                  backgroundColor: shareSuccess 
+                    ? 'rgba(34, 197, 94, 0.1)' 
+                    : (darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)')
                 }
               }}
             >

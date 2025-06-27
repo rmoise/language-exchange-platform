@@ -43,6 +43,11 @@ func main() {
 	conversationRepo := postgres.NewConversationRepository(db.DB)
 	messageRepo := postgres.NewMessageRepository(db.DB)
 	sessionRepo := postgres.NewSessionRepository(db)
+	postRepo := postgres.NewPostRepository(db.DB)
+	commentRepo := postgres.NewCommentRepository(db.DB)
+	reactionRepo := postgres.NewReactionRepository(db.DB)
+	bookmarkRepo := postgres.NewBookmarkRepository(db.DB)
+	connectionRepo := postgres.NewConnectionRepository(db.DB)
 
 	// Initialize WebSocket hub
 	wsHub := websocket.NewHub()
@@ -55,6 +60,9 @@ func main() {
 	conversationService := services.NewConversationService(conversationRepo, userRepo, messageRepo, matchRepo)
 	messageService := services.NewMessageService(messageRepo, conversationRepo, userRepo, wsHub)
 	sessionService := services.NewSessionService(sessionRepo, userRepo, matchRepo)
+	postService := services.NewPostService(postRepo, commentRepo, reactionRepo, userRepo)
+	bookmarkService := services.NewBookmarkService(bookmarkRepo, postRepo)
+	connectionService := services.NewConnectionService(connectionRepo, userRepo)
 	log.Println("DEBUG: Creating translation service with URL:", cfg.LibreTranslateURL)
 	translationService := services.NewTranslationService(cfg.LibreTranslateURL, cfg.LibreTranslateAPIKey)
 	log.Println("DEBUG: Creating upload service with dir:", cfg.UploadsDir, "max size:", cfg.MaxUploadSize)
@@ -71,10 +79,16 @@ func main() {
 	messageHandler := handlers.NewMessageHandler(messageService, conversationService)
 	sessionHandler := handlers.NewSessionHandler(sessionService, wsHub)
 	wsHandler := handlers.NewWebSocketHandler(wsHub, sessionService)
+	postHandler := handlers.NewPostHandler(postService)
+	bookmarkHandler := handlers.NewBookmarkHandler(bookmarkService)
+	connectionHandler := handlers.NewConnectionHandler(connectionService)
 	log.Println("DEBUG: Creating translation handler")
 	translationHandler := handlers.NewTranslationHandler(translationService)
 	log.Println("DEBUG: Creating upload handler")
 	uploadHandler := handlers.NewUploadHandler(uploadService, userService)
+	
+	// Start rate limit cleanup goroutine
+	go handlers.CleanupRateLimits()
 
 	// Setup Gin router
 	if cfg.Environment == "production" {
@@ -190,6 +204,25 @@ func main() {
 				upload.POST("/images", uploadHandler.UploadMultipleImages)
 			}
 
+			// Connection routes
+			connections := protected.Group("/connections")
+			{
+				connections.POST("/toggle", connectionHandler.ToggleFollow)
+				connections.GET("/following", connectionHandler.GetFollowing)
+				connections.GET("/followers", connectionHandler.GetFollowers)
+				connections.GET("/status/:userId", connectionHandler.GetConnectionStatus)
+				connections.GET("/users/:userId/following", connectionHandler.GetUserFollowing)
+				connections.GET("/users/:userId/followers", connectionHandler.GetUserFollowers)
+			}
+
+			// Bookmark routes
+			bookmarks := protected.Group("/bookmarks")
+			{
+				bookmarks.POST("", bookmarkHandler.ToggleBookmark)
+				bookmarks.GET("", bookmarkHandler.GetUserBookmarks)
+				bookmarks.GET("/status/:postId", bookmarkHandler.CheckBookmarkStatus)
+			}
+
 			// WebSocket routes  
 			ws := protected.Group("/ws")
 			{
@@ -206,6 +239,9 @@ func main() {
 		{
 			wsSession.GET("/:sessionId", wsHandler.HandleSessionWebSocket)
 		}
+		
+		// Post routes (mixed public/protected, handled internally)
+		postHandler.RegisterRoutes(api, handlers.AuthMiddleware(authService), handlers.OptionalAuthMiddleware(authService))
 	}
 
 	// Start server

@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Exchange Community</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #36393f;
+            color: #dcddde;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Left Sidebar - Language Communities */
+        .servers-sidebar {
+            width: 72px;
+            background-color: #202225;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0;
+            gap: 8px;
+        }
+
+        .server-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #7289da, #5865f2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .server-icon:hover {
+            border-radius: 15px;
+            transform: translateY(-2px);
+        }
+
+        .server-icon.active::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 40px;
+            background: white;
+            border-radius: 2px;
+        }
+
+        .server-icon.spanish { background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
+        .server-icon.french { background: linear-gradient(135deg, #4834d4, #686de0); }
+        .server-icon.japanese { background: linear-gradient(135deg, #ff9ff3, #f368e0); }
+        .server-icon.german { background: linear-gradient(135deg, #feca57, #ff9f43); }
+        .server-icon.italian { background: linear-gradient(135deg, #48dbfb, #0abde3); }
+        .server-icon.korean { background: linear-gradient(135deg, #ff6348, #ff4757); }
+
+        .server-separator {
+            width: 32px;
+            height: 2px;
+            background: #36393f;
+            border-radius: 1px;
+            margin: 4px 0;
+        }
+
+        /* Channels Sidebar */
+        .channels-sidebar {
+            width: 240px;
+            background-color: #2f3136;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .server-header {
+            height: 48px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #202225;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+
+        .channels-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 8px;
+        }
+
+        .channel-category {
+            color: #8e9297;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            margin: 16px 0 4px 16px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .channel-category:first-child {
+            margin-top: 0;
+        }
+
+        .channel-item {
+            padding: 6px 8px;
+            margin: 1px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #8e9297;
+            font-size: 14px;
+        }
+
+        .channel-item:hover {
+            background-color: #393c42;
+            color: #dcddde;
+        }
+
+        .channel-item.active {
+            background-color: #42464d;
+            color: white;
+        }
+
+        .channel-icon {
+            font-size: 16px;
+        }
+
+        .voice-channel {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .voice-participants {
+            font-size: 12px;
+            color: #72767d;
+        }
+
+        .user-area {
+            padding: 8px;
+            background-color: #292b2f;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #7289da, #5865f2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .user-info {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .user-level {
+            font-size: 12px;
+            color: #72767d;
+        }
+
+        .user-xp {
+            font-size: 10px;
+            color: #ffd700;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        /* Main Chat Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #36393f;
+        }
+
+        .chat-header {
+            height: 48px;
+            padding: 0 16px;
+            border-bottom: 1px solid #202225;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            gap: 16px;
+            padding: 2px 0;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #7289da, #5865f2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .message-author {
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .message-timestamp {
+            font-size: 12px;
+            color: #72767d;
+        }
+
+        .role-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: #5865f2;
+            color: white;
+            font-weight: 600;
+        }
+
+        .role-badge.native { background: #57f287; color: #000; }
+        .role-badge.advanced { background: #fee75c; color: #000; }
+        .role-badge.intermediate { background: #faa61a; color: #000; }
+        .role-badge.beginner { background: #f23f42; }
+
+        .message-text {
+            line-height: 1.375;
+            color: #dcddde;
+        }
+
+        .embed {
+            background: #2f3136;
+            border-left: 4px solid #5865f2;
+            border-radius: 4px;
+            padding: 16px;
+            margin: 8px 0;
+            max-width: 520px;
+        }
+
+        .embed-title {
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .embed-description {
+            color: #dcddde;
+            font-size: 14px;
+            line-height: 1.375;
+        }
+
+        .chat-input-container {
+            padding: 24px;
+            background-color: #40444b;
+        }
+
+        .chat-input {
+            background: #40444b;
+            border: none;
+            border-radius: 8px;
+            padding: 11px 16px;
+            color: #dcddde;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .chat-input::placeholder {
+            color: #72767d;
+        }
+
+        /* Right Sidebar */
+        .members-sidebar {
+            width: 240px;
+            background-color: #2f3136;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .members-header {
+            padding: 16px;
+            border-bottom: 1px solid #202225;
+            font-weight: 600;
+        }
+
+        .members-list {
+            flex: 1;
+            padding: 16px 8px;
+        }
+
+        .member-category {
+            color: #8e9297;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            margin: 24px 0 8px 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .member-category:first-child {
+            margin-top: 0;
+        }
+
+        .member-count {
+            background: #36393f;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+        }
+
+        .member-item {
+            padding: 2px 8px;
+            border-radius: 3px;
+            margin: 1px 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .member-item:hover {
+            background-color: #42464d;
+        }
+
+        .member-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #7289da, #5865f2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+            position: relative;
+        }
+
+        .status-indicator {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid #2f3136;
+        }
+
+        .status-online { background: #57f287; }
+        .status-away { background: #faa61a; }
+        .status-offline { background: #80848e; }
+
+        .member-info {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .member-name {
+            color: #dcddde;
+            font-weight: 500;
+        }
+
+        .member-activity {
+            font-size: 12px;
+            color: #72767d;
+        }
+
+        /* Leaderboard Section */
+        .leaderboard-section {
+            background: #36393f;
+            margin: 8px;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .leaderboard-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+            font-size: 12px;
+        }
+
+        .leaderboard-rank {
+            width: 16px;
+            text-align: center;
+            font-weight: 600;
+            color: #ffd700;
+        }
+
+        .leaderboard-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #7289da, #5865f2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            font-weight: bold;
+        }
+
+        .leaderboard-info {
+            flex: 1;
+        }
+
+        .leaderboard-name {
+            color: #dcddde;
+            font-weight: 500;
+        }
+
+        .leaderboard-score {
+            color: #72767d;
+            font-size: 10px;
+        }
+
+        /* Challenges Section */
+        .challenges-section {
+            background: #36393f;
+            margin: 8px;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .challenges-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .challenge-item {
+            background: #40444b;
+            border-radius: 6px;
+            padding: 8px;
+            margin: 4px 0;
+            font-size: 12px;
+        }
+
+        .challenge-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .challenge-icon {
+            font-size: 14px;
+        }
+
+        .challenge-title-text {
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .challenge-xp {
+            color: #ffd700;
+            font-size: 10px;
+            margin-left: auto;
+        }
+
+        .challenge-description {
+            color: #dcddde;
+            margin-bottom: 4px;
+        }
+
+        .challenge-progress {
+            background: #202225;
+            height: 4px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .challenge-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #5865f2, #7289da);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .challenge-completed {
+            opacity: 0.6;
+        }
+
+        .challenge-completed .challenge-progress-fill {
+            background: #57f287;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #18191c;
+            color: #ffffff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Boost indicator */
+        .boost-indicator {
+            background: linear-gradient(45deg, #ff73fa, #17acff);
+            width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        /* Language flag emojis */
+        .flag {
+            font-size: 16px;
+            margin-right: 4px;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #2f3136;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #202225;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #40444b;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Sidebar - Language Communities -->
+        <div class="servers-sidebar">
+            <div class="server-icon active" data-tooltip="Language Exchange Hub">🌍</div>
+            <div class="server-separator"></div>
+            <div class="server-icon spanish" data-tooltip="Spanish Learners">ES</div>
+            <div class="server-icon french" data-tooltip="Français Club">FR</div>
+            <div class="server-icon japanese" data-tooltip="日本語 Community">JP</div>
+            <div class="server-icon german" data-tooltip="Deutsch Gruppe">DE</div>
+            <div class="server-icon italian" data-tooltip="Italiano Amici">IT</div>
+            <div class="server-icon korean" data-tooltip="한국어 Friends">KR</div>
+            <div class="server-separator"></div>
+            <div class="server-icon" data-tooltip="Add Community">+</div>
+        </div>
+
+        <!-- Channels Sidebar -->
+        <div class="channels-sidebar">
+            <div class="server-header">
+                <span>🌍 Language Exchange Hub</span>
+                <div class="boost-indicator">✨</div>
+            </div>
+
+            <div class="channels-list">
+                <div class="channel-category">
+                    📝 Text Channels
+                </div>
+                <div class="channel-item active">
+                    <span class="channel-icon">#</span>
+                    <span>general</span>
+                </div>
+                <div class="channel-item">
+                    <span class="channel-icon">#</span>
+                    <span>grammar-help</span>
+                </div>
+                <div class="channel-item">
+                    <span class="channel-icon">#</span>
+                    <span>daily-challenges</span>
+                </div>
+                <div class="channel-item">
+                    <span class="channel-icon">#</span>
+                    <span>word-of-the-day</span>
+                </div>
+                <div class="channel-item">
+                    <span class="channel-icon">#</span>
+                    <span>achievements</span>
+                </div>
+                <div class="channel-item">
+                    <span class="channel-icon">#</span>
+                    <span>find-partners</span>
+                </div>
+
+                <div class="channel-category">
+                    🎤 Voice Channels
+                </div>
+                <div class="channel-item voice-channel">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="channel-icon">🔊</span>
+                        <span>Beginner Practice</span>
+                    </div>
+                    <span class="voice-participants">3</span>
+                </div>
+                <div class="channel-item voice-channel">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="channel-icon">🔊</span>
+                        <span>Intermediate Chat</span>
+                    </div>
+                    <span class="voice-participants">7</span>
+                </div>
+                <div class="channel-item voice-channel">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="channel-icon">🔊</span>
+                        <span>Advanced Discussion</span>
+                    </div>
+                    <span class="voice-participants">2</span>
+                </div>
+                <div class="channel-item">
+                    <span class="channel-icon">🔊</span>
+                    <span>Pronunciation Help</span>
+                </div>
+
+                <div class="channel-category">
+                    🎯 Study Rooms
+                </div>
+                <div class="channel-item">
+                    <span class="channel-icon">📚</span>
+                    <span>Flashcard Sessions</span>
+                </div>
+                <div class="channel-item voice-channel">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="channel-icon">✏️</span>
+                        <span>Writing Workshop</span>
+                    </div>
+                    <span class="voice-participants">5</span>
+                </div>
+                <div class="channel-item">
+                    <span class="channel-icon">🎬</span>
+                    <span>Movie Night</span>
+                </div>
+            </div>
+
+            <div class="user-area">
+                <div class="user-avatar">You</div>
+                <div class="user-info">
+                    <div>You</div>
+                    <div class="user-level">Level 4 • Intermediate</div>
+                    <div class="user-xp">
+                        ⭐ 675 / 1000 XP
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="main-content">
+            <div class="chat-header">
+                <span class="channel-icon">#</span>
+                <span>general</span>
+                <span style="color: #72767d; margin-left: 8px;">|</span>
+                <span style="color: #72767d; font-size: 14px; font-weight: 400;">Welcome to the main community chat!</span>
+            </div>
+
+            <div class="chat-messages">
+                <div class="message">
+                    <div class="message-avatar">MG</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">Maria García</span>
+                            <span class="role-badge native">Native Speaker</span>
+                            <span class="message-timestamp">Today at 2:45 PM</span>
+                        </div>
+                        <div class="message-text">¡Hola everyone! I just completed my daily challenge. Who wants to practice conversation? 🎉</div>
+                    </div>
+                </div>
+
+                <div class="message">
+                    <div class="message-avatar">YT</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">Yuki Tanaka</span>
+                            <span class="role-badge advanced">Advanced</span>
+                            <span class="message-timestamp">Today at 2:47 PM</span>
+                        </div>
+                        <div class="message-text">@Maria García I'd love to! I'm working on my Spanish pronunciation. Could we do a voice chat?</div>
+                        <div class="embed">
+                            <div class="embed-title">🎯 Achievement Unlocked!</div>
+                            <div class="embed-description">Yuki just earned the "Week Warrior" badge for maintaining a 7-day streak! 🔥</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="message">
+                    <div class="message-avatar">SC</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">Sarah Chen</span>
+                            <span class="role-badge intermediate">Intermediate</span>
+                            <span class="message-timestamp">Today at 2:50 PM</span>
+                        </div>
+                        <div class="message-text">Great job Yuki! 🎊 I'm also looking for speaking practice. Anyone want to join a group session?</div>
+                    </div>
+                </div>
+
+                <div class="message">
+                    <div class="message-avatar">PD</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">Pierre Dubois</span>
+                            <span class="role-badge beginner">Beginner</span>
+                            <span class="message-timestamp">Today at 2:52 PM</span>
+                        </div>
+                        <div class="message-text">Can someone help me with this sentence? "I have been learning Spanish for two months" - ¿Cómo se dice en español?</div>
+                    </div>
+                </div>
+
+                <div class="message">
+                    <div class="message-avatar">MG</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">Maria García</span>
+                            <span class="role-badge native">Native Speaker</span>
+                            <span class="message-timestamp">Today at 2:53 PM</span>
+                        </div>
+                        <div class="message-text">@Pierre Dubois "He estado aprendiendo español durante dos meses" 😊 
+                        
+The key is using "he estado" (I have been) + gerund "aprendiendo" (learning)</div>
+                        <div class="embed">
+                            <div class="embed-title">💡 Grammar Tip</div>
+                            <div class="embed-description">Present Perfect Continuous in Spanish uses "haber estado" + gerund (-ando/-iendo). This expresses actions that started in the past and continue to the present.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="message">
+                    <div class="message-avatar">AL</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">Alex Kim</span>
+                            <span class="role-badge advanced">Advanced</span>
+                            <span class="message-timestamp">Today at 2:55 PM</span>
+                        </div>
+                        <div class="message-text">Just hit my monthly XP goal! 🎯 Anyone else crushing their language learning goals this month?</div>
+                    </div>
+                </div>
+
+                <div class="message">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">LangBot</span>
+                            <span class="role-badge" style="background: #57f287; color: #000;">Bot</span>
+                            <span class="message-timestamp">Today at 3:00 PM</span>
+                        </div>
+                        <div class="message-text">🌟 <strong>Word of the Day</strong> 🌟</div>
+                        <div class="embed">
+                            <div class="embed-title">📚 Serendipity (English) | Serendipia (Spanish)</div>
+                            <div class="embed-description"><strong>Definition:</strong> A pleasant surprise; finding something good without looking for it.
+                            
+<strong>Example:</strong> "Meeting my language partner was pure serendipity!" 
+"¡Conocer a mi compañero de idioma fue pura serendipia!"</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" placeholder="Message #general">
+            </div>
+        </div>
+
+        <!-- Right Sidebar - Members & Features -->
+        <div class="members-sidebar">
+            <div class="members-header">Online — 47</div>
+
+            <div class="leaderboard-section">
+                <div class="leaderboard-title">
+                    🏆 Weekly Leaders
+                </div>
+                <div class="leaderboard-item">
+                    <div class="leaderboard-rank">1</div>
+                    <div class="leaderboard-avatar">SC</div>
+                    <div class="leaderboard-info">
+                        <div class="leaderboard-name">Sarah Chen</div>
+                        <div class="leaderboard-score">520 XP</div>
+                    </div>
+                </div>
+                <div class="leaderboard-item">
+                    <div class="leaderboard-rank">2</div>
+                    <div class="leaderboard-avatar">AK</div>
+                    <div class="leaderboard-info">
+                        <div class="leaderboard-name">Alex Kim</div>
+                        <div class="leaderboard-score">485 XP</div>
+                    </div>
+                </div>
+                <div class="leaderboard-item">
+                    <div class="leaderboard-rank">3</div>
+                    <div class="leaderboard-avatar">MR</div>
+                    <div class="leaderboard-info">
+                        <div class="leaderboard-name">Marco Rossi</div>
+                        <div class="leaderboard-score">470 XP</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="challenges-section">
+                <div class="challenges-title">
+                    ⚡ Daily Challenges
+                </div>
+                <div class="challenge-item">
+                    <div class="challenge-header">
+                        <span class="challenge-icon">💬</span>
+                        <span class="challenge-title-text">Morning Conversation</span>
+                        <span class="challenge-xp">+50 XP</span>
+                    </div>
+                    <div class="challenge-description">Have a 30-minute conversation session</div>
+                    <div class="challenge-progress">
+                        <div class="challenge-progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="challenge-item">
+                    <div class="challenge-header">
+                        <span class="challenge-icon">📚</span>
+                        <span class="challenge-title-text">Vocabulary Builder</span>
+                        <span class="challenge-xp">+30 XP</span>
+                    </div>
+                    <div class="challenge-description">Learn 10 new words</div>
+                    <div class="challenge-progress">
+                        <div class="challenge-progress-fill" style="width: 40%"></div>
+                    </div>
+                </div>
+                <div class="challenge-item challenge-completed">
+                    <div class="challenge-header">
+                        <span class="challenge-icon">🎯</span>
+                        <span class="challenge-title-text">Practice Makes Perfect</span>
+                        <span class="challenge-xp">+20 XP</span>
+                    </div>
+                    <div class="challenge-description">Complete 15 flashcard reviews</div>
+                    <div class="challenge-progress">
+                        <div class="challenge-progress-fill" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="members-list">
+                <div class="member-category">
+                    Native Speakers <span class="member-count">8</span>
+                </div>
+                <div class="member-item">
+                    <div class="member-avatar">
+                        MG
+                        <div class="status-indicator status-online"></div>
+                    </div>
+                    <div class="member-info">
+                        <div class="member-name">Maria García</div>
+                        <div class="member-activity">🇪🇸 Spanish • Teaching mode</div>
+                    </div>
+                </div>
+                <div class="member-item">
+                    <div class="member-avatar">
+                        LR
+                        <div class="status-indicator status-online"></div>
+                    </div>
+                    <div class="member-info">
+                        <div class="member-name">Luis Rodriguez</div>
+                        <div class="member-activity">🇪🇸 Spanish • Voice chat</div>
+                    </div>
+                </div>
+                <div class="member-item">
+                    <div class="member-avatar">
+                        SM
+                        <div class="status-indicator status-away"></div>
+                    </div>
+                    <div class="member-info">
+                        <div class="member-name">Sophie Martin</div>
+                        <div class="member-activity">🇫🇷 French • In session</div>
+                    </div>
+                </div>
+
+                <div class="member-category">
+                    Advanced <span class="member-count">12</span>
+                </div>
+                <div class="member-item">
+                    <div class="member-avatar">
+                        SC
+                        <div class="status-indicator status-online"></div>
+                    </div>
+                    <div class="member-info">
+                        <div class="member-name">Sarah Chen</div>
+                        <div class="member-activity">🔥 45-day streak</div>
+                    </div>
+                </div>
+                <div class="member-item">
+                    <div class="member-avatar">
+                        AK
+                        <div class="status-indicator status-online"></div>
+                    </div>
+                    <div class="member-info">
+                        <div class="member-name">Alex Kim</div>
+                        <div class="member-activity">📚 Learning Spanish</div>
+                    </div>
+                </div>
+                <div class="member-item">
+                    <div class="member-avatar">
+                        YT
+                        <div class="status-indicator status-online"></div>
+                    </div>
+                    <div class="member-info">
+                        <div class="member-name">Yuki Tanaka</div>
+                        <div class="member-activity">🎯 In flashcards</div>
+                    </div>
+                </div>
+
+                <div class="member-category">
+                    Intermediate <span class="member-count">18</span>
+                </div>
+                <div class="member-item">
+                    <div class="member-avatar">
+                        EJ
+                        <div class="status-indicator status-online"></div>
+                    </div>
+                    <div class="member-info">
+                        <div class="member-name">Emma Johnson</div>
+                        <div class="member-activity">🎤 Voice practice</div>
+                    </div>
+                </div>
+                <div class="member-item">
+                    <div class="member-avatar">
+                        MR
+                        <div class="status-indicator status-online"></div>
+                    </div>
+                    <div class="member-info">
+                        <div class="member-name">Marco Rossi</div>
+                        <div class="member-activity">✏️ Writing workshop</div>
+                    </div>
+                </div>
+
+                <div class="member-category">
+                    Beginners <span class="member-count">9</span>
+                </div>
+                <div class="member-item">
+                    <div class="member-avatar">
+                        PD
+                        <div class="status-indicator status-online"></div>
+                    </div>
+                    <div class="member-info">
+                        <div class="member-name">Pierre Dubois</div>
+                        <div class="member-activity">❓ Asking questions</div>
+                    </div>
+                </div>
+                <div class="member-item">
+                    <div class="member-avatar">
+                        AM
+                        <div class="status-indicator status-away"></div>
+                    </div>
+                    <div class="member-info">
+                        <div class="member-name">Anna Mueller</div>
+                        <div class="member-activity">📱 Mobile app</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

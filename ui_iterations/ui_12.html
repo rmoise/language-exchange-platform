@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Portfolio Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            /* Colors from staking design system */
+            --primary-purple: #8B7FDB;
+            --primary-purple-light: #A394FF;
+            --primary-purple-dark: #6B5FCF;
+            --primary-gradient: linear-gradient(135deg, #8B7FDB 0%, #B8ACFF 100%);
+            
+            --bg-dark: #0F0F14;
+            --bg-dark-secondary: #1A1A24;
+            --bg-dark-tertiary: #252532;
+            --bg-card: #1E1E2E;
+            --bg-card-hover: #262637;
+            
+            --text-primary: #FFFFFF;
+            --text-secondary: #B8BCC8;
+            --text-tertiary: #7B7F8E;
+            --text-muted: #4A4D5A;
+            
+            --success: #22C55E;
+            --success-light: #4ADE80;
+            --error: #EF4444;
+            --error-light: #F87171;
+            --warning: #F59E0B;
+            --info: #3B82F6;
+            
+            --chart-positive: #22C55E;
+            --chart-negative: #EF4444;
+            
+            --accent-pink: #EC4899;
+            --accent-blue: #3B82F6;
+            --accent-cyan: #06B6D4;
+            --accent-orange: #F97316;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+        
+        /* Layout */
+        .dashboard {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-dark-secondary);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 2rem 1.5rem;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 3rem;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.75rem;
+            color: var(--text-tertiary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item:hover {
+            background-color: rgba(139, 127, 219, 0.1);
+            color: var(--primary-purple);
+        }
+        
+        .nav-item.active {
+            background-color: rgba(139, 127, 219, 0.2);
+            color: var(--primary-purple);
+        }
+        
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            opacity: 0.7;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        
+        .header {
+            margin-bottom: 2rem;
+        }
+        
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .page-subtitle {
+            color: var(--text-secondary);
+        }
+        
+        /* Portfolio Value Card */
+        .portfolio-value-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.25rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .portfolio-value-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(139, 127, 219, 0.1) 0%, transparent 70%);
+            transform: translate(100px, -100px);
+        }
+        
+        .portfolio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .portfolio-info h2 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .portfolio-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+        
+        .portfolio-change {
+            text-align: right;
+        }
+        
+        .change-percentage {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+        
+        .change-arrow {
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 10px solid var(--success);
+        }
+        
+        .change-period {
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .metric-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        }
+        
+        .metric-label {
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .metric-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .metric-change {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .positive {
+            color: var(--success);
+        }
+        
+        .negative {
+            color: var(--error);
+        }
+        
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+        
+        .chart-legend {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        /* Donut Chart */
+        .donut-chart-container {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            margin: 0 auto;
+        }
+        
+        .donut-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        
+        .donut-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .donut-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+        
+        /* Line Chart Placeholder */
+        .line-chart {
+            height: 250px;
+            background: linear-gradient(180deg, rgba(139, 127, 219, 0.1) 0%, transparent 100%);
+            border-radius: 0.75rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .chart-grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0px, transparent 1px, transparent 50px, rgba(255,255,255,0.05) 50px),
+                repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0px, transparent 1px, transparent 50px, rgba(255,255,255,0.05) 50px);
+        }
+        
+        /* Assets Table */
+        .assets-section {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .view-all-btn {
+            background: transparent;
+            color: var(--primary-purple);
+            border: none;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+        
+        .view-all-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .assets-table {
+            width: 100%;
+        }
+        
+        .asset-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            align-items: center;
+        }
+        
+        .asset-row:last-child {
+            border-bottom: none;
+        }
+        
+        .asset-header {
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .asset-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .asset-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(139, 127, 219, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+        
+        .asset-name {
+            font-weight: 600;
+        }
+        
+        .asset-type {
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+        }
+        
+        .proficiency-bar {
+            width: 100px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .proficiency-fill {
+            height: 100%;
+            background: var(--primary-gradient);
+            transition: width 0.3s ease;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .btn {
+            padding: 0.75rem 2rem;
+            border-radius: 0.75rem;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(139, 127, 219, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(139, 127, 219, 0.1);
+            color: var(--primary-purple);
+            border: 1px solid var(--primary-purple);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(139, 127, 219, 0.2);
+        }
+        
+        /* Risk Analysis Card */
+        .risk-card {
+            background: linear-gradient(135deg, rgba(139, 127, 219, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%);
+            border: 1px solid rgba(139, 127, 219, 0.3);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .risk-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .risk-score {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .risk-badge {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success-light);
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .risk-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+        
+        .risk-metric {
+            text-align: center;
+        }
+        
+        .risk-metric-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .risk-metric-label {
+            color: var(--text-tertiary);
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">💼</div>
+                <div class="logo-text">LangFolio</div>
+            </div>
+            
+            <nav>
+                <a href="#" class="nav-item active">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                    </svg>
+                    Portfolio Overview
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+                    </svg>
+                    Language Assets
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
+                    </svg>
+                    Performance
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l-5.5 9h11z M12 2l5.5 9H6.5z M17.5 11L12 22l-5.5-11z"/>
+                    </svg>
+                    Rebalancing
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                    </svg>
+                    Study Plan
+                </a>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <h1 class="page-title">Language Portfolio</h1>
+                <p class="page-subtitle">Track your linguistic investments and returns</p>
+            </header>
+            
+            <!-- Portfolio Value Card -->
+            <div class="portfolio-value-card">
+                <div class="portfolio-header">
+                    <div class="portfolio-info">
+                        <h2>8,420 hrs</h2>
+                        <p class="portfolio-subtitle">Total Language Investment</p>
+                    </div>
+                    <div class="portfolio-change">
+                        <div class="change-percentage">
+                            <div class="change-arrow"></div>
+                            +24.3%
+                        </div>
+                        <div class="change-period">This month</div>
+                    </div>
+                </div>
+                
+                <!-- Metrics Grid -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Active Languages</div>
+                        <div class="metric-value">5</div>
+                        <div class="metric-change positive">+1 new</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Avg. Proficiency</div>
+                        <div class="metric-value">72%</div>
+                        <div class="metric-change positive">+5.2%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Study Streak</div>
+                        <div class="metric-value">47d</div>
+                        <div class="metric-change positive">Best: 52d</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">ROI Score</div>
+                        <div class="metric-value">8.4x</div>
+                        <div class="metric-change positive">+1.2x</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts Section -->
+            <div class="charts-section">
+                <!-- Language Distribution -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Language Allocation</h3>
+                    </div>
+                    <div class="donut-chart-container">
+                        <svg viewBox="0 0 100 100" style="transform: rotate(-90deg);">
+                            <!-- Spanish -->
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#8B7FDB" stroke-width="15" 
+                                    stroke-dasharray="100 251.2" stroke-dashoffset="0"/>
+                            <!-- French -->
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#EC4899" stroke-width="15" 
+                                    stroke-dasharray="75 251.2" stroke-dashoffset="-100"/>
+                            <!-- Japanese -->
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#3B82F6" stroke-width="15" 
+                                    stroke-dasharray="50 251.2" stroke-dashoffset="-175"/>
+                            <!-- German -->
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#06B6D4" stroke-width="15" 
+                                    stroke-dasharray="26.2 251.2" stroke-dashoffset="-225"/>
+                        </svg>
+                        <div class="donut-center">
+                            <div class="donut-value">100%</div>
+                            <div class="donut-label">Allocated</div>
+                        </div>
+                    </div>
+                    <div class="chart-legend" style="margin-top: 1.5rem; justify-content: center;">
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #8B7FDB;"></div>
+                            <span>Spanish 40%</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #EC4899;"></div>
+                            <span>French 30%</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #3B82F6;"></div>
+                            <span>Japanese 20%</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #06B6D4;"></div>
+                            <span>German 10%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress Chart -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Portfolio Performance</h3>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background: var(--primary-purple);"></div>
+                                <span>Overall</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background: var(--success);"></div>
+                                <span>Target</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="line-chart">
+                        <div class="chart-grid"></div>
+                        <!-- Placeholder for actual chart -->
+                        <svg width="100%" height="100%" viewBox="0 0 400 250" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#8B7FDB;stop-opacity:0.3" />
+                                    <stop offset="100%" style="stop-color:#8B7FDB;stop-opacity:0" />
+                                </linearGradient>
+                            </defs>
+                            <path d="M 0,200 Q 100,150 200,100 T 400,50" fill="none" stroke="#8B7FDB" stroke-width="2"/>
+                            <path d="M 0,200 Q 100,150 200,100 T 400,50 L 400,250 L 0,250 Z" fill="url(#areaGradient)"/>
+                            <path d="M 0,180 L 400,80" fill="none" stroke="#22C55E" stroke-width="2" stroke-dasharray="5,5" opacity="0.5"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Language Assets Table -->
+            <div class="assets-section">
+                <div class="section-header">
+                    <h3 class="section-title">Language Assets</h3>
+                    <button class="view-all-btn">View All →</button>
+                </div>
+                
+                <div class="assets-table">
+                    <div class="asset-row asset-header">
+                        <div>LANGUAGE</div>
+                        <div>PROFICIENCY</div>
+                        <div>TIME INVESTED</div>
+                        <div>ROI</div>
+                        <div>STATUS</div>
+                    </div>
+                    
+                    <div class="asset-row">
+                        <div class="asset-info">
+                            <div class="asset-icon">🇪🇸</div>
+                            <div>
+                                <div class="asset-name">Spanish</div>
+                                <div class="asset-type">Romance Language</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="proficiency-bar">
+                                <div class="proficiency-fill" style="width: 85%;"></div>
+                            </div>
+                        </div>
+                        <div>3,368 hrs</div>
+                        <div class="positive">+12.4x</div>
+                        <div><span class="risk-badge">Active</span></div>
+                    </div>
+                    
+                    <div class="asset-row">
+                        <div class="asset-info">
+                            <div class="asset-icon">🇫🇷</div>
+                            <div>
+                                <div class="asset-name">French</div>
+                                <div class="asset-type">Romance Language</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="proficiency-bar">
+                                <div class="proficiency-fill" style="width: 70%;"></div>
+                            </div>
+                        </div>
+                        <div>2,526 hrs</div>
+                        <div class="positive">+8.2x</div>
+                        <div><span class="risk-badge">Active</span></div>
+                    </div>
+                    
+                    <div class="asset-row">
+                        <div class="asset-info">
+                            <div class="asset-icon">🇯🇵</div>
+                            <div>
+                                <div class="asset-name">Japanese</div>
+                                <div class="asset-type">East Asian</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="proficiency-bar">
+                                <div class="proficiency-fill" style="width: 60%;"></div>
+                            </div>
+                        </div>
+                        <div>1,684 hrs</div>
+                        <div class="positive">+5.1x</div>
+                        <div><span class="risk-badge">Active</span></div>
+                    </div>
+                    
+                    <div class="asset-row">
+                        <div class="asset-info">
+                            <div class="asset-icon">🇩🇪</div>
+                            <div>
+                                <div class="asset-name">German</div>
+                                <div class="asset-type">Germanic</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="proficiency-bar">
+                                <div class="proficiency-fill" style="width: 45%;"></div>
+                            </div>
+                        </div>
+                        <div>842 hrs</div>
+                        <div class="positive">+3.2x</div>
+                        <div><span class="risk-badge" style="background: rgba(245, 158, 11, 0.2); color: #F59E0B;">Building</span></div>
+                    </div>
+                </div>
+                
+                <!-- Risk Analysis -->
+                <div class="risk-card">
+                    <div class="risk-header">
+                        <h4 class="chart-title">Portfolio Risk Analysis</h4>
+                        <div class="risk-score">
+                            <span>Risk Score:</span>
+                            <span class="risk-badge">Low Risk</span>
+                        </div>
+                    </div>
+                    <div class="risk-metrics">
+                        <div class="risk-metric">
+                            <div class="risk-metric-value">82%</div>
+                            <div class="risk-metric-label">Diversification Score</div>
+                        </div>
+                        <div class="risk-metric">
+                            <div class="risk-metric-value">4.2</div>
+                            <div class="risk-metric-label">Difficulty Balance</div>
+                        </div>
+                        <div class="risk-metric">
+                            <div class="risk-metric-value">91%</div>
+                            <div class="risk-metric-label">Consistency Rate</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn btn-primary">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        Add Language Asset
+                    </button>
+                    <button class="btn btn-secondary">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        Rebalance Portfolio
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

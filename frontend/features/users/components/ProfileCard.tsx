@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { getAbsoluteImageUrl } from '@/utils/imageUrl';
 import UserAvatar from "@/components/ui/UserAvatar";
 import { MatchService } from "@/features/matches/matchService";
+import { NewUserBadge } from "@/components/ui/NewUserBadge";
 
 // Helper function to map languages to emoji flags
 const getLanguageEmojiFlag = (language: string): string => {
@@ -79,6 +80,8 @@ interface User {
   is_verified?: boolean;
   followers_count?: number;
   projects_count?: number;
+  isNew?: boolean;
+  createdAt?: string;
 }
 
 interface ProfileCardProps {
@@ -273,14 +276,17 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       <Box
         onClick={handleCardClick}
         sx={{
-          backgroundColor: darkMode ? "rgba(0, 0, 0, 0.4)" : "white",
-          backdropFilter: darkMode ? "blur(10px)" : "none",
+          backgroundColor: darkMode ? "rgba(30, 30, 30, 0.5)" : "rgba(255, 255, 255, 0.8)",
+          backdropFilter: "blur(20px)",
           width: 322,
           height: 360,
           p: 3.5,
           borderRadius: "16px",
-          border: darkMode ? "1px solid #374151" : "none",
-          boxShadow: darkMode ? "0 4px 20px rgba(99, 102, 241, 0.2)" : "0 2px 12px rgba(0,0,0,0.08)",
+          border: "1px solid",
+          borderColor: darkMode ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)",
+          boxShadow: darkMode
+            ? "0 20px 40px -12px rgba(0, 0, 0, 0.3)"
+            : "0 20px 40px -12px rgba(0, 0, 0, 0.08)",
           transition: "all 0.3s ease",
           cursor: 'pointer',
           transform: "translate3d(0, 0, 0)",
@@ -288,13 +294,18 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           display: "flex",
           flexDirection: "column",
           "&:hover": {
-            backgroundColor: darkMode ? "rgba(0, 0, 0, 0.6)" : "white",
-            boxShadow: darkMode ? "0 16px 40px rgba(99, 102, 241, 0.4)" : "0 8px 32px rgba(99, 102, 241, 0.3)",
-            borderColor: darkMode ? "#6366f1" : "transparent",
+            backgroundColor: darkMode ? "rgba(30, 30, 30, 0.7)" : "rgba(255, 255, 255, 0.95)",
+            boxShadow: darkMode
+              ? "0 24px 48px -12px rgba(0, 0, 0, 0.4)"
+              : "0 24px 48px -12px rgba(0, 0, 0, 0.12)",
+            borderColor: darkMode ? "rgba(99, 102, 241, 0.3)" : "rgba(99, 102, 241, 0.2)",
             transform: "translate3d(0, -8px, 0)",
           },
         }}
       >
+        {/* New User Badge */}
+        {user.isNew && <NewUserBadge variant="compact" darkMode={darkMode} />}
+        
         <Stack spacing={3.5} sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
           <Stack direction="row" spacing={3} alignItems="center">
             <UserAvatar

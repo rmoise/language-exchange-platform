@@ -13,17 +13,23 @@ import {
   Card,
   CardContent,
   Skeleton,
-  Grid
+  Grid,
+  Stack,
+  Chip
 } from '@mui/material'
 import {
   Add as AddIcon,
   VideoCall as VideoIcon,
   People as PeopleIcon,
-  History as HistoryIcon
+  History as HistoryIcon,
+  CalendarToday,
+  AccessTime,
+  Language
 } from '@mui/icons-material'
 import { LanguageSession, SessionService } from '@/services/sessionService'
-import CreateSessionDialog from '@/components/sessions/CreateSessionDialog'
+import { CreateSessionModal } from './CreateSessionModal'
 import SessionCard from '@/components/sessions/SessionCard'
+import { useTheme as useCustomTheme } from '@/contexts/ThemeContext'
 
 interface SessionsClientProps {
   currentUser: any
@@ -31,12 +37,16 @@ interface SessionsClientProps {
 
 export default function SessionsClient({ currentUser }: SessionsClientProps) {
   const router = useRouter()
+  const { mode } = useCustomTheme()
+  const darkMode = mode === 'dark'
   const [activeTab, setActiveTab] = useState(0)
   const [sessions, setSessions] = useState<LanguageSession[]>([])
   const [mySessions, setMySessions] = useState<LanguageSession[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [selectedTime, setSelectedTime] = useState('')
 
   useEffect(() => {
     loadSessions()
@@ -69,9 +79,12 @@ export default function SessionsClient({ currentUser }: SessionsClientProps) {
     setActiveTab(newValue)
   }
 
-  const handleSessionCreated = (sessionId: string) => {
-    // Navigate to the new session
-    router.push(`/app/sessions/${sessionId}`)
+  const handleSessionCreated = async (session: any) => {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    console.log('Session created:', session)
+    // In real app, this would call the API and refresh sessions
+    router.push(`/app/sessions/${session.id || 'new'}`)
   }
 
   const handleJoinSession = (sessionId: string) => {
@@ -80,19 +93,21 @@ export default function SessionsClient({ currentUser }: SessionsClientProps) {
 
   const SessionSkeleton = () => (
     <Card sx={{ 
-      backgroundColor: 'rgba(20, 20, 20, 0.6)',
-      border: '1px solid rgba(255, 255, 255, 0.15)',
-      borderRadius: 2
+      backgroundColor: darkMode ? 'rgba(30, 30, 30, 0.5)' : 'white',
+      border: '1px solid',
+      borderColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+      borderRadius: '12px',
+      overflow: 'hidden'
     }}>
       <CardContent sx={{ p: 3 }}>
-        <Skeleton variant="text" width="80%" height={32} sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
+        <Skeleton variant="text" width="80%" height={32} sx={{ bgcolor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }} />
         <Box sx={{ display: 'flex', gap: 1, my: 2 }}>
-          <Skeleton variant="rounded" width={80} height={24} sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
-          <Skeleton variant="rounded" width={100} height={24} sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
+          <Skeleton variant="rounded" width={80} height={24} sx={{ bgcolor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }} />
+          <Skeleton variant="rounded" width={100} height={24} sx={{ bgcolor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }} />
         </Box>
-        <Skeleton variant="text" width="100%" height={20} sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
-        <Skeleton variant="text" width="70%" height={20} sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
-        <Skeleton variant="rounded" width="100%" height={40} sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)', mt: 2 }} />
+        <Skeleton variant="text" width="100%" height={20} sx={{ bgcolor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }} />
+        <Skeleton variant="text" width="70%" height={20} sx={{ bgcolor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }} />
+        <Skeleton variant="rounded" width="100%" height={40} sx={{ bgcolor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)', mt: 2 }} />
       </CardContent>
     </Card>
   )
@@ -102,68 +117,100 @@ export default function SessionsClient({ currentUser }: SessionsClientProps) {
       {/* Header */}
       <Box sx={{ mb: 4, textAlign: "center" }}>
         <Typography
-          variant="h4"
-          sx={{ fontWeight: 300, mb: 2, color: "white" }}
+          variant="h3"
+          sx={{ 
+            fontWeight: 700, 
+            mb: 2, 
+            color: darkMode ? 'white' : '#1a1a1a',
+            background: darkMode ? 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)' : 'linear-gradient(135deg, #1a1a1a 0%, #4a4a4a 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}
         >
           Language Sessions
         </Typography>
-        <Typography variant="body1" sx={{ color: "#9ca3af", mb: 3 }}>
+        <Typography variant="h6" sx={{ color: darkMode ? '#9ca3af' : '#6b7280', mb: 3, fontWeight: 400 }}>
           Join collaborative sessions with interactive whiteboards and real-time chat
         </Typography>
       </Box>
         
       {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={3} sx={{ mb: 4, mx: 'auto', maxWidth: 1200 }}>
         <Grid size={{ xs: 12, sm: 4 }}>
           <Box sx={{
-            backgroundColor: 'rgba(20, 20, 20, 0.6)',
+            backgroundColor: darkMode ? 'rgba(99, 102, 241, 0.1)' : 'rgba(99, 102, 241, 0.08)',
             backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: 1.5,
-            p: 2,
-            textAlign: 'center'
+            border: '1px solid',
+            borderColor: darkMode ? 'rgba(99, 102, 241, 0.2)' : 'rgba(99, 102, 241, 0.15)',
+            borderRadius: '16px',
+            p: 3,
+            textAlign: 'center',
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: darkMode 
+                ? '0 8px 24px rgba(99, 102, 241, 0.3)' 
+                : '0 8px 24px rgba(99, 102, 241, 0.15)',
+            }
           }}>
-            <VideoIcon sx={{ fontSize: 32, color: '#6366f1', mb: 1 }} />
-            <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+            <VideoIcon sx={{ fontSize: 40, color: '#6366f1', mb: 2 }} />
+            <Typography variant="h6" sx={{ color: darkMode ? 'white' : '#1a1a1a', fontWeight: 600, mb: 1 }}>
               Interactive
             </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+            <Typography variant="body2" sx={{ color: darkMode ? 'rgba(255, 255, 255, 0.7)' : '#6b7280' }}>
               Whiteboard & Chat
             </Typography>
           </Box>
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
           <Box sx={{
-            backgroundColor: 'rgba(20, 20, 20, 0.6)',
+            backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.1)' : 'rgba(34, 197, 94, 0.08)',
             backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: 1.5,
-            p: 2,
-            textAlign: 'center'
+            border: '1px solid',
+            borderColor: darkMode ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.15)',
+            borderRadius: '16px',
+            p: 3,
+            textAlign: 'center',
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: darkMode 
+                ? '0 8px 24px rgba(34, 197, 94, 0.3)' 
+                : '0 8px 24px rgba(34, 197, 94, 0.15)',
+            }
           }}>
-            <PeopleIcon sx={{ fontSize: 32, color: '#22c55e', mb: 1 }} />
-            <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+            <PeopleIcon sx={{ fontSize: 40, color: '#22c55e', mb: 2 }} />
+            <Typography variant="h6" sx={{ color: darkMode ? 'white' : '#1a1a1a', fontWeight: 600, mb: 1 }}>
               Collaborative
             </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+            <Typography variant="body2" sx={{ color: darkMode ? 'rgba(255, 255, 255, 0.7)' : '#6b7280' }}>
               Real-time Learning
             </Typography>
           </Box>
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
           <Box sx={{
-            backgroundColor: 'rgba(20, 20, 20, 0.6)',
+            backgroundColor: darkMode ? 'rgba(245, 158, 11, 0.1)' : 'rgba(245, 158, 11, 0.08)',
             backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: 1.5,
-            p: 2,
-            textAlign: 'center'
+            border: '1px solid',
+            borderColor: darkMode ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.15)',
+            borderRadius: '16px',
+            p: 3,
+            textAlign: 'center',
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: darkMode 
+                ? '0 8px 24px rgba(245, 158, 11, 0.3)' 
+                : '0 8px 24px rgba(245, 158, 11, 0.15)',
+            }
           }}>
-            <HistoryIcon sx={{ fontSize: 32, color: '#f59e0b', mb: 1 }} />
-            <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+            <HistoryIcon sx={{ fontSize: 40, color: '#f59e0b', mb: 2 }} />
+            <Typography variant="h6" sx={{ color: darkMode ? 'white' : '#1a1a1a', fontWeight: 600, mb: 1 }}>
               Persistent
             </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+            <Typography variant="body2" sx={{ color: darkMode ? 'rgba(255, 255, 255, 0.7)' : '#6b7280' }}>
               Saved Sessions
             </Typography>
           </Box>
@@ -171,18 +218,25 @@ export default function SessionsClient({ currentUser }: SessionsClientProps) {
       </Grid>
 
       {/* Tabs */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 4, mx: 'auto', maxWidth: 1200 }}>
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
+          centered
           sx={{
             '& .MuiTabs-indicator': {
               backgroundColor: '#6366f1',
+              height: 3,
+              borderRadius: '3px 3px 0 0',
             },
             '& .MuiTab-root': {
-              color: '#9ca3af',
+              color: darkMode ? '#9ca3af' : '#6b7280',
+              fontSize: '16px',
+              fontWeight: 500,
+              px: 3,
               '&.Mui-selected': {
                 color: '#6366f1',
+                fontWeight: 600,
               },
             },
           }}
@@ -218,8 +272,9 @@ export default function SessionsClient({ currentUser }: SessionsClientProps) {
       )}
 
       {/* Sessions Content */}
-      {activeTab === 0 && (
-        <Box>
+      <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+        {activeTab === 0 && (
+          <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h5" sx={{ color: 'white', fontWeight: 500 }}>
               Active Sessions
@@ -278,12 +333,12 @@ export default function SessionsClient({ currentUser }: SessionsClientProps) {
                 Create First Session
               </Button>
             </Box>
-          )}
-        </Box>
-      )}
+            )}
+          </Box>
+        )}
 
-      {activeTab === 1 && (
-        <Box>
+        {activeTab === 1 && (
+          <Box>
           <Typography variant="h5" sx={{ color: 'white', fontWeight: 500, mb: 3 }}>
             My Sessions
           </Typography>
@@ -329,9 +384,10 @@ export default function SessionsClient({ currentUser }: SessionsClientProps) {
                 Create Session
               </Button>
             </Box>
-          )}
-        </Box>
-      )}
+            )}
+          </Box>
+        )}
+      </Box>
 
       {/* Floating Action Button */}
       <Fab
@@ -349,11 +405,14 @@ export default function SessionsClient({ currentUser }: SessionsClientProps) {
         <AddIcon />
       </Fab>
 
-      {/* Create Session Dialog */}
-      <CreateSessionDialog
+      {/* Create Session Modal */}
+      <CreateSessionModal
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
-        onSessionCreated={handleSessionCreated}
+        selectedDate={selectedDate}
+        selectedTime={selectedTime}
+        onCreateSession={handleSessionCreated}
+        darkMode={darkMode}
       />
     </Box>
   )

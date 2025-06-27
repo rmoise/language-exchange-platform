@@ -26,8 +26,19 @@ export default function MobileBottomNav() {
 
   // Get current bottom nav value based on pathname
   const getBottomNavValue = () => {
+    // Special handling for posts pages - no item should be highlighted
+    if (pathname.startsWith("/app/posts/") || pathname === "/app/profile/posts") {
+      return -1; // This will unselect all items
+    }
+    
+    // Special handling for profile sub-pages - highlight "Profile"
+    if (pathname.startsWith("/app/profile/")) {
+      const profileItem = bottomNavItems.find(item => item.href === "/app/profile");
+      return profileItem ? bottomNavItems.indexOf(profileItem) : -1;
+    }
+    
     const item = bottomNavItems.find((item) => pathname === item.href);
-    return item ? bottomNavItems.indexOf(item) : 0;
+    return item ? bottomNavItems.indexOf(item) : -1;
   };
 
   const currentIndex = getBottomNavValue();
@@ -64,7 +75,7 @@ export default function MobileBottomNav() {
           return (
             <Box
               key={item.text}
-              onClick={() => router.push(item.href as any)}
+              onClick={() => router.push(item.href)}
               sx={{
                 display: "flex",
                 flexDirection: "column",

@@ -67,13 +67,25 @@ export const TextSelectionHandler: React.FC<TextSelectionHandlerProps> = ({
 
       // Get the selected range
       const range = selection.getRangeAt(0);
+      
+      // Check if selection is within a post content area
+      const container = range.commonAncestorContainer;
+      const element = container.nodeType === Node.TEXT_NODE 
+        ? container.parentElement 
+        : container as HTMLElement;
+      
+      // Only proceed if selection is within a post (check for post-content class or data attribute)
+      const isInPost = element?.closest('[data-post-content="true"]') || 
+                       element?.closest('.post-content');
+      
+      if (!isInPost) {
+        return;
+      }
+
       const rect = range.getBoundingClientRect();
 
       // Get context sentence
-      const container = range.commonAncestorContainer;
-      const parentElement = container.nodeType === Node.TEXT_NODE 
-        ? container.parentElement 
-        : container as HTMLElement;
+      const parentElement = element;
       
       const fullText = parentElement?.textContent || '';
       const context = extractContextSentence(fullText, text);

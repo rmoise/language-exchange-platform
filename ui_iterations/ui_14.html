@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Learning Video Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            /* Colors from design system */
+            --primary-purple: #8B7FDB;
+            --primary-purple-light: #A394FF;
+            --primary-purple-dark: #6B5FCF;
+            --primary-gradient: linear-gradient(135deg, #8B7FDB 0%, #B8ACFF 100%);
+            
+            --bg-dark: #0F0F14;
+            --bg-dark-secondary: #1A1A24;
+            --bg-dark-tertiary: #252532;
+            --bg-card: #1E1E2E;
+            --bg-card-hover: #262637;
+            
+            --text-primary: #FFFFFF;
+            --text-secondary: #B8BCC8;
+            --text-tertiary: #7B7F8E;
+            --text-muted: #4A4D5A;
+            
+            --success: #22C55E;
+            --success-light: #4ADE80;
+            --error: #EF4444;
+            --error-light: #F87171;
+            --warning: #F59E0B;
+            --info: #3B82F6;
+            
+            --accent-pink: #EC4899;
+            --accent-blue: #3B82F6;
+            --accent-cyan: #06B6D4;
+            --accent-orange: #F97316;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+        
+        /* Layout */
+        .player-container {
+            display: flex;
+            min-height: 100vh;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+        
+        /* Left Panel - Video Player */
+        .video-panel {
+            flex: 1;
+            max-width: 900px;
+        }
+        
+        .video-wrapper {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.25rem;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .video-player {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: var(--bg-dark);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .video-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(139, 127, 219, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%);
+        }
+        
+        .play-button {
+            width: 80px;
+            height: 80px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 40px rgba(139, 127, 219, 0.3);
+        }
+        
+        .play-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 60px rgba(139, 127, 219, 0.5);
+        }
+        
+        .play-icon {
+            width: 0;
+            height: 0;
+            border-left: 20px solid white;
+            border-top: 15px solid transparent;
+            border-bottom: 15px solid transparent;
+            margin-left: 5px;
+        }
+        
+        /* Subtitles */
+        .subtitles {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            width: 90%;
+            max-width: 800px;
+        }
+        
+        .subtitle-text {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 1.125rem;
+            line-height: 1.6;
+            backdrop-filter: blur(10px);
+        }
+        
+        .subtitle-translation {
+            color: var(--text-secondary);
+            font-size: 0.975rem;
+            margin-top: 0.5rem;
+        }
+        
+        /* Video Controls */
+        .video-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+            padding: 1.5rem;
+            transition: opacity 0.3s ease;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-gradient);
+            border-radius: 3px;
+            width: 35%;
+            position: relative;
+        }
+        
+        .progress-handle {
+            position: absolute;
+            right: -8px;
+            top: -5px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .controls-left, .controls-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .control-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .time-display {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            min-width: 100px;
+        }
+        
+        /* Video Info */
+        .video-info {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .lesson-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .instructor-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .instructor-avatar {
+            width: 48px;
+            height: 48px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+        
+        .instructor-details h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .native-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success-light);
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .lesson-stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-purple);
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-tertiary);
+        }
+        
+        /* Learning Tools */
+        .learning-tools {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+        }
+        
+        .tools-header {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .tool-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        
+        .tool-btn {
+            background: rgba(139, 127, 219, 0.1);
+            border: 1px solid rgba(139, 127, 219, 0.3);
+            color: var(--primary-purple);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .tool-btn:hover {
+            background: rgba(139, 127, 219, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 127, 219, 0.2);
+        }
+        
+        .tool-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--primary-gradient);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Right Panel - Playlist */
+        .playlist-panel {
+            width: 380px;
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            height: fit-content;
+            position: sticky;
+            top: 1.5rem;
+        }
+        
+        .playlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .playlist-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .playlist-count {
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+        }
+        
+        .playlist-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .playlist-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .playlist-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(4px);
+        }
+        
+        .playlist-item.active {
+            background: rgba(139, 127, 219, 0.2);
+            border-color: var(--primary-purple);
+        }
+        
+        .playlist-thumbnail {
+            width: 80px;
+            height: 60px;
+            background: var(--bg-dark-tertiary);
+            border-radius: 0.5rem;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        .playlist-thumbnail::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid rgba(255, 255, 255, 0.6);
+            border-top: 7px solid transparent;
+            border-bottom: 7px solid transparent;
+        }
+        
+        .playlist-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .playlist-item-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .playlist-item-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+        }
+        
+        .difficulty-badge {
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+        }
+        
+        .difficulty-beginner {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success-light);
+        }
+        
+        .difficulty-intermediate {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+        
+        .difficulty-advanced {
+            background: rgba(236, 72, 153, 0.2);
+            color: var(--accent-pink);
+        }
+        
+        /* Subtitle Controls */
+        .subtitle-controls {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .subtitle-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        
+        .subtitle-option:last-child {
+            margin-bottom: 0;
+        }
+        
+        .subtitle-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .subtitle-select {
+            background: var(--bg-dark-tertiary);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 24px;
+            background: var(--bg-dark-tertiary);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .toggle-switch.active {
+            background: var(--primary-purple);
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+        
+        .toggle-switch.active::after {
+            transform: translateX(24px);
+        }
+        
+        /* Speed Control */
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.25rem;
+            border-radius: 0.5rem;
+        }
+        
+        .speed-btn {
+            padding: 0.25rem 0.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            border-radius: 0.25rem;
+            transition: all 0.3s ease;
+        }
+        
+        .speed-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+        
+        .speed-btn.active {
+            background: var(--primary-purple);
+            color: white;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .player-container {
+                flex-direction: column;
+            }
+            
+            .playlist-panel {
+                width: 100%;
+                position: static;
+            }
+            
+            .video-panel {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="player-container">
+        <!-- Left Panel - Video Player -->
+        <div class="video-panel">
+            <!-- Video Player -->
+            <div class="video-wrapper">
+                <div class="video-player">
+                    <div class="video-placeholder">
+                        <div class="play-button">
+                            <div class="play-icon"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Subtitles -->
+                    <div class="subtitles">
+                        <div class="subtitle-text">
+                            ¿Cómo estás hoy? Espero que tengas un buen día.
+                        </div>
+                        <div class="subtitle-translation">
+                            How are you today? I hope you have a good day.
+                        </div>
+                    </div>
+                    
+                    <!-- Video Controls -->
+                    <div class="video-controls">
+                        <div class="progress-bar">
+                            <div class="progress-fill">
+                                <div class="progress-handle"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="controls-row">
+                            <div class="controls-left">
+                                <button class="control-btn">
+                                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                                    </svg>
+                                </button>
+                                <button class="control-btn">
+                                    <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                </button>
+                                <button class="control-btn">
+                                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                                    </svg>
+                                </button>
+                                <span class="time-display">05:23 / 15:40</span>
+                            </div>
+                            
+                            <div class="controls-right">
+                                <div class="speed-control">
+                                    <button class="speed-btn">0.5x</button>
+                                    <button class="speed-btn">0.75x</button>
+                                    <button class="speed-btn active">1x</button>
+                                    <button class="speed-btn">1.25x</button>
+                                    <button class="speed-btn">1.5x</button>
+                                </div>
+                                
+                                <button class="control-btn">
+                                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+                                    </svg>
+                                </button>
+                                
+                                <button class="control-btn">
+                                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                                    </svg>
+                                </button>
+                                
+                                <button class="control-btn">
+                                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Video Info -->
+            <div class="video-info">
+                <h1 class="lesson-title">Spanish Conversation Practice - Daily Routines</h1>
+                
+                <div class="instructor-info">
+                    <div class="instructor-avatar">👨‍🏫</div>
+                    <div class="instructor-details">
+                        <h3>Carlos Rodriguez</h3>
+                        <span class="native-badge">
+                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                            Native Spanish Speaker
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="lesson-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">15:40</span>
+                        <span class="stat-label">Duration</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">A2</span>
+                        <span class="stat-label">Level</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">4.8</span>
+                        <span class="stat-label">Rating</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">12.3k</span>
+                        <span class="stat-label">Views</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Learning Tools -->
+            <div class="learning-tools">
+                <h3 class="tools-header">Interactive Learning Tools</h3>
+                
+                <div class="tool-buttons">
+                    <button class="tool-btn">
+                        <div class="tool-icon">📝</div>
+                        <span>Take Notes</span>
+                    </button>
+                    <button class="tool-btn">
+                        <div class="tool-icon">🔁</div>
+                        <span>Loop Section</span>
+                    </button>
+                    <button class="tool-btn">
+                        <div class="tool-icon">📑</div>
+                        <span>Transcript</span>
+                    </button>
+                    <button class="tool-btn">
+                        <div class="tool-icon">💡</div>
+                        <span>Vocabulary</span>
+                    </button>
+                </div>
+                
+                <!-- Subtitle Controls -->
+                <div class="subtitle-controls">
+                    <div class="subtitle-option">
+                        <span class="subtitle-label">Show Subtitles</span>
+                        <div class="toggle-switch active"></div>
+                    </div>
+                    <div class="subtitle-option">
+                        <span class="subtitle-label">Native Language</span>
+                        <select class="subtitle-select">
+                            <option>Spanish</option>
+                            <option>French</option>
+                            <option>German</option>
+                        </select>
+                    </div>
+                    <div class="subtitle-option">
+                        <span class="subtitle-label">Translation</span>
+                        <select class="subtitle-select">
+                            <option>English</option>
+                            <option>Chinese</option>
+                            <option>Japanese</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Panel - Playlist -->
+        <div class="playlist-panel">
+            <div class="playlist-header">
+                <h2 class="playlist-title">Spanish A2 Course</h2>
+                <span class="playlist-count">12 lessons</span>
+            </div>
+            
+            <div class="playlist-items">
+                <!-- Active Item -->
+                <div class="playlist-item active">
+                    <div class="playlist-thumbnail"></div>
+                    <div class="playlist-info">
+                        <h4 class="playlist-item-title">Daily Routines - Morning Activities</h4>
+                        <div class="playlist-item-meta">
+                            <span class="difficulty-badge difficulty-beginner">A2</span>
+                            <span>15:40</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Other Items -->
+                <div class="playlist-item">
+                    <div class="playlist-thumbnail"></div>
+                    <div class="playlist-info">
+                        <h4 class="playlist-item-title">At the Restaurant - Ordering Food</h4>
+                        <div class="playlist-item-meta">
+                            <span class="difficulty-badge difficulty-beginner">A2</span>
+                            <span>18:25</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="playlist-item">
+                    <div class="playlist-thumbnail"></div>
+                    <div class="playlist-info">
+                        <h4 class="playlist-item-title">Shopping Conversations - At the Market</h4>
+                        <div class="playlist-item-meta">
+                            <span class="difficulty-badge difficulty-intermediate">B1</span>
+                            <span>22:15</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="playlist-item">
+                    <div class="playlist-thumbnail"></div>
+                    <div class="playlist-info">
+                        <h4 class="playlist-item-title">Travel Spanish - Airport and Hotels</h4>
+                        <div class="playlist-item-meta">
+                            <span class="difficulty-badge difficulty-intermediate">B1</span>
+                            <span>25:30</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="playlist-item">
+                    <div class="playlist-thumbnail"></div>
+                    <div class="playlist-info">
+                        <h4 class="playlist-item-title">Medical Spanish - Doctor's Visit</h4>
+                        <div class="playlist-item-meta">
+                            <span class="difficulty-badge difficulty-advanced">B2</span>
+                            <span>20:45</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="playlist-item">
+                    <div class="playlist-thumbnail"></div>
+                    <div class="playlist-info">
+                        <h4 class="playlist-item-title">Business Spanish - Meeting Vocabulary</h4>
+                        <div class="playlist-item-meta">
+                            <span class="difficulty-badge difficulty-advanced">B2</span>
+                            <span>28:10</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="playlist-item">
+                    <div class="playlist-thumbnail"></div>
+                    <div class="playlist-info">
+                        <h4 class="playlist-item-title">Spanish Idioms and Expressions</h4>
+                        <div class="playlist-item-meta">
+                            <span class="difficulty-badge difficulty-intermediate">B1</span>
+                            <span>19:55</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="playlist-item">
+                    <div class="playlist-thumbnail"></div>
+                    <div class="playlist-info">
+                        <h4 class="playlist-item-title">Family and Relationships</h4>
+                        <div class="playlist-item-meta">
+                            <span class="difficulty-badge difficulty-beginner">A2</span>
+                            <span>16:30</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Toggle switches
+        document.querySelectorAll('.toggle-switch').forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                this.classList.toggle('active');
+            });
+        });
+        
+        // Speed control buttons
+        document.querySelectorAll('.speed-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // Playlist items
+        document.querySelectorAll('.playlist-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.playlist-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // Play button
+        document.querySelector('.play-button').addEventListener('click', function() {
+            console.log('Playing video...');
+        });
+        
+        // Tool buttons
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                console.log('Tool clicked:', this.textContent.trim());
+            });
+        });
+    </script>
+</body>
+</html>

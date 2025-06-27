@@ -255,7 +255,7 @@ frontend/
 **Protected Routes** (`app/(protected)/`)
 - `layout.tsx` - Auth check (Server Component)
 - `profile/page.tsx` - Profile page (Server Component, fetches user data)
-- `profile/LanguageForm.tsx` - Language editor ('use client')
+- `profile/LanguageForm.tsx` - Language editnopeor ('use client')
 - `search/page.tsx` - Search page (Server Component, fetches users)
 - `search/SearchFilters.tsx` - Filter controls ('use client')
 - `matches/page.tsx` - Matches page (Server Component, fetches matches)

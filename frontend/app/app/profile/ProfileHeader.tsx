@@ -199,7 +199,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           >
             <Box sx={{ pointerEvents: "auto", position: "absolute", top: 16, right: 16 }}>
               <SimpleImageUpload
-                currentImage={displayCoverPhoto}
+                currentImage={displayCoverPhoto || undefined}
                 userName={user.name || 'User'}
                 isProfilePicture={false}
                 onImageUpdate={onEditCover}
@@ -241,7 +241,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             {onEditAvatar ? (
               // Editable avatar using SimpleImageUpload component
               <SimpleImageUpload
-                currentImage={displayImage}
+                currentImage={displayImage || undefined}
                 userName={user.name || 'User'}
                 size={{ xs: 100, sm: 120 }}
                 isProfilePicture={true}
@@ -252,7 +252,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             ) : (
               // Non-editable avatar (for viewing other profiles) - using UserAvatar for consistency
               <UserAvatar
-                user={{ ...user, profileImage: displayImage }}
+                user={{ ...user, profileImage: displayImage || undefined } as any}
                 size={{ xs: 100, sm: 120 }}
                 onClick={handleAvatarClick}
                 showOnlineStatus={false}

@@ -6,6 +6,8 @@ import {
   Typography,
   Tabs,
   Tab,
+  Badge,
+  Button,
 } from "@mui/material";
 import {
   PeopleOutlined as PeopleIcon,
@@ -19,6 +21,7 @@ import {
   Search as SearchIcon,
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
+  FilterList as FilterListIcon,
 } from "@mui/icons-material";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -70,7 +73,7 @@ export default function UnifiedHeader({
       } else {
         url.searchParams.delete('search');
       }
-      router.push((url.pathname + url.search) as any);
+      router.push(url.pathname + url.search);
     }
   };
 
@@ -246,13 +249,24 @@ export default function UnifiedHeader({
                 return matchesIndex !== -1 ? matchesIndex : 0;
               }
               
+              // Special handling for posts pages - no tab should be highlighted
+              if (pathname.startsWith("/app/posts/") || pathname === "/app/profile/posts") {
+                return false; // This will unselect all tabs
+              }
+              
+              // Special handling for profile sub-pages - highlight "Profile"
+              if (pathname.startsWith("/app/profile/")) {
+                const profileIndex = tabNavigationItems.findIndex(item => item.href === "/app/profile");
+                return profileIndex !== -1 ? profileIndex : false;
+              }
+              
               const currentItem = tabNavigationItems.find((item) => pathname === item.href);
-              return currentItem ? tabNavigationItems.indexOf(currentItem) : 0;
+              return currentItem ? tabNavigationItems.indexOf(currentItem) : false;
             })()}
             onChange={(event: React.SyntheticEvent, newValue: number) => {
               const selectedItem = tabNavigationItems[newValue];
               if (selectedItem) {
-                router.push(selectedItem.href as any);
+                router.push(selectedItem.href);
               }
             }}
             sx={{
@@ -299,28 +313,29 @@ export default function UnifiedHeader({
             })}
           </Tabs>
 
-          {/* Search Bar */}
-          <Box
-            sx={{
-              position: "relative",
-              display: "flex",
-              alignItems: "center",
-              backgroundColor: "rgba(255, 255, 255, 0.1)",
-              borderRadius: 1.5,
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              px: 2,
-              py: 1,
-              minWidth: 200,
-              maxWidth: 250,
-              "&:hover": {
-                borderColor: "rgba(255, 255, 255, 0.3)",
-              },
-              "&:focus-within": {
-                borderColor: "#6366f1",
-                backgroundColor: "rgba(255, 255, 255, 0.15)",
-              },
-            }}
-          >
+          {/* Search Bar - Always visible */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box
+              sx={{
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                borderRadius: 1.5,
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                px: 2,
+                py: 1,
+                minWidth: 200,
+                maxWidth: 250,
+                "&:hover": {
+                  borderColor: "rgba(255, 255, 255, 0.3)",
+                },
+                "&:focus-within": {
+                  borderColor: "#6366f1",
+                  backgroundColor: "rgba(255, 255, 255, 0.15)",
+                },
+              }}
+            >
             <SearchIcon
               sx={{
                 fontSize: 18,
@@ -330,7 +345,7 @@ export default function UnifiedHeader({
             />
             <input
               type="text"
-              placeholder="Search users..."
+              placeholder="Search people..."
               value={searchQuery}
               onChange={handleSearch}
               style={{
@@ -343,8 +358,31 @@ export default function UnifiedHeader({
               }}
             />
           </Box>
+          
+          {/* Filter Button - Only show on Connect page */}
+          {pathname === "/app/connect" && (
+              <IconButton
+                onClick={() => {
+                  // Navigate to connect page with filter param to open drawer
+                  router.push('/app/connect?openFilters=true');
+                }}
+                sx={{
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  color: "rgba(255, 255, 255, 0.8)",
+                  "&:hover": {
+                    backgroundColor: "rgba(255, 255, 255, 0.15)",
+                    borderColor: "#6366f1",
+                    color: "#6366f1",
+                  },
+                }}
+              >
+                <FilterListIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+          )}
+            </Box>
         </Box>
-        </Box>
+      </Box>
       </Box>
 
       {/* Mobile Header */}

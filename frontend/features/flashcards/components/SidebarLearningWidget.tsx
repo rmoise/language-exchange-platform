@@ -33,14 +33,14 @@ import { FlashcardReview } from './FlashcardReview';
 import { useAuth } from '@/hooks/useAuth';
 import { UserLearningProfile, FlashcardDeck, Flashcard } from '../types';
 import { motion } from 'framer-motion';
+import { useTheme as useCustomTheme } from '@/contexts/ThemeContext';
 
 interface SidebarLearningWidgetProps {
-  darkMode?: boolean;
 }
 
-export const SidebarLearningWidget: React.FC<SidebarLearningWidgetProps> = ({
-  darkMode = false
-}) => {
+export const SidebarLearningWidget: React.FC<SidebarLearningWidgetProps> = () => {
+  const { mode } = useCustomTheme();
+  const darkMode = mode === 'dark';
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserLearningProfile | null>(null);
   const [deck, setDeck] = useState<FlashcardDeck | null>(null);

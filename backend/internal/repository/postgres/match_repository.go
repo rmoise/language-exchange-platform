@@ -134,7 +134,7 @@ func (r *matchRepository) GetRequestsByUser(ctx context.Context, userID string, 
 	}
 	defer rows.Close()
 
-	var requests []*models.MatchRequest
+	requests := make([]*models.MatchRequest, 0)
 	for rows.Next() {
 		request := &models.MatchRequest{}
 		user := &models.User{}
@@ -270,7 +270,7 @@ func (r *matchRepository) GetMatchesByUser(ctx context.Context, userID string) (
 	}
 	defer rows.Close()
 
-	var matches []*models.Match
+	matches := make([]*models.Match, 0)
 	for rows.Next() {
 		match := &models.Match{}
 		user1 := &models.User{}

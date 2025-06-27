@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Planner - Language Exchange Platform</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .header-date {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        /* Main Grid Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Today's Agenda */
+        .agenda-section {
+            background: #ffffff;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+        }
+
+        .agenda-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 1rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .agenda-item:last-child {
+            border-bottom: none;
+        }
+
+        .time-slot {
+            min-width: 80px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #64748b;
+        }
+
+        .agenda-content {
+            flex: 1;
+            margin-left: 1.5rem;
+        }
+
+        .agenda-title {
+            font-weight: 500;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .agenda-details {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .agenda-language {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: #8b5cf6;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+
+        .language-flag {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #e2e8f0;
+        }
+
+        /* Weekly Calendar */
+        .calendar-section {
+            background: #ffffff;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .day-cell {
+            text-align: center;
+            padding: 0.75rem 0.5rem;
+            border-radius: 0.5rem;
+            background-color: #f8fafc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .day-cell:hover {
+            background-color: #f1f5f9;
+        }
+
+        .day-cell.active {
+            background-color: #8b5cf6;
+            color: #ffffff;
+        }
+
+        .day-name {
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .day-number {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .day-sessions {
+            font-size: 0.625rem;
+            margin-top: 0.25rem;
+            opacity: 0.8;
+        }
+
+        /* Study Goals */
+        .goals-section {
+            background: #ffffff;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        .goal-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .goal-item:last-child {
+            border-bottom: none;
+        }
+
+        .goal-text {
+            font-size: 0.875rem;
+            color: #1e293b;
+        }
+
+        .goal-progress {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #8b5cf6;
+        }
+
+        /* Two Column Layout */
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        /* Session Booking */
+        .booking-section {
+            background: #ffffff;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        .quick-booking {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .time-button {
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            background: #ffffff;
+            font-size: 0.875rem;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .time-button:hover {
+            border-color: #8b5cf6;
+            color: #8b5cf6;
+        }
+
+        .time-button.selected {
+            background-color: #8b5cf6;
+            color: #ffffff;
+            border-color: #8b5cf6;
+        }
+
+        .book-button {
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            margin-top: 1.5rem;
+            background-color: #1e293b;
+            color: #ffffff;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .book-button:hover {
+            background-color: #334155;
+        }
+
+        /* Study History */
+        .history-section {
+            background: #ffffff;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            font-size: 0.875rem;
+        }
+
+        .history-date {
+            color: #64748b;
+        }
+
+        .history-partner {
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        .history-duration {
+            color: #8b5cf6;
+            font-weight: 500;
+        }
+
+        /* Time Management Widget */
+        .time-widget {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #ffffff;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 280px;
+        }
+
+        .timer-display {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #1e293b;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+
+        .timer-button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            background: #ffffff;
+            font-size: 0.875rem;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .timer-button:hover {
+            border-color: #8b5cf6;
+            color: #8b5cf6;
+        }
+
+        .timer-button.primary {
+            background-color: #8b5cf6;
+            color: #ffffff;
+            border-color: #8b5cf6;
+        }
+
+        .timer-button.primary:hover {
+            background-color: #7c3aed;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #94a3b8;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            font-size: 0.875rem;
+        }
+
+        /* Subtle animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .agenda-item,
+        .goal-item,
+        .history-item {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">Study Planner</div>
+            <div class="header-date">Thursday, December 7, 2024</div>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Today's Agenda -->
+            <section class="agenda-section">
+                <h2 class="section-title">Today's Study Agenda</h2>
+                
+                <div class="agenda-item">
+                    <div class="time-slot">09:00 AM</div>
+                    <div class="agenda-content">
+                        <div class="agenda-title">Spanish Conversation Practice</div>
+                        <div class="agenda-details">with Maria Rodriguez • 45 minutes</div>
+                        <div class="agenda-language">
+                            <span class="language-flag" style="background: linear-gradient(to bottom, #c60b1e 50%, #ffc400 50%);"></span>
+                            Spanish → English
+                        </div>
+                    </div>
+                </div>
+
+                <div class="agenda-item">
+                    <div class="time-slot">11:30 AM</div>
+                    <div class="agenda-content">
+                        <div class="agenda-title">French Grammar Review</div>
+                        <div class="agenda-details">Self-study session • 30 minutes</div>
+                        <div class="agenda-language">
+                            <span class="language-flag" style="background: linear-gradient(to right, #002395 33%, #ffffff 33% 66%, #ed2939 66%);"></span>
+                            French Study
+                        </div>
+                    </div>
+                </div>
+
+                <div class="agenda-item">
+                    <div class="time-slot">02:00 PM</div>
+                    <div class="agenda-content">
+                        <div class="agenda-title">Japanese Writing Practice</div>
+                        <div class="agenda-details">with Takeshi Yamamoto • 60 minutes</div>
+                        <div class="agenda-language">
+                            <span class="language-flag" style="background: radial-gradient(circle, #bc002d 30%, #ffffff 30%);"></span>
+                            Japanese → English
+                        </div>
+                    </div>
+                </div>
+
+                <div class="agenda-item">
+                    <div class="time-slot">04:30 PM</div>
+                    <div class="agenda-content">
+                        <div class="agenda-title">English Pronunciation Workshop</div>
+                        <div class="agenda-details">Group session • 45 minutes</div>
+                        <div class="agenda-language">
+                            <span class="language-flag" style="background: linear-gradient(135deg, #012169 25%, #ffffff 25% 50%, #c8102e 50%);"></span>
+                            English Practice
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Study Goals -->
+            <section class="goals-section">
+                <h2 class="section-title">Weekly Goals</h2>
+                
+                <div class="goal-item">
+                    <span class="goal-text">Complete 5 conversation sessions</span>
+                    <span class="goal-progress">3/5</span>
+                </div>
+                
+                <div class="goal-item">
+                    <span class="goal-text">Study 150 new vocabulary words</span>
+                    <span class="goal-progress">87/150</span>
+                </div>
+                
+                <div class="goal-item">
+                    <span class="goal-text">Practice writing for 2 hours</span>
+                    <span class="goal-progress">1.5/2h</span>
+                </div>
+                
+                <div class="goal-item">
+                    <span class="goal-text">Review grammar lessons</span>
+                    <span class="goal-progress">4/6</span>
+                </div>
+                
+                <div class="goal-item">
+                    <span class="goal-text">Listen to 3 podcasts</span>
+                    <span class="goal-progress">2/3</span>
+                </div>
+            </section>
+        </div>
+
+        <!-- Weekly Calendar -->
+        <section class="calendar-section">
+            <h2 class="section-title">Week Overview</h2>
+            <div class="week-grid">
+                <div class="day-cell">
+                    <div class="day-name">Mon</div>
+                    <div class="day-number">4</div>
+                    <div class="day-sessions">2 sessions</div>
+                </div>
+                <div class="day-cell">
+                    <div class="day-name">Tue</div>
+                    <div class="day-number">5</div>
+                    <div class="day-sessions">1 session</div>
+                </div>
+                <div class="day-cell">
+                    <div class="day-name">Wed</div>
+                    <div class="day-number">6</div>
+                    <div class="day-sessions">3 sessions</div>
+                </div>
+                <div class="day-cell active">
+                    <div class="day-name">Thu</div>
+                    <div class="day-number">7</div>
+                    <div class="day-sessions">4 sessions</div>
+                </div>
+                <div class="day-cell">
+                    <div class="day-name">Fri</div>
+                    <div class="day-number">8</div>
+                    <div class="day-sessions">2 sessions</div>
+                </div>
+                <div class="day-cell">
+                    <div class="day-name">Sat</div>
+                    <div class="day-number">9</div>
+                    <div class="day-sessions">1 session</div>
+                </div>
+                <div class="day-cell">
+                    <div class="day-name">Sun</div>
+                    <div class="day-number">10</div>
+                    <div class="day-sessions">Free</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottom Grid -->
+        <div class="bottom-grid">
+            <!-- Quick Session Booking -->
+            <section class="booking-section">
+                <h2 class="section-title">Book Tomorrow's Session</h2>
+                <p style="font-size: 0.875rem; color: #64748b; margin-bottom: 1rem;">Available time slots for Friday, Dec 8</p>
+                
+                <div class="quick-booking">
+                    <button class="time-button">9:00 AM</button>
+                    <button class="time-button">10:00 AM</button>
+                    <button class="time-button">11:00 AM</button>
+                    <button class="time-button selected">2:00 PM</button>
+                    <button class="time-button">3:00 PM</button>
+                    <button class="time-button">4:00 PM</button>
+                </div>
+                
+                <button class="book-button">Book Selected Time</button>
+            </section>
+
+            <!-- Recent Study History -->
+            <section class="history-section">
+                <h2 class="section-title">Recent Sessions</h2>
+                
+                <div class="history-item">
+                    <span class="history-date">Dec 6</span>
+                    <span class="history-partner">Anna Schmidt</span>
+                    <span class="history-duration">45 min</span>
+                </div>
+                
+                <div class="history-item">
+                    <span class="history-date">Dec 6</span>
+                    <span class="history-partner">Self-study</span>
+                    <span class="history-duration">30 min</span>
+                </div>
+                
+                <div class="history-item">
+                    <span class="history-date">Dec 5</span>
+                    <span class="history-partner">Chen Wei</span>
+                    <span class="history-duration">60 min</span>
+                </div>
+                
+                <div class="history-item">
+                    <span class="history-date">Dec 5</span>
+                    <span class="history-partner">Group Session</span>
+                    <span class="history-duration">45 min</span>
+                </div>
+                
+                <div class="history-item">
+                    <span class="history-date">Dec 4</span>
+                    <span class="history-partner">Lucas Dubois</span>
+                    <span class="history-duration">30 min</span>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Time Management Widget -->
+    <div class="time-widget">
+        <div class="timer-display">25:00</div>
+        <div class="timer-controls">
+            <button class="timer-button primary">Start Focus</button>
+            <button class="timer-button">Reset</button>
+        </div>
+    </div>
+</body>
+</html>

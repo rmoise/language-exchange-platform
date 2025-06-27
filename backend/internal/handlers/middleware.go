@@ -114,6 +114,41 @@ func WebSocketAuthMiddleware(authService services.AuthService) gin.HandlerFunc {
 	}
 }
 
+// OptionalAuthMiddleware attempts to authenticate but doesn't fail if no token is present
+// This is useful for endpoints that work for both authenticated and unauthenticated users
+func OptionalAuthMiddleware(authService services.AuthService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		
+		if authHeader == "" {
+			// No auth header, continue without setting user
+			c.Next()
+			return
+		}
+
+		// Extract token from "Bearer <token>"
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			// Invalid format, continue without setting user
+			c.Next()
+			return
+		}
+
+		token := parts[1]
+		user, err := authService.ValidateToken(token)
+		if err != nil {
+			// Invalid token, continue without setting user
+			c.Next()
+			return
+		}
+
+		// Set user in context
+		c.Set("user", user)
+		c.Set("userID", user.ID)
+		c.Next()
+	}
+}
+
 func ErrorHandlingMiddleware() gin.HandlerFunc {
 	return gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
 		errors.SendError(c, 500, "INTERNAL_SERVER_ERROR", "Internal server error")

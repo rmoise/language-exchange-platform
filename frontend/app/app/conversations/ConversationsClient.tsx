@@ -418,7 +418,7 @@ export const ConversationsClient = () => {
           </Typography>
           {!searchTerm && (
             <IconButton 
-              onClick={() => router.push('/app/community')}
+              onClick={() => router.push('/app/connect')}
               sx={{ 
                 background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
                 color: 'white',

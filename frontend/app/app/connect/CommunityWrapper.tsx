@@ -29,7 +29,10 @@ interface CommunityWrapperProps {
   currentUser: User | null;
 }
 
-export default function CommunityWrapper({ users, currentUser }: CommunityWrapperProps) {
+export default function CommunityWrapper({ 
+  users, 
+  currentUser,
+}: CommunityWrapperProps) {
   const handleRequestUpdate = useCallback(async () => {
     // Call the server action to refresh the data
     await refreshCommunityData()

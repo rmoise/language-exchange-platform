@@ -144,7 +144,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   };
 
   const handleViewAllMembers = () => {
-    router.push("/app/community");
+    router.push("/app/connect");
     onClose();
   };
 

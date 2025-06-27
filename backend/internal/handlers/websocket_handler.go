@@ -220,7 +220,7 @@ func (h *WebSocketHandler) SaveAndBroadcastSessionMessage(sessionID, userID, con
 		"created_at":   savedMessage.CreatedAt,
 	}
 	
-	h.hub.BroadcastSessionMessage(sessionID, messageData, nil)
+	h.hub.BroadcastSessionMessage(sessionID, messageData)
 	return nil
 }
 
@@ -249,7 +249,11 @@ func (h *WebSocketHandler) GetSessionParticipants(c *gin.Context) {
 		return
 	}
 
-	participants := h.hub.GetSessionParticipants(sessionID)
+	participants, err := h.hub.GetSessionParticipants(sessionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get session participants"})
+		return
+	}
 	count := h.hub.GetSessionParticipantCount(sessionID)
 
 	response := map[string]interface{}{

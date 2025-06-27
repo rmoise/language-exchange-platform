@@ -103,8 +103,11 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [realUsers, setRealUsers] = useState<any[]>([]);
-  const [usersLoading, setUsersLoading] = useState(true);
+  const [userPosts, setUserPosts] = useState<any[]>([]);
+  const [totalPostsCount, setTotalPostsCount] = useState<number>(0);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [userConnections, setUserConnections] = useState<any[]>([]);
+  const [connectionsLoading, setConnectionsLoading] = useState(true);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   // Hide header when in preview mode
@@ -210,35 +213,66 @@ export default function ProfilePage() {
     []
   );
 
-  // Random follower selection for preview (updated when real users load)
-  const [randomFollowers, setRandomFollowers] = useState<any[]>([]);
+  // User bookmarks
+  const [userBookmarks, setUserBookmarks] = useState<any[]>([]);
+  const [bookmarksLoading, setBookmarksLoading] = useState(true);
 
   // Navigation handler for follower cards
   const handleFollowerClick = (userId: string) => {
     router.push(`/app/profile/${userId}`);
   };
 
-  // Fetch real users for followers section
-  const fetchRealUsers = async () => {
+  // Fetch user connections (following)
+  const fetchUserConnections = async () => {
     try {
-      setUsersLoading(true);
-      const response = await api.get('/users?limit=12');
-      const users = response.data.data || response.data;
+      setConnectionsLoading(true);
+      const response = await api.get('/connections/following');
+      const connections = response.data.data?.connections || [];
       
-      // Enhance user data for consistent avatars and additional data
-      const enhancedUsers = users.map((user: any) => enhanceUserData(user));
-      setRealUsers(enhancedUsers);
-      
-      // Select 4 random users for the preview
-      const shuffled = [...enhancedUsers].sort(() => Math.random() - 0.5);
-      setRandomFollowers(shuffled.slice(0, 4));
+      // Enhance user data for consistent avatars
+      const enhancedConnections = connections.map((conn: any) => enhanceUserData(conn.following));
+      setUserConnections(enhancedConnections);
     } catch (error) {
-      console.error('Failed to fetch real users:', error);
-      // Just show empty state if API fails
-      setRealUsers([]);
-      setRandomFollowers([]);
+      console.error('Failed to fetch user connections:', error);
+      setUserConnections([]);
     } finally {
-      setUsersLoading(false);
+      setConnectionsLoading(false);
+    }
+  };
+
+  // Fetch user posts
+  const fetchUserPosts = async () => {
+    try {
+      setPostsLoading(true);
+      const response = await api.get('/posts', {
+        params: {
+          user_id: user?.id,
+          limit: 100  // Fetch all posts to get accurate count
+        }
+      });
+      const posts = response.data.posts || [];
+      setUserPosts(posts);
+      setTotalPostsCount(posts.length);
+    } catch (error) {
+      console.error('Failed to fetch user posts:', error);
+      setUserPosts([]);
+    } finally {
+      setPostsLoading(false);
+    }
+  };
+
+  // Fetch user bookmarks
+  const fetchUserBookmarks = async () => {
+    try {
+      setBookmarksLoading(true);
+      const response = await api.get('/bookmarks');
+      const bookmarks = response.data.data?.posts || [];
+      setUserBookmarks(bookmarks);
+    } catch (error) {
+      console.error('Failed to fetch user bookmarks:', error);
+      setUserBookmarks([]);
+    } finally {
+      setBookmarksLoading(false);
     }
   };
 
@@ -286,6 +320,21 @@ export default function ProfilePage() {
     }
   };
 
+  // Format time ago helper
+  const formatTimeAgo = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (seconds < 60) return "just now";
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
+    if (seconds < 2592000) return `${Math.floor(seconds / 604800)} weeks ago`;
+    if (seconds < 31536000) return `${Math.floor(seconds / 2592000)} months ago`;
+    return `${Math.floor(seconds / 31536000)} years ago`;
+  };
+
   // Learning preferences modal states
   const [learningPreferencesModalOpen, setLearningPreferencesModalOpen] =
     useState(false);
@@ -310,7 +359,7 @@ export default function ProfilePage() {
         ? `${reduxUser.city}, ${reduxUser.country}` 
         : reduxUser.city || reduxUser.country || "";
       setEditLocation(location);
-      setEditTopics(reduxUser.topics || []);
+      setEditTopics(reduxUser.interests || []);
     }
   }, [reduxUser, user]);
 
@@ -377,7 +426,7 @@ export default function ProfilePage() {
           ? `${enhancedUser.city}, ${enhancedUser.country}` 
           : enhancedUser.city || enhancedUser.country || "";
         setEditLocation(location);
-        setEditTopics(enhancedUser.topics || []);
+        setEditTopics(enhancedUser.interests || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load profile");
       } finally {
@@ -386,8 +435,16 @@ export default function ProfilePage() {
     };
 
     fetchProfile();
-    fetchRealUsers();
-  }, [reduxUser]);
+  }, [reduxUser, dispatch]);
+
+  // Fetch additional data when user is loaded
+  useEffect(() => {
+    if (user?.id) {
+      fetchUserConnections();
+      fetchUserPosts();
+      fetchUserBookmarks();
+    }
+  }, [user?.id]);
 
   const handleLanguageUpdate = (
     nativeLanguages: string[],
@@ -1267,7 +1324,7 @@ export default function ProfilePage() {
                         fontSize: "0.875rem",
                       }}
                     >
-                      {realUsers.length} people
+                      {userConnections.length} people
                     </Typography>
                   </Box>
                   {!isPreviewMode && <EditIconButton onClick={() => setFollowingModalOpen(true)} />}
@@ -1281,7 +1338,7 @@ export default function ProfilePage() {
                     gap: 2,
                   }}
                 >
-                  {usersLoading ? (
+                  {connectionsLoading ? (
                     // Loading state
                     [1, 2, 3, 4].map((index) => (
                       <Box
@@ -1304,10 +1361,10 @@ export default function ProfilePage() {
                       </Box>
                     ))
                   ) : (
-                    randomFollowers.map((follower) => (
+                    userConnections.slice(0, 4).map((connection) => (
                       <Box
-                        key={follower.id}
-                        onClick={() => handleFollowerClick(follower.id)}
+                        key={connection.id}
+                        onClick={() => handleFollowerClick(connection.id)}
                         sx={{
                           display: "flex",
                           flexDirection: "column",
@@ -1326,7 +1383,7 @@ export default function ProfilePage() {
                       >
                         <Box sx={{ mb: 1, position: 'relative', display: 'inline-block' }}>
                           <UserAvatar
-                            user={follower}
+                            user={connection}
                             size={48}
                             showOnlineStatus={true}
                           />
@@ -1340,7 +1397,7 @@ export default function ProfilePage() {
                             fontSize: "0.75rem",
                           }}
                         >
-                          {follower.name?.split(' ')[0] || 'User'}
+                          {connection.name?.split(' ')[0] || 'User'}
                         </Typography>
                       </Box>
                     ))
@@ -1433,7 +1490,7 @@ export default function ProfilePage() {
                   </Typography>
                   {!isPreviewMode && <EditIconButton
                     onClick={() => {
-                      setEditTopics(user.topics || user.interests || []);
+                      setEditTopics(user.interests || []);
                       setTopicsModalOpen(true);
                     }}
                   />}
@@ -1448,8 +1505,8 @@ export default function ProfilePage() {
                     gap: 1,
                   }}
                 >
-                  {(user.topics || user.interests || []).length > 0 ? (
-                    (user.topics || user.interests || []).map((topic: string, index: number) => (
+                  {(user.interests || []).length > 0 ? (
+                    (user.interests || []).map((topic: string, index: number) => (
                       <Box component="li" key={index}>
                         <Typography
                           sx={{
@@ -1482,6 +1539,369 @@ export default function ProfilePage() {
                   )}
                 </Box>
               </Box>
+
+              {/* My Posts Section - Only visible when not in preview mode */}
+              {!isPreviewMode && (
+                <Box
+                  sx={{
+                    backgroundColor: "rgba(0, 0, 0, 0.4)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid #374151",
+                    borderRadius: 1.5,
+                    p: 3,
+                    color: "white",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 3,
+                    }}
+                  >
+                    <Typography
+                      variant="h5"
+                      sx={{ fontWeight: 400, color: "white" }}
+                    >
+                      My Posts
+                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      {userPosts.length > 0 && (
+                        <Chip 
+                          label={`${totalPostsCount} posts`}
+                          size="small"
+                          sx={{
+                            backgroundColor: "rgba(99, 102, 241, 0.2)",
+                            color: "#a5b4fc",
+                            fontSize: "12px",
+                          }}
+                        />
+                      )}
+                      {userPosts.length > 0 && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          sx={{
+                            color: "rgba(255, 255, 255, 0.7)",
+                            borderColor: "rgba(255, 255, 255, 0.3)",
+                            fontSize: "0.75rem",
+                            px: 2,
+                            py: 0.5,
+                            "&:hover": {
+                              borderColor: "rgba(255, 255, 255, 0.5)",
+                              backgroundColor: "rgba(255, 255, 255, 0.05)",
+                            },
+                          }}
+                          onClick={() => {
+                            // Navigate to dedicated posts page
+                            router.push("/app/profile/posts");
+                          }}
+                        >
+                          See All Posts
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
+
+                  <Typography
+                    sx={{
+                      color: "rgba(255, 255, 255, 0.7)",
+                      fontSize: "0.875rem",
+                      mb: 2,
+                    }}
+                  >
+                    Your recent posts and questions to the community
+                  </Typography>
+
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    {postsLoading ? (
+                      // Loading state
+                      [1, 2].map((index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            backgroundColor: "rgba(255, 255, 255, 0.1)",
+                            borderRadius: 1,
+                            p: 2,
+                            border: "1px solid rgba(255, 255, 255, 0.15)",
+                            animation: "pulse 1.5s ease-in-out infinite",
+                          }}
+                        >
+                          <Box sx={{ width: "80%", height: 16, backgroundColor: "rgba(255, 255, 255, 0.2)", borderRadius: 1, mb: 1 }} />
+                          <Box sx={{ display: "flex", gap: 1 }}>
+                            <Box sx={{ width: 60, height: 20, backgroundColor: "rgba(255, 255, 255, 0.2)", borderRadius: 1 }} />
+                            <Box sx={{ width: 80, height: 20, backgroundColor: "rgba(255, 255, 255, 0.2)", borderRadius: 1 }} />
+                          </Box>
+                        </Box>
+                      ))
+                    ) : userPosts.length > 0 ? (
+                      userPosts.slice(0, 2).map((post) => {
+                        const timeAgo = formatTimeAgo(post.created_at);
+                        return (
+                          <Box
+                            key={post.id}
+                            onClick={() => {
+                              // Navigate to individual post page
+                              router.push(`/app/posts/${post.id}`);
+                            }}
+                            sx={{
+                              backgroundColor: "rgba(255, 255, 255, 0.1)",
+                              borderRadius: 1,
+                              p: 2,
+                              border: "1px solid rgba(255, 255, 255, 0.15)",
+                              transition: "all 0.2s ease",
+                              cursor: "pointer",
+                              "&:hover": {
+                                backgroundColor: "rgba(255, 255, 255, 0.15)",
+                                transform: "translateY(-1px)",
+                                boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)",
+                              },
+                            }}
+                          >
+                            <Typography
+                              sx={{
+                                color: "white",
+                                fontWeight: 500,
+                                fontSize: "0.875rem",
+                                mb: 1,
+                                lineHeight: 1.3,
+                                "&:hover": {
+                                  textDecoration: "underline",
+                                },
+                              }}
+                            >
+                              {post.title}
+                            </Typography>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                <Chip
+                                  label={post.category || "General"}
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: "rgba(99, 102, 241, 0.3)",
+                                    color: "#a5b4fc",
+                                    fontSize: "11px",
+                                    height: "20px",
+                                  }}
+                                />
+                                <Typography
+                                  sx={{
+                                    color: "rgba(255, 255, 255, 0.5)",
+                                    fontSize: "0.75rem",
+                                  }}
+                                >
+                                  {timeAgo}
+                                </Typography>
+                              </Box>
+                              <Typography
+                                sx={{
+                                  color: "rgba(255, 255, 255, 0.6)",
+                                  fontSize: "0.75rem",
+                                }}
+                              >
+                                {post.bookmark_count || 0} bookmarks
+                              </Typography>
+                            </Box>
+                          </Box>
+                        );
+                      })
+                    ) : (
+                      <Typography
+                        sx={{
+                          color: "rgba(255, 255, 255, 0.6)",
+                          fontSize: "0.875rem",
+                          fontStyle: "italic",
+                          textAlign: "center",
+                          py: 2,
+                        }}
+                      >
+                        No posts yet. Start sharing your language learning journey!
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              )}
+
+              {/* Bookmarks Section - Only visible when not in preview mode */}
+              {!isPreviewMode && (
+                <Box
+                  sx={{
+                    backgroundColor: "rgba(0, 0, 0, 0.4)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid #374151",
+                    borderRadius: 1.5,
+                    p: 3,
+                    color: "white",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 3,
+                    }}
+                  >
+                    <Typography
+                      variant="h5"
+                      sx={{ fontWeight: 400, color: "white" }}
+                    >
+                      Bookmarks
+                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      {userBookmarks.length > 0 && (
+                        <Chip 
+                          label={`${userBookmarks.length} saved`}
+                          size="small"
+                          sx={{
+                            backgroundColor: "rgba(245, 158, 11, 0.2)",
+                            color: "#fbbf24",
+                            fontSize: "12px",
+                          }}
+                        />
+                      )}
+                      {userBookmarks.length > 0 && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          sx={{
+                            color: "rgba(255, 255, 255, 0.7)",
+                            borderColor: "rgba(255, 255, 255, 0.3)",
+                            fontSize: "0.75rem",
+                            px: 2,
+                            py: 0.5,
+                            "&:hover": {
+                              borderColor: "rgba(255, 255, 255, 0.5)",
+                              backgroundColor: "rgba(255, 255, 255, 0.05)",
+                            },
+                          }}
+                          onClick={() => {
+                            // Navigate to dedicated bookmarks page
+                            router.push("/app/profile/bookmarks");
+                          }}
+                        >
+                          See All Bookmarks
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
+
+                  <Typography
+                    sx={{
+                      color: "rgba(255, 255, 255, 0.7)",
+                      fontSize: "0.875rem",
+                      mb: 2,
+                    }}
+                  >
+                    Posts you've saved for later reference
+                  </Typography>
+
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    {bookmarksLoading ? (
+                      // Loading state
+                      [1, 2].map((index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            backgroundColor: "rgba(245, 158, 11, 0.1)",
+                            borderRadius: 1,
+                            p: 2,
+                            border: "1px solid rgba(245, 158, 11, 0.2)",
+                            animation: "pulse 1.5s ease-in-out infinite",
+                          }}
+                        >
+                          <Box sx={{ width: "80%", height: 16, backgroundColor: "rgba(255, 255, 255, 0.2)", borderRadius: 1, mb: 1 }} />
+                          <Box sx={{ display: "flex", gap: 1 }}>
+                            <Box sx={{ width: 100, height: 20, backgroundColor: "rgba(255, 255, 255, 0.2)", borderRadius: 1 }} />
+                            <Box sx={{ width: 60, height: 20, backgroundColor: "rgba(255, 255, 255, 0.2)", borderRadius: 1 }} />
+                          </Box>
+                        </Box>
+                      ))
+                    ) : userBookmarks.length > 0 ? (
+                      userBookmarks.slice(0, 2).map((post) => (
+                        <Box
+                          key={post.id}
+                          onClick={() => {
+                            // Navigate to individual post page
+                            router.push(`/app/posts/${post.id}`);
+                          }}
+                          sx={{
+                            backgroundColor: "rgba(245, 158, 11, 0.1)",
+                            borderRadius: 1,
+                            p: 2,
+                            border: "1px solid rgba(245, 158, 11, 0.2)",
+                            transition: "all 0.2s ease",
+                            cursor: "pointer",
+                            "&:hover": {
+                              backgroundColor: "rgba(245, 158, 11, 0.15)",
+                              transform: "translateY(-1px)",
+                              boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)",
+                            },
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              color: "white",
+                              fontWeight: 500,
+                              fontSize: "0.875rem",
+                              mb: 1,
+                              lineHeight: 1.3,
+                              "&:hover": {
+                                textDecoration: "underline",
+                              },
+                            }}
+                          >
+                            {post.title}
+                          </Typography>
+                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Typography
+                                sx={{
+                                  color: "rgba(255, 255, 255, 0.6)",
+                                  fontSize: "0.75rem",
+                                }}
+                              >
+                                by {post.author?.name || "Unknown"}
+                              </Typography>
+                              <Chip
+                                label={post.category || "General"}
+                                size="small"
+                                sx={{
+                                  backgroundColor: "rgba(245, 158, 11, 0.3)",
+                                  color: "#fbbf24",
+                                  fontSize: "11px",
+                                  height: "20px",
+                                }}
+                              />
+                            </Box>
+                            <Typography
+                              sx={{
+                                color: "rgba(255, 255, 255, 0.6)",
+                                fontSize: "0.75rem",
+                              }}
+                            >
+                              {post.bookmark_count || 0} bookmarks
+                            </Typography>
+                          </Box>
+                        </Box>
+                      ))
+                    ) : (
+                      <Typography
+                        sx={{
+                          color: "rgba(255, 255, 255, 0.6)",
+                          fontSize: "0.875rem",
+                          fontStyle: "italic",
+                          textAlign: "center",
+                          py: 2,
+                        }}
+                      >
+                        No bookmarks yet. Save posts that interest you!
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              )}
 
               {/* Photos Section */}
               <PhotosSection userId={user?.id} isOwnProfile={!isPreviewMode} />
@@ -1885,7 +2305,7 @@ export default function ProfilePage() {
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <Box component="span" sx={{ fontWeight: 600, fontSize: "1rem" }}>
-              Connections {realUsers.length} people
+              Connections {userConnections.length} people
             </Box>
             {selectedUsers.size > 0 && (
               <Box component="span" sx={{ 
@@ -1959,8 +2379,8 @@ export default function ProfilePage() {
                   <FormControlLabel
                     control={
                       <Checkbox
-                        checked={selectedUsers.size === 12}
-                        indeterminate={selectedUsers.size > 0 && selectedUsers.size < 12}
+                        checked={selectedUsers.size === userConnections.length}
+                        indeterminate={selectedUsers.size > 0 && selectedUsers.size < userConnections.length}
                         onChange={handleSelectAll}
                         sx={{
                           color: "rgba(255, 255, 255, 0.7)",
@@ -1975,7 +2395,7 @@ export default function ProfilePage() {
                     }
                     label={
                       <Typography sx={{ color: "white", fontSize: "0.8rem" }}>
-                        Select all ({selectedUsers.size}/12)
+                        Select all ({selectedUsers.size}/{userConnections.length})
                       </Typography>
                     }
                   />
@@ -2058,24 +2478,12 @@ export default function ProfilePage() {
                     p: 1
                   }}>
                     <Stack spacing={0.5}>
-                      {Array.from(selectedUsers).map((userId) => {
-                        const userName = [
-                          "Alex Johnson",
-                          "Maria Garcia", 
-                          "David Chen",
-                          "Sarah Wilson",
-                          "Mike Brown",
-                          "Lisa Taylor",
-                          "James Davis",
-                          "Emma Miller",
-                          "Ryan Anderson",
-                          "Sophie Martin",
-                          "Tom Wilson",
-                          "Anna Lee",
-                        ][userId - 1];
+                      {Array.from(selectedUsers).map((userIndex) => {
+                        const user = userConnections[userIndex - 1];
+                        if (!user) return null;
                         
                         return (
-                          <Box key={userId} sx={{ 
+                          <Box key={user.id} sx={{ 
                             display: "flex", 
                             alignItems: "center", 
                             gap: 1.5, 
@@ -2083,12 +2491,12 @@ export default function ProfilePage() {
                             px: 1,
                           }}>
                             <UserAvatar
-                              userName={userName}
+                              user={user}
                               size={24}
                               showOnlineStatus={false}
                             />
                             <Typography sx={{ color: "white", fontSize: "0.8rem" }}>
-                              {userName}
+                              {user.name}
                             </Typography>
                           </Box>
                         );
@@ -2144,7 +2552,7 @@ export default function ProfilePage() {
               overflowY: "auto",
               pr: 0.5
             }}>
-              {usersLoading ? (
+              {connectionsLoading ? (
                 // Loading state for modal
                 [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((index) => (
                   <Box key={index}>
@@ -2167,8 +2575,8 @@ export default function ProfilePage() {
                   </Box>
                 ))
               ) : (
-                realUsers.map((user) => {
-                  const userIndex = realUsers.indexOf(user) + 1;
+                userConnections.map((user, index) => {
+                  const userIndex = index + 1;
                   const learningLanguage = user.target_languages?.[0] || user.targetLanguages?.[0] || "English";
 
                   return (
@@ -2324,7 +2732,7 @@ export default function ProfilePage() {
                               Cancel
                             </Button>
                             <Button
-                              onClick={() => handleConfirmUnfollow(userName, index)}
+                              onClick={() => handleConfirmUnfollow(user.name, userIndex)}
                               variant="contained"
                               size="small"
                               sx={{

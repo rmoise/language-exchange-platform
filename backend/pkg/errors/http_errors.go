@@ -29,6 +29,8 @@ func HandleError(c *gin.Context, err error) {
 			Details: e,
 		})
 	default:
+		// Log the actual error for debugging
+		gin.DefaultErrorWriter.Write([]byte("Internal Server Error: " + err.Error() + "\n"))
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: "Internal server error",
 			Code:  "INTERNAL_SERVER_ERROR",

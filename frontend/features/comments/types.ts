@@ -42,6 +42,7 @@ export interface Post {
   stats: {
     bookmarks: number;
   };
+  isBookmarked?: boolean;
   askingFor: string;
   reactions?: {
     emoji: string;

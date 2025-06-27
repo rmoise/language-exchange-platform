@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Learning Resources Hub</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            line-height: 1.5;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Header */
+        .header {
+            background-color: #ffffff;
+            border-bottom: 1px solid #f1f5f9;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 1.25rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-link {
+            color: #64748b;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: #8b5cf6;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background-color: #f1f5f9;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            width: 300px;
+        }
+
+        .search-input {
+            border: none;
+            background: none;
+            outline: none;
+            width: 100%;
+            color: #1e293b;
+            font-size: 0.875rem;
+        }
+
+        .search-input::placeholder {
+            color: #94a3b8;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 3rem 0;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+
+        .hero-content {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero-title {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1.125rem;
+            color: #64748b;
+            margin-bottom: 2rem;
+        }
+
+        .learning-path-selector {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .path-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .path-card:hover {
+            border-color: #8b5cf6;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .path-card.active {
+            background-color: #8b5cf6;
+            color: #ffffff;
+            border-color: #8b5cf6;
+        }
+
+        .path-icon {
+            font-size: 1.5rem;
+        }
+
+        .path-name {
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 3rem 0;
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .section-link {
+            color: #8b5cf6;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            transition: gap 0.3s ease;
+        }
+
+        .section-link:hover {
+            gap: 0.5rem;
+        }
+
+        /* Course Grid */
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .course-card {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .course-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .course-thumbnail {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .course-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: #10b981;
+            color: #ffffff;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .course-info {
+            padding: 1.5rem;
+        }
+
+        .course-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .course-description {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 1rem;
+        }
+
+        .course-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .course-duration {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+            color: #94a3b8;
+        }
+
+        .course-level {
+            background-color: #f1f5f9;
+            color: #64748b;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Study Materials */
+        .materials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .material-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+        }
+
+        .material-card:hover {
+            border-color: #8b5cf6;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+        }
+
+        .material-icon {
+            width: 3rem;
+            height: 3rem;
+            background-color: #f1f5f9;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .material-content {
+            flex-grow: 1;
+        }
+
+        .material-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .material-count {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        /* Video Lessons */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .video-card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .video-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .video-thumbnail {
+            width: 100%;
+            height: 160px;
+            background-color: #1e293b;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .play-button {
+            width: 3rem;
+            height: 3rem;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: #1e293b;
+            transition: all 0.3s ease;
+        }
+
+        .video-card:hover .play-button {
+            background-color: #8b5cf6;
+            color: #ffffff;
+            transform: scale(1.1);
+        }
+
+        .video-duration {
+            position: absolute;
+            bottom: 0.5rem;
+            right: 0.5rem;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #ffffff;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+        }
+
+        .video-info {
+            padding: 1rem;
+        }
+
+        .video-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .video-instructor {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        /* Practice Section */
+        .practice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .practice-card {
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            color: #ffffff;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .practice-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+        }
+
+        .practice-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .practice-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .practice-count {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        /* Reference Section */
+        .reference-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .reference-tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: none;
+            color: #64748b;
+            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .reference-tab:hover {
+            color: #1e293b;
+        }
+
+        .reference-tab.active {
+            color: #8b5cf6;
+        }
+
+        .reference-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #8b5cf6;
+        }
+
+        .reference-content {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        .grammar-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .grammar-item {
+            background-color: #f8fafc;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            border-left: 4px solid #8b5cf6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .grammar-item:hover {
+            background-color: #f1f5f9;
+            transform: translateX(4px);
+        }
+
+        .grammar-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .grammar-example {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        /* Cultural Notes */
+        .culture-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .culture-card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+        }
+
+        .culture-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .culture-image {
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(135deg, #10b981, #34d399);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+
+        .culture-content {
+            padding: 1.5rem;
+        }
+
+        .culture-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .culture-description {
+            font-size: 0.875rem;
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            background-color: #1e293b;
+            color: #ffffff;
+            padding: 3rem 0;
+            margin-top: 6rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .footer-section h3 {
+            font-size: 1.125rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .footer-link {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: #ffffff;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .search-bar {
+                width: 200px;
+            }
+
+            .hero-title {
+                font-size: 1.875rem;
+            }
+
+            .course-grid,
+            .video-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">📚</div>
+                    <span>Language Learning Hub</span>
+                </div>
+                <nav>
+                    <ul class="nav-links">
+                        <li><a href="#" class="nav-link active">Resources</a></li>
+                        <li><a href="#" class="nav-link">Courses</a></li>
+                        <li><a href="#" class="nav-link">Grammar</a></li>
+                        <li><a href="#" class="nav-link">Practice</a></li>
+                        <li><a href="#" class="nav-link">Culture</a></li>
+                    </ul>
+                </nav>
+                <div class="search-bar">
+                    <span>🔍</span>
+                    <input type="text" class="search-input" placeholder="Search resources...">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">Master Languages with Structured Learning</h1>
+                <p class="hero-subtitle">Access comprehensive courses, grammar guides, and cultural insights for effective language acquisition</p>
+                
+                <div class="learning-path-selector">
+                    <div class="path-card active">
+                        <span class="path-icon">🇪🇸</span>
+                        <span class="path-name">Spanish</span>
+                    </div>
+                    <div class="path-card">
+                        <span class="path-icon">🇫🇷</span>
+                        <span class="path-name">French</span>
+                    </div>
+                    <div class="path-card">
+                        <span class="path-icon">🇩🇪</span>
+                        <span class="path-name">German</span>
+                    </div>
+                    <div class="path-card">
+                        <span class="path-icon">🇮🇹</span>
+                        <span class="path-name">Italian</span>
+                    </div>
+                    <div class="path-card">
+                        <span class="path-icon">🇯🇵</span>
+                        <span class="path-name">Japanese</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Featured Courses -->
+            <div class="section-header">
+                <h2 class="section-title">Featured Courses</h2>
+                <a href="#" class="section-link">View all courses →</a>
+            </div>
+            
+            <div class="course-grid">
+                <div class="course-card">
+                    <div class="course-thumbnail">
+                        🎯
+                        <span class="course-badge">Popular</span>
+                    </div>
+                    <div class="course-info">
+                        <h3 class="course-title">Spanish for Beginners</h3>
+                        <p class="course-description">Start your Spanish journey with essential vocabulary and basic conversations</p>
+                        <div class="course-meta">
+                            <span class="course-duration">⏱ 12 hours</span>
+                            <span class="course-level">Beginner</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="course-card">
+                    <div class="course-thumbnail" style="background: linear-gradient(135deg, #10b981, #34d399);">
+                        💬
+                        <span class="course-badge">New</span>
+                    </div>
+                    <div class="course-info">
+                        <h3 class="course-title">Conversational Spanish</h3>
+                        <p class="course-description">Master everyday conversations and improve your speaking confidence</p>
+                        <div class="course-meta">
+                            <span class="course-duration">⏱ 8 hours</span>
+                            <span class="course-level">Intermediate</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="course-card">
+                    <div class="course-thumbnail" style="background: linear-gradient(135deg, #f97316, #fb923c);">
+                        📖
+                    </div>
+                    <div class="course-info">
+                        <h3 class="course-title">Advanced Grammar</h3>
+                        <p class="course-description">Deep dive into complex grammar structures and subjunctive mood</p>
+                        <div class="course-meta">
+                            <span class="course-duration">⏱ 15 hours</span>
+                            <span class="course-level">Advanced</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Study Materials -->
+            <div class="section-header">
+                <h2 class="section-title">Study Materials</h2>
+                <a href="#" class="section-link">Browse library →</a>
+            </div>
+
+            <div class="materials-grid">
+                <div class="material-card">
+                    <div class="material-icon">📝</div>
+                    <div class="material-content">
+                        <h4 class="material-title">Vocabulary Lists</h4>
+                        <p class="material-count">2,500+ words</p>
+                    </div>
+                </div>
+
+                <div class="material-card">
+                    <div class="material-icon">📊</div>
+                    <div class="material-content">
+                        <h4 class="material-title">Verb Conjugations</h4>
+                        <p class="material-count">All tenses covered</p>
+                    </div>
+                </div>
+
+                <div class="material-card">
+                    <div class="material-icon">🎧</div>
+                    <div class="material-content">
+                        <h4 class="material-title">Audio Lessons</h4>
+                        <p class="material-count">150+ recordings</p>
+                    </div>
+                </div>
+
+                <div class="material-card">
+                    <div class="material-icon">📄</div>
+                    <div class="material-content">
+                        <h4 class="material-title">PDF Worksheets</h4>
+                        <p class="material-count">300+ exercises</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Lessons -->
+            <div class="section-header">
+                <h2 class="section-title">Video Lessons</h2>
+                <a href="#" class="section-link">All videos →</a>
+            </div>
+
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-thumbnail">
+                        <div class="play-button">▶</div>
+                        <span class="video-duration">12:45</span>
+                    </div>
+                    <div class="video-info">
+                        <h4 class="video-title">Introduction to Subjunctive</h4>
+                        <p class="video-instructor">Prof. Maria García</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-thumbnail">
+                        <div class="play-button">▶</div>
+                        <span class="video-duration">15:20</span>
+                    </div>
+                    <div class="video-info">
+                        <h4 class="video-title">Pronunciation Masterclass</h4>
+                        <p class="video-instructor">Dr. Carlos Mendez</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-thumbnail">
+                        <div class="play-button">▶</div>
+                        <span class="video-duration">10:30</span>
+                    </div>
+                    <div class="video-info">
+                        <h4 class="video-title">Common Expressions</h4>
+                        <p class="video-instructor">Ana Rodriguez</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-thumbnail">
+                        <div class="play-button">▶</div>
+                        <span class="video-duration">18:15</span>
+                    </div>
+                    <div class="video-info">
+                        <h4 class="video-title">Past Tenses Explained</h4>
+                        <p class="video-instructor">Prof. Luis Fernandez</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Practice Exercises -->
+            <div class="section-header">
+                <h2 class="section-title">Practice Exercises</h2>
+                <a href="#" class="section-link">Start practicing →</a>
+            </div>
+
+            <div class="practice-grid">
+                <div class="practice-card">
+                    <div class="practice-icon">✍️</div>
+                    <h4 class="practice-title">Writing</h4>
+                    <p class="practice-count">120 prompts</p>
+                </div>
+
+                <div class="practice-card" style="background: linear-gradient(135deg, #10b981, #34d399);">
+                    <div class="practice-icon">🗣️</div>
+                    <h4 class="practice-title">Speaking</h4>
+                    <p class="practice-count">80 scenarios</p>
+                </div>
+
+                <div class="practice-card" style="background: linear-gradient(135deg, #f97316, #fb923c);">
+                    <div class="practice-icon">👂</div>
+                    <h4 class="practice-title">Listening</h4>
+                    <p class="practice-count">200 clips</p>
+                </div>
+
+                <div class="practice-card" style="background: linear-gradient(135deg, #3b82f6, #60a5fa);">
+                    <div class="practice-icon">📖</div>
+                    <h4 class="practice-title">Reading</h4>
+                    <p class="practice-count">150 texts</p>
+                </div>
+
+                <div class="practice-card" style="background: linear-gradient(135deg, #ec4899, #f472b6);">
+                    <div class="practice-icon">🎮</div>
+                    <h4 class="practice-title">Interactive</h4>
+                    <p class="practice-count">50 activities</p>
+                </div>
+            </div>
+
+            <!-- Grammar Reference -->
+            <div class="section-header">
+                <h2 class="section-title">Grammar Reference</h2>
+            </div>
+
+            <div class="reference-tabs">
+                <button class="reference-tab active">Tenses</button>
+                <button class="reference-tab">Pronouns</button>
+                <button class="reference-tab">Articles</button>
+                <button class="reference-tab">Prepositions</button>
+                <button class="reference-tab">Subjunctive</button>
+            </div>
+
+            <div class="reference-content">
+                <div class="grammar-list">
+                    <div class="grammar-item">
+                        <h4 class="grammar-title">Present Simple</h4>
+                        <p class="grammar-example">"Yo hablo español"</p>
+                    </div>
+                    <div class="grammar-item">
+                        <h4 class="grammar-title">Present Progressive</h4>
+                        <p class="grammar-example">"Estoy hablando"</p>
+                    </div>
+                    <div class="grammar-item">
+                        <h4 class="grammar-title">Preterite</h4>
+                        <p class="grammar-example">"Yo hablé ayer"</p>
+                    </div>
+                    <div class="grammar-item">
+                        <h4 class="grammar-title">Imperfect</h4>
+                        <p class="grammar-example">"Yo hablaba cuando..."</p>
+                    </div>
+                    <div class="grammar-item">
+                        <h4 class="grammar-title">Future</h4>
+                        <p class="grammar-example">"Yo hablaré mañana"</p>
+                    </div>
+                    <div class="grammar-item">
+                        <h4 class="grammar-title">Conditional</h4>
+                        <p class="grammar-example">"Yo hablaría si..."</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cultural Notes -->
+            <div class="section-header">
+                <h2 class="section-title">Cultural Insights</h2>
+                <a href="#" class="section-link">Explore culture →</a>
+            </div>
+
+            <div class="culture-grid">
+                <div class="culture-card">
+                    <div class="culture-image">🎭</div>
+                    <div class="culture-content">
+                        <h4 class="culture-title">Spanish Festivals</h4>
+                        <p class="culture-description">Discover the vibrant festivals of Spain, from La Tomatina to San Fermín, and learn the cultural significance behind each celebration.</p>
+                    </div>
+                </div>
+
+                <div class="culture-card">
+                    <div class="culture-image">🍽️</div>
+                    <div class="culture-content">
+                        <h4 class="culture-title">Culinary Traditions</h4>
+                        <p class="culture-description">Explore the rich culinary heritage of Spanish-speaking countries and learn food-related vocabulary in context.</p>
+                    </div>
+                </div>
+
+                <div class="culture-card">
+                    <div class="culture-image">🎨</div>
+                    <div class="culture-content">
+                        <h4 class="culture-title">Art & Literature</h4>
+                        <p class="culture-description">Journey through the masterpieces of Spanish art and literature, from Cervantes to García Lorca.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Learning Resources</h3>
+                    <ul class="footer-links">
+                        <li><a href="#" class="footer-link">Course Catalog</a></li>
+                        <li><a href="#" class="footer-link">Grammar Guide</a></li>
+                        <li><a href="#" class="footer-link">Vocabulary Builder</a></li>
+                        <li><a href="#" class="footer-link">Practice Tests</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Study Tools</h3>
+                    <ul class="footer-links">
+                        <li><a href="#" class="footer-link">Flashcards</a></li>
+                        <li><a href="#" class="footer-link">Pronunciation Guide</a></li>
+                        <li><a href="#" class="footer-link">Writing Assistant</a></li>
+                        <li><a href="#" class="footer-link">Audio Library</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Support</h3>
+                    <ul class="footer-links">
+                        <li><a href="#" class="footer-link">Help Center</a></li>
+                        <li><a href="#" class="footer-link">Study Tips</a></li>
+                        <li><a href="#" class="footer-link">FAQ</a></li>
+                        <li><a href="#" class="footer-link">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>About</h3>
+                    <ul class="footer-links">
+                        <li><a href="#" class="footer-link">Our Method</a></li>
+                        <li><a href="#" class="footer-link">Instructors</a></li>
+                        <li><a href="#" class="footer-link">Success Stories</a></li>
+                        <li><a href="#" class="footer-link">Research</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

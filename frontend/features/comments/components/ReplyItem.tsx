@@ -3,12 +3,11 @@ import {
   Box,
   Typography,
   Stack,
-  Avatar,
   Button,
   Chip,
-  Tooltip,
   TextField,
   IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   ChatBubbleOutline as ChatBubbleOutlineIcon,
@@ -16,14 +15,20 @@ import {
   Send as SendIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  Image as ImageIcon,
 } from '@mui/icons-material';
+import { useRouter } from 'next/navigation';
+import UserAvatar from '@/components/ui/UserAvatar';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface Reply {
   id: string;
   user: {
+    id?: string;
     name: string;
     initials: string;
     avatarColor: string;
+    profileImage?: string;
   };
   content: string;
   timeAgo: string;
@@ -74,11 +79,19 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
   onToggleReplyCollapse,
   darkMode = false,
 }) => {
+  const router = useRouter();
+  const { user: currentUser } = useAuth();
   const isNested = level > 0;
   const maxNestingLevel = 2; // Limit nesting depth
   const canReply = level < maxNestingLevel;
   const hasChildren = reply.children && reply.children.length > 0;
   const isCollapsed = collapsedReplies[reply.id] || false;
+
+  const handleUserClick = () => {
+    if (reply.user.id) {
+      router.push(`/app/profile/${reply.user.id}`);
+    }
+  };
 
   return (
     <Box sx={{ position: "relative", overflow: "visible" }}>
@@ -93,18 +106,23 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
           }}
         >
           
-          <Avatar
-            sx={{
-              width: isNested ? 28 : 32,
-              height: isNested ? 28 : 32,
-              backgroundColor: reply.user.avatarColor,
-              fontSize: isNested ? "12px" : "13px",
+          <Box 
+            onClick={handleUserClick}
+            sx={{ 
+              cursor: reply.user.id ? 'pointer' : 'default',
               flexShrink: 0,
-              position: "relative",
             }}
           >
-            {reply.user.initials}
-          </Avatar>
+            <UserAvatar
+              user={{
+                id: reply.user.id || 'default',
+                name: reply.user.name,
+                profileImage: reply.user.profileImage
+              }}
+              size={isNested ? 28 : 32}
+              showOnlineStatus={false}
+            />
+          </Box>
           <Stack spacing={0.25} sx={{ flex: 1 }}>
             <Stack direction="row" alignItems="center" spacing={0.5}>
               <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "14px", lineHeight: 1.3 }}>
@@ -119,7 +137,9 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
               borderRadius: 0,
               p: 0,
               mt: 0,
-            }}>
+            }}
+            data-post-content="true"
+            >
               <Typography variant="body2" sx={{ fontSize: isNested ? "13px" : "14px", lineHeight: 1.5, color: darkMode ? "#e5e7eb" : "#3b3b3b" }}>
                 {reply.content}
               </Typography>
@@ -200,15 +220,18 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
                   {reply.reactions.map((reaction, index) => (
                     <Tooltip
                       key={index}
-                      title={formatReactionTooltip(reaction.users || [])}
+                      title={
+                        reaction.users && reaction.users.length > 0 ? (
+                          <Box sx={{ fontSize: '12px' }}>
+                            {reaction.users.slice(0, 10).join(', ')}
+                            {reaction.users.length > 10 && ` +${reaction.users.length - 10} more`}
+                          </Box>
+                        ) : (
+                          ''
+                        )
+                      }
                       placement="top"
                       arrow
-                      PopperProps={{
-                        keepMounted: false,
-                        popperOptions: {
-                          strategy: 'fixed',
-                        },
-                      }}
                     >
                       <Chip
                         label={`${reaction.emoji} ${reaction.count}`}
@@ -246,7 +269,14 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
                   ml: -0.5,
                 }}
               >
-                <Avatar sx={{ width: 24, height: 24, fontSize: '11px' }}>Y</Avatar>
+                <UserAvatar
+                  user={currentUser || { 
+                    id: 'default',
+                    name: 'User'
+                  }}
+                  size={24}
+                  showOnlineStatus={false}
+                />
                 <Stack 
                   direction="row" 
                   spacing={0.75} 
@@ -296,6 +326,38 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
                       },
                     }}
                   />
+                  
+                  {/* Photo Attachment Button for nested replies */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    id={`nested-photo-upload-${postId}-${reply.id}`}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        // TODO: Handle photo upload for nested reply
+                        console.log('Nested reply photo selected:', file.name);
+                      }
+                    }}
+                  />
+                  <label htmlFor={`nested-photo-upload-${postId}-${reply.id}`}>
+                    <IconButton
+                      component="span"
+                      size="small"
+                      sx={{
+                        p: 0.5,
+                        color: darkMode ? "#9ca3af" : "#666666",
+                        "&:hover": {
+                          backgroundColor: darkMode ? "rgba(156, 163, 175, 0.1)" : "rgba(0, 0, 0, 0.04)",
+                          color: darkMode ? "#6366f1" : "#141417",
+                        },
+                      }}
+                    >
+                      <ImageIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </label>
+                  
                   <IconButton
                     size="small"
                     onClick={() => onNestedReplySubmit(postId, reply.id)}

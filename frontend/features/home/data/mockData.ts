@@ -2,11 +2,13 @@ export const mockPosts = [
   {
     id: "1",
     user: {
-      name: "Aaron Schulz",
-      initials: "AS",
-      department: "Engineering",
-      timeAgo: "9 hours ago",
-      avatarColor: "#0e3a78",
+      id: "user-maria",
+      name: "Maria Garcia",
+      initials: "MG",
+      department: "Spanish Native",
+      timeAgo: "3 hours ago",
+      avatarColor: "#e91e63",
+      profileImage: "https://i.pravatar.cc/150?img=5",
     },
     category: {
       emoji: "🇪🇸",
@@ -37,9 +39,11 @@ export const mockPosts = [
       {
         id: "r1",
         user: {
+          id: "user-2",
           name: "Jane Smith",
           initials: "JS",
           avatarColor: "#9c27b0",
+          profileImage: "https://i.pravatar.cc/150?img=5",
         },
         content: "Great opportunity! I'd be happy to help. I have experience conducting technical interviews at FAANG companies.",
         timeAgo: "2 hours ago",
@@ -51,9 +55,11 @@ export const mockPosts = [
       {
         id: "r2",
         user: {
+          id: "user-3",
           name: "John Doe",
           initials: "JD",
           avatarColor: "#ff6b6b",
+          profileImage: "https://i.pravatar.cc/150?img=8",
         },
         content: "@Jane Smith That's amazing! Could you share some tips on system design questions?",
         timeAgo: "1 hour ago",
@@ -65,9 +71,11 @@ export const mockPosts = [
       {
         id: "r3",
         user: {
+          id: "user-4",
           name: "Sarah Chen",
           initials: "SC",
           avatarColor: "#4ecdc4",
+          profileImage: "https://i.pravatar.cc/150?img=10",
         },
         content: "I'm also interested in this opportunity. I have 5+ years of experience in tech interviews.",
         timeAgo: "45 minutes ago",
@@ -77,9 +85,11 @@ export const mockPosts = [
       {
         id: "r4",
         user: {
+          id: "user-2",
           name: "Jane Smith",
           initials: "JS",
           avatarColor: "#9c27b0",
+          profileImage: "https://i.pravatar.cc/150?img=5",
         },
         content: "@John Doe Sure! System design is all about understanding trade-offs. Focus on scalability, reliability, and maintainability.",
         timeAgo: "30 minutes ago",
@@ -93,11 +103,13 @@ export const mockPosts = [
   {
     id: "2",
     user: {
+      id: "user-5",
       name: "Aaron Schulz",
       initials: "AS",
       department: "Engineering",
       timeAgo: "9 hours ago",
       avatarColor: "#0e3a78",
+      profileImage: "https://i.pravatar.cc/150?img=15",
     },
     category: {
       emoji: "🇫🇷",
@@ -124,11 +136,13 @@ export const mockPosts = [
   {
     id: "3",
     user: {
+      id: "user-6",
       name: "Lucas Harrison",
       initials: "LH",
       department: "Project & Program Management",
       timeAgo: "1 day ago",
       avatarColor: "#22c55e",
+      profileImage: "https://i.pravatar.cc/150?img=18",
     },
     category: {
       emoji: "🇯🇵",
@@ -214,4 +228,116 @@ export const trendingTopics = [
   { name: "nativespeaker", color: "#fff8e1", icon: "🏆" },
   { name: "culturaltips", color: "#e8f5e8", icon: "🎭" },
   { name: "resources", color: "#f3e5f5", icon: "📖" },
+];
+
+export const highlightedProfiles = [
+  { 
+    id: "1",
+    name: "María García", 
+    location: "Madrid, Spain",
+    languages: {
+      fluent: { flags: ["🇪🇸", "🇬🇧"], count: 2 },
+      learns: { flags: ["🇯🇵"], count: 1 }
+    },
+    level: "Native",
+    description: "Passionate Spanish teacher with 5 years of experience. I love helping beginners feel confident!",
+    isOnline: true,
+    age: 28,
+    gender: "female",
+    region: "Europe",
+    country: "Spain",
+    city: "Madrid",
+    languageLevel: "native"
+  },
+  { 
+    id: "2",
+    name: "Yuki Tanaka", 
+    location: "Tokyo, Japan",
+    languages: {
+      fluent: { flags: ["🇯🇵", "🇬🇧"], count: 2 },
+      learns: { flags: ["🇪🇸", "🇰🇷"], count: 2 }
+    },
+    level: "Native",
+    description: "Japanese language enthusiast. Let's practice daily conversation and learn about culture together!",
+    isOnline: true,
+    isNew: true,
+    age: 25,
+    gender: "male",
+    region: "Asia",
+    country: "Japan",
+    city: "Tokyo",
+    languageLevel: "fluent"
+  },
+  { 
+    id: "3",
+    name: "Jean Dupont", 
+    location: "Paris, France",
+    languages: {
+      fluent: { flags: ["🇫🇷", "🇬🇧", "🇩🇪"], count: 3 },
+      learns: { flags: ["🇨🇳"], count: 1 }
+    },
+    level: "Native",
+    description: "French literature lover. I enjoy discussing books, films, and helping with pronunciation.",
+    isOnline: false,
+    age: 35,
+    gender: "male",
+    region: "Europe",
+    country: "France",
+    city: "Paris",
+    languageLevel: "advanced"
+  },
+  { 
+    id: "4",
+    name: "Sarah Chen", 
+    location: "Shanghai, China",
+    languages: {
+      fluent: { flags: ["🇨🇳", "🇬🇧"], count: 2 },
+      learns: { flags: ["🇫🇷", "🇯🇵"], count: 2 }
+    },
+    level: "Advanced",
+    description: "Business Chinese specialist. I can help with HSK preparation and professional vocabulary.",
+    isOnline: true,
+    age: 30,
+    gender: "female",
+    region: "Asia",
+    country: "China",
+    city: "Shanghai",
+    languageLevel: "intermediate"
+  },
+  { 
+    id: "5",
+    name: "Marco Rossi", 
+    location: "Rome, Italy",
+    languages: {
+      fluent: { flags: ["🇮🇹", "🇬🇧", "🇪🇸"], count: 3 },
+      learns: { flags: ["🇩🇪"], count: 1 }
+    },
+    level: "Native",
+    description: "Italian chef and language teacher. Let's talk about food, travel, and Italian culture!",
+    isOnline: false,
+    age: 40,
+    gender: "male",
+    region: "Europe",
+    country: "Italy",
+    city: "Rome",
+    languageLevel: "beginner"
+  },
+  { 
+    id: "6",
+    name: "Anna Schmidt", 
+    location: "Berlin, Germany",
+    languages: {
+      fluent: { flags: ["🇩🇪", "🇬🇧"], count: 2 },
+      learns: { flags: ["🇪🇸", "🇮🇹"], count: 2 }
+    },
+    level: "Native",
+    description: "German language coach focusing on business German and exam preparation.",
+    isOnline: true,
+    age: 32,
+    gender: "female",
+    region: "Europe",
+    country: "Germany",
+    city: "Berlin",
+    languageLevel: "native"
+  },
 ];

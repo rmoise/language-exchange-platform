@@ -110,42 +110,38 @@ export const ConversationList: React.FC<ConversationListProps> = ({
             </Badge>
           </ListItemAvatar>
           
-          <ListItemText
-            primary={
-              <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Typography variant="subtitle1" fontWeight="medium">
-                  {conversation.other_user?.name || 'Unknown User'}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" suppressHydrationWarning>
-                  {formatLastMessageTime(conversation.last_message_at)}
-                </Typography>
-              </Box>
-            }
-            secondary={
-              <Box display="flex" justifyContent="space-between" alignItems="center" mt={0.5}>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    maxWidth: '200px',
-                  }}
-                >
-                  {getLastMessagePreview(conversation)}
-                </Typography>
-                {conversation.unread_count > 0 && (
-                  <Chip
-                    label={conversation.unread_count}
-                    size="small"
-                    color="primary"
-                    sx={{ minWidth: 24, height: 20, fontSize: '0.75rem' }}
-                  />
-                )}
-              </Box>
-            }
-          />
+          <Box sx={{ flex: 1 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Typography variant="subtitle1" fontWeight="medium">
+                {conversation.other_user?.name || 'Unknown User'}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" suppressHydrationWarning>
+                {formatLastMessageTime(conversation.last_message_at)}
+              </Typography>
+            </Box>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mt={0.5}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '200px',
+                }}
+              >
+                {getLastMessagePreview(conversation)}
+              </Typography>
+              {conversation.unread_count > 0 && (
+                <Chip
+                  label={conversation.unread_count}
+                  size="small"
+                  color="primary"
+                  sx={{ minWidth: 24, height: 20, fontSize: '0.75rem' }}
+                />
+              )}
+            </Box>
+          </Box>
         </ListItem>
       ))}
     </List>

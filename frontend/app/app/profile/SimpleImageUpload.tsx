@@ -180,7 +180,8 @@ export default function SimpleImageUpload({
         }
       >
         <UserAvatar
-          user={{ name: userName, profileImage: currentImage }}
+          user={null}
+          userName={userName}
           size={size}
           showOnlineStatus={false}
           showBorderForNonImage={true}
@@ -190,6 +191,11 @@ export default function SimpleImageUpload({
             } else {
               fileInputRef.current?.click()
             }
+          }}
+          sx={{
+            backgroundImage: currentImage ? `url(${currentImage})` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
           }}
         />
       </Badge>

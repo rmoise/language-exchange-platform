@@ -1,3 +1,5 @@
+"use client";
+
 import { 
     AttachFile,
     Image as ImageIcon,
@@ -8,10 +10,8 @@ import {
     GifBox,
     FormatBold,
     FormatItalic,
-    Code,
 } from "@mui/icons-material";
 import {
-    Avatar,
     Box,
     Button,
     IconButton,
@@ -20,31 +20,56 @@ import {
     Typography,
     Divider,
     Tooltip,
+    Select,
+    MenuItem,
+    FormControl,
+    Chip,
 } from "@mui/material";
 import React, { useState } from "react";
+import UserAvatar from "@/components/ui/UserAvatar";
+import { useAuth } from "@/hooks/useAuth";
+import { useTheme as useCustomTheme } from "@/contexts/ThemeContext";
 
 interface AskMembersQuestionProps {
-    onPost?: (text: string) => void;
+    onPost?: (title: string, text: string, category: string) => void;
     userAvatar?: string;
     placeholder?: string;
     darkMode?: boolean;
     compact?: boolean;
 }
 
-export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = ({ 
+const categories = [
+    { value: "general", label: "General Discussion", icon: "💡" },
+    { value: "grammar", label: "Grammar Help", icon: "📝" },
+    { value: "vocabulary", label: "Vocabulary", icon: "📚" },
+    { value: "pronunciation", label: "Pronunciation", icon: "🗣️" },
+    { value: "conversation", label: "Conversation Practice", icon: "💬" },
+    { value: "writing", label: "Writing", icon: "✍️" },
+    { value: "culture", label: "Culture & Travel", icon: "🌍" },
+    { value: "resources", label: "Resources & Tips", icon: "📖" },
+];
+
+export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = React.memo(({ 
     onPost,
-    userAvatar = "/user-avatar.png",
+    userAvatar,
     placeholder = "What's on your mind? Ask the community...",
-    darkMode = false,
+    darkMode: darkModeProp,
     compact = false
 }) => {
+    const [title, setTitle] = useState("");
     const [text, setText] = useState("");
+    const [category, setCategory] = useState("general");
     const [isFocused, setIsFocused] = useState(false);
+    const { user } = useAuth();
+    const { mode } = useCustomTheme();
+    const darkMode = darkModeProp ?? (mode === "dark");
 
     const handlePost = () => {
-        if (text.trim() && onPost) {
-            onPost(text);
+        if (title.trim() && text.trim() && onPost) {
+            onPost(title, text, category);
+            setTitle("");
             setText("");
+            setCategory("general");
         }
     };
 
@@ -58,48 +83,83 @@ export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = ({
     return (
         <Box
             sx={{
-                bgcolor: darkMode ? "rgba(30, 30, 30, 0.5)" : "white",
-                border: "1px solid",
+                backgroundColor: darkMode ? "rgba(30, 30, 30, 0.5)" : "rgba(255, 255, 255, 0.8)",
+                backdropFilter: "blur(20px)",
+                border: "0.5px solid",
                 borderColor: isFocused 
-                    ? (darkMode ? "#6366f1" : "#1976d2")
-                    : (darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.06)"),
+                    ? (darkMode ? "#6366f1" : "#6366f1")
+                    : (darkMode ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)"),
                 borderRadius: "16px",
                 overflow: "hidden",
-                transition: "all 0.2s ease",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                position: "relative",
+                transform: isFocused ? "translateY(-1px)" : "translateY(0)",
                 boxShadow: isFocused
                     ? darkMode 
-                        ? "0 0 0 3px rgba(99, 102, 241, 0.1)" 
-                        : "0 0 0 3px rgba(25, 118, 210, 0.1)"
-                    : "none",
+                        ? "0 0 0 3px rgba(99, 102, 241, 0.2), 0 10px 24px -8px rgba(0, 0, 0, 0.3)" 
+                        : "0 0 0 3px rgba(99, 102, 241, 0.15), 0 10px 24px -8px rgba(0, 0, 0, 0.08)"
+                    : darkMode
+                        ? "0 20px 40px -12px rgba(0, 0, 0, 0.3)"
+                        : "0 20px 40px -12px rgba(0, 0, 0, 0.08)",
                 "&:hover": {
+                    borderColor: isFocused 
+                        ? (darkMode ? "#6366f1" : "#6366f1")
+                        : (darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.06)"),
+                    transform: "translateY(-2px)",
                     boxShadow: isFocused
                         ? darkMode 
-                            ? "0 0 0 3px rgba(99, 102, 241, 0.1)" 
-                            : "0 0 0 3px rgba(25, 118, 210, 0.1)"
+                            ? "0 0 0 3px rgba(99, 102, 241, 0.25), 0 12px 28px -8px rgba(99, 102, 241, 0.2)" 
+                            : "0 0 0 3px rgba(99, 102, 241, 0.2), 0 12px 28px -8px rgba(99, 102, 241, 0.15)"
                         : darkMode
-                            ? "0 0 0 1px #6366f1"
-                            : "0 0 0 1px #1976d2",
+                            ? "0 20px 40px -12px rgba(0, 0, 0, 0.35)"
+                            : "0 20px 40px -12px rgba(0, 0, 0, 0.1)",
                 },
             }}
         >
             {/* Header */}
             <Box sx={{ p: 2.5, pb: 0 }}>
                 <Stack direction="row" spacing={2} alignItems="flex-start">
-                    <Avatar
-                        sx={{
-                            width: 44,
-                            height: 44,
-                            bgcolor: darkMode ? "#6366f1" : "#1976d2",
-                            fontSize: "18px",
-                            fontWeight: 600,
-                            border: "2px solid",
-                            borderColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.06)",
+                    <UserAvatar
+                        user={user || { 
+                            id: 'default',
+                            name: 'User',
+                            profileImage: null 
                         }}
-                    >
-                        U
-                    </Avatar>
+                        size={44}
+                        showOnlineStatus={false}
+                    />
 
                     <Box sx={{ flex: 1 }}>
+                        <TextField
+                            placeholder="Add a title..."
+                            variant="standard"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => setIsFocused(false)}
+                            fullWidth
+                            InputProps={{
+                                disableUnderline: true,
+                                sx: {
+                                    fontSize: "18px",
+                                    fontWeight: 600,
+                                    color: darkMode ? "white" : "#1a1a1a",
+                                    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                                    mb: 1.5,
+                                    "& input": {
+                                        "&::placeholder": {
+                                            color: darkMode ? "#9ca3af" : "#6b7280",
+                                            opacity: 1,
+                                            fontWeight: 400,
+                                        },
+                                    },
+                                },
+                            }}
+                        />
+                        <Divider sx={{ 
+                            borderColor: darkMode ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)",
+                            my: 1.5
+                        }} />
                         <TextField
                             placeholder={placeholder}
                             variant="standard"
@@ -136,54 +196,59 @@ export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = ({
             <Divider sx={{ borderColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.06)" }} />
             
             {/* Footer with actions */}
-            <Box sx={{ p: 2, bgcolor: darkMode ? "rgba(255, 255, 255, 0.02)" : "rgba(0, 0, 0, 0.02)" }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Stack direction="row" spacing={0.5}>
-                        {/* Format buttons */}
-                        <Tooltip title="Bold" arrow>
-                            <IconButton 
-                                size="small"
+            <Box sx={{ p: 2, bgcolor: "transparent" }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+                    <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+                        {/* Category selector */}
+                        <FormControl size="small" sx={{ minWidth: 180 }}>
+                            <Select
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
                                 sx={{
-                                    color: darkMode ? "#9ca3af" : "#6b7280",
-                                    "&:hover": {
-                                        bgcolor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)",
+                                    backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)",
+                                    borderRadius: "8px",
+                                    fontSize: "14px",
+                                    "& .MuiOutlinedInput-notchedOutline": {
+                                        borderColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                                    },
+                                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                                        borderColor: darkMode ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.2)",
+                                    },
+                                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                        borderColor: "#6366f1",
+                                    },
+                                    "& .MuiSelect-select": {
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1,
+                                        py: 1,
                                     },
                                 }}
-                            >
-                                <FormatBold sx={{ fontSize: 20 }} />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Italic" arrow>
-                            <IconButton 
-                                size="small"
-                                sx={{
-                                    color: darkMode ? "#9ca3af" : "#6b7280",
-                                    "&:hover": {
-                                        bgcolor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)",
-                                    },
+                                renderValue={(value) => {
+                                    const selected = categories.find(cat => cat.value === value);
+                                    return (
+                                        <Stack direction="row" spacing={1} alignItems="center">
+                                            <Typography>{selected?.icon}</Typography>
+                                            <Typography sx={{ fontSize: "14px" }}>{selected?.label}</Typography>
+                                        </Stack>
+                                    );
                                 }}
                             >
-                                <FormatItalic sx={{ fontSize: 20 }} />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Code" arrow>
-                            <IconButton 
-                                size="small"
-                                sx={{
-                                    color: darkMode ? "#9ca3af" : "#6b7280",
-                                    "&:hover": {
-                                        bgcolor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)",
-                                    },
-                                }}
-                            >
-                                <Code sx={{ fontSize: 20 }} />
-                            </IconButton>
-                        </Tooltip>
-                        
+                                {categories.map((cat) => (
+                                    <MenuItem key={cat.value} value={cat.value}>
+                                        <Stack direction="row" spacing={1} alignItems="center">
+                                            <Typography>{cat.icon}</Typography>
+                                            <Typography sx={{ fontSize: "14px" }}>{cat.label}</Typography>
+                                        </Stack>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
                         <Divider orientation="vertical" flexItem sx={{ mx: 1, borderColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)" }} />
                         
                         {/* Media buttons */}
-                        <Tooltip title="Add image" arrow>
+                        <Tooltip title="Add image" placement="bottom" arrow>
                             <IconButton 
                                 size="small"
                                 sx={{
@@ -196,7 +261,7 @@ export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = ({
                                 <ImageIcon sx={{ fontSize: 20 }} />
                             </IconButton>
                         </Tooltip>
-                        <Tooltip title="Add GIF" arrow>
+                        <Tooltip title="Add GIF" placement="bottom" arrow>
                             <IconButton 
                                 size="small"
                                 sx={{
@@ -209,7 +274,7 @@ export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = ({
                                 <GifBox sx={{ fontSize: 20 }} />
                             </IconButton>
                         </Tooltip>
-                        <Tooltip title="Add poll" arrow>
+                        <Tooltip title="Create poll" placement="bottom" arrow>
                             <IconButton 
                                 size="small"
                                 sx={{
@@ -222,7 +287,7 @@ export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = ({
                                 <Poll sx={{ fontSize: 20 }} />
                             </IconButton>
                         </Tooltip>
-                        <Tooltip title="Add emoji" arrow>
+                        <Tooltip title="Add emoji" placement="bottom" arrow>
                             <IconButton 
                                 size="small"
                                 sx={{
@@ -241,10 +306,10 @@ export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = ({
                     <Button
                         variant="contained"
                         onClick={handlePost}
-                        disabled={!text.trim()}
+                        disabled={!title.trim() || !text.trim()}
                         endIcon={<Send sx={{ fontSize: 18 }} />}
                         sx={{
-                            bgcolor: darkMode ? "#6366f1" : "#1976d2",
+                            background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
                             color: "white",
                             borderRadius: "8px",
                             px: 2.5,
@@ -252,14 +317,16 @@ export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = ({
                             fontSize: "14px",
                             fontWeight: 600,
                             textTransform: "none",
-                            boxShadow: "none",
+                            boxShadow: "0 4px 12px rgba(99, 102, 241, 0.25)",
                             "&:hover": {
-                                bgcolor: darkMode ? "#5558d9" : "#1565c0",
-                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+                                background: "linear-gradient(135deg, #5558d9 0%, #7c3aed 100%)",
+                                boxShadow: "0 6px 16px rgba(99, 102, 241, 0.35)",
+                                transform: "translateY(-1px)",
                             },
                             "&.Mui-disabled": {
-                                bgcolor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)",
+                                background: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)",
                                 color: darkMode ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.3)",
+                                boxShadow: "none",
                             },
                         }}
                     >
@@ -269,4 +336,6 @@ export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = ({
             </Box>
         </Box>
     );
-};
+});
+
+AskMembersQuestion.displayName = 'AskMembersQuestion';

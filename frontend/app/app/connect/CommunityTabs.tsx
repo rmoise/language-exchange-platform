@@ -8,20 +8,31 @@ import {
   Typography,
   Button,
   CircularProgress,
+  IconButton,
+  Drawer,
+  useMediaQuery,
+  useTheme,
+  Badge,
 } from "@mui/material";
 import {
   LocationOn as LocationIcon,
   People as PeopleIcon,
+  FilterList as FilterListIcon,
 } from "@mui/icons-material";
 import ProfileCard from "../../../features/users/components/ProfileCard";
+import { HighlightedProfilesSection } from "@/features/home";
+import { ConnectFilters } from "@/components/ui/ConnectFilters";
+import { useSearchParams } from "next/navigation";
 
 interface User {
   id: string;
   name: string;
   email: string;
   avatar?: string;
+  profile_picture?: string;
   city?: string;
   country?: string;
+  region?: string;
   nativeLanguages: string[];
   targetLanguages: string[];
   bio?: string;
@@ -33,6 +44,10 @@ interface User {
   updatedAt?: string;
   hasExistingRequest?: boolean;
   existingRequestId?: string;
+  isNew?: boolean;
+  age?: number;
+  gender?: string;
+  languageLevel?: string;
 }
 
 interface CommunityTabsProps {
@@ -42,30 +57,119 @@ interface CommunityTabsProps {
 }
 
 
+interface FilterOptions {
+  ageRange: [number, number];
+  newMembersOnly: boolean;
+  sameGenderOnly: boolean;
+  country?: string;
+  region?: string;
+  city?: string;
+  languageLevels: string[];
+}
+
 export default function CommunityTabs({
   users,
+  currentUser,
   onRequestUpdate,
 }: CommunityTabsProps) {
   const [activeTab, setActiveTab] = useState(0);
-  const [displayCount, setDisplayCount] = useState(20); // Start by showing 20 users
+  const [displayCount, setDisplayCount] = useState(20);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [filters, setFilters] = useState<FilterOptions>({
+    ageRange: [18, 65],
+    newMembersOnly: false,
+    sameGenderOnly: false,
+    country: "",
+    region: "",
+    city: "",
+    languageLevels: [],
+  });
+  
+  const searchParams = useSearchParams();
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const darkMode = theme.palette.mode === 'dark';
 
 
   console.log("CommunityTabs - users received:", users.length, users);
 
-  // Use all users directly (search now handled by main header)
-  const filteredUsers = users;
+  // Check if we should open filters from URL param
+  useEffect(() => {
+    if (searchParams.get('openFilters') === 'true') {
+      setFilterDrawerOpen(true);
+      // Remove the param from URL after opening
+      const url = new URL(window.location.href);
+      url.searchParams.delete('openFilters');
+      window.history.replaceState({}, '', url.pathname + url.search);
+    }
+  }, [searchParams]);
 
-  // Separate nearby users (those with distance data)
-  const nearbyUsers = filteredUsers.filter(
+  // Apply filters
+  const applyFilters = (userList: User[]) => {
+    return userList.filter((user) => {
+      // Age filter
+      if (user.age && (user.age < filters.ageRange[0] || user.age > filters.ageRange[1])) {
+        return false;
+      }
+
+      // New members filter
+      if (filters.newMembersOnly && !user.isNew) {
+        return false;
+      }
+
+      // Same gender filter
+      if (filters.sameGenderOnly && currentUser?.gender && user.gender !== currentUser.gender) {
+        return false;
+      }
+
+      // Location filters
+      if (filters.country && user.country?.toLowerCase() !== filters.country.toLowerCase()) {
+        return false;
+      }
+      if (filters.region && user.region?.toLowerCase() !== filters.region.toLowerCase()) {
+        return false;
+      }
+      if (filters.city && !user.city?.toLowerCase().includes(filters.city.toLowerCase())) {
+        return false;
+      }
+
+      // Language level filter
+      if (filters.languageLevels.length > 0 && user.languageLevel) {
+        if (!filters.languageLevels.includes(user.languageLevel.toLowerCase())) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  };
+
+  // Use all users directly (search now handled by main header)
+  const filteredUsers = applyFilters(users);
+
+  // Sort users by match percentage only
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    const aMatch = a.matchPercentage || 0;
+    const bMatch = b.matchPercentage || 0;
+    return bMatch - aMatch;
+  });
+
+  // Separate nearby users (those with distance data) and apply same sorting
+  const nearbyUsers = sortedUsers.filter(
     (user) => user.distance !== undefined
   );
-  const allUsers = filteredUsers;
+  const allUsers = sortedUsers;
+
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
     setDisplayCount(20); // Reset display count when changing tabs
+  };
+
+  const handleFiltersChange = (newFilters: FilterOptions) => {
+    setFilters(newFilters);
   };
 
   const handleLoadMore = useCallback(() => {
@@ -127,6 +231,7 @@ export default function CommunityTabs({
         </Typography>
       </Box>
 
+
       {/* Tabs */}
       <Box sx={{ mb: 4, display: "flex", justifyContent: "center" }}>
         <Tabs
@@ -167,19 +272,22 @@ export default function CommunityTabs({
       {/* Tab Content */}
       <Box sx={{ position: "relative", zIndex: 1 }}>
         {activeTab === 0 && (
-          <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
             {allUsers.length > 0 ? (
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(322px, 322px))",
-                  gap: "24px",
-                  maxWidth: "1400px",
-                  justifyContent: "center",
-                  justifyItems: "center",
-                }}
-              >
-                {allUsers.slice(0, displayCount).map((user) => (
+              <>
+                {/* First 8 profile cards */}
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(322px, 322px))",
+                    gap: "24px",
+                    maxWidth: "1400px",
+                    justifyContent: "center",
+                    justifyItems: "center",
+                    width: "100%",
+                  }}
+                >
+                  {allUsers.slice(0, Math.min(4, displayCount)).map((user) => (
                   <Box
                     key={user.id}
                     sx={{
@@ -189,8 +297,10 @@ export default function CommunityTabs({
                   >
                     <ProfileCard
                       user={{
-                        ...user,
+                        id: user.id,
+                        name: user.name,
                         age: 25,
+                        avatar: user.avatar,
                         profile_picture:
                           user.avatar ||
                           `https://ui-avatars.com/api/?name=${encodeURIComponent(
@@ -199,14 +309,18 @@ export default function CommunityTabs({
                         bio:
                           user.bio ||
                           "Learning languages and connecting with people around the world!",
+                        city: user.city,
+                        country: user.country,
                         location:
                           user.city && user.country
                             ? `${user.city}, ${user.country}`
                             : user.city || user.country,
+                        nativeLanguages: user.nativeLanguages,
+                        targetLanguages: user.targetLanguages,
                         native_languages: user.nativeLanguages,
                         learning_languages: user.targetLanguages,
                         is_verified: true,
-                      }}
+                      } as any}
                       matchPercentage={user.matchPercentage || 85}
                       distance={user.distance ? `${user.distance}km` : "2.1km"}
                       isFollowing={false}
@@ -216,8 +330,76 @@ export default function CommunityTabs({
                       onFollow={onRequestUpdate}
                     />
                   </Box>
-                ))}
-              </Box>
+                  ))}
+                </Box>
+                
+                {/* Highlighted Profiles Section - shown after first row (4 cards) */}
+                {displayCount > 4 && (
+                  <Box sx={{ width: "100%", my: 4 }}>
+                    <HighlightedProfilesSection currentUser={currentUser} />
+                  </Box>
+                )}
+                
+                {/* Remaining profile cards after highlighted section */}
+                {displayCount > 4 && (
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(322px, 322px))",
+                      gap: "24px",
+                      maxWidth: "1400px",
+                      justifyContent: "center",
+                      justifyItems: "center",
+                      width: "100%",
+                    }}
+                  >
+                    {allUsers.slice(4, displayCount).map((user) => (
+                      <Box
+                        key={user.id}
+                        sx={{
+                          width: "322px",
+                          height: "360px",
+                        }}
+                      >
+                        <ProfileCard
+                          user={{
+                            id: user.id,
+                            name: user.name,
+                            age: 25,
+                            avatar: user.avatar,
+                            profile_picture:
+                              user.avatar ||
+                              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                user.name
+                              )}&background=6366f1&color=fff&size=400`,
+                            bio:
+                              user.bio ||
+                              "Learning languages and connecting with people around the world!",
+                            city: user.city,
+                            country: user.country,
+                            location:
+                              user.city && user.country
+                                ? `${user.city}, ${user.country}`
+                                : user.city || user.country,
+                            nativeLanguages: user.nativeLanguages,
+                            targetLanguages: user.targetLanguages,
+                            native_languages: user.nativeLanguages,
+                            learning_languages: user.targetLanguages,
+                            is_verified: true,
+                          } as any}
+                          matchPercentage={user.matchPercentage || 85}
+                          distance={user.distance ? `${user.distance}km` : "2.1km"}
+                          isFollowing={false}
+                          hasExistingRequest={user.hasExistingRequest}
+                          existingRequestId={user.existingRequestId}
+                          darkMode={true}
+                          onFollow={onRequestUpdate}
+                        />
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </>
             ) : (
               <Box sx={{ textAlign: "center", py: 8 }}>
                 <Typography sx={{ fontSize: "3rem", mb: 2 }}>🔍</Typography>
@@ -262,8 +444,10 @@ export default function CommunityTabs({
                   >
                     <ProfileCard
                       user={{
-                        ...user,
+                        id: user.id,
+                        name: user.name,
                         age: 25,
+                        avatar: user.avatar,
                         profile_picture:
                           user.avatar ||
                           `https://ui-avatars.com/api/?name=${encodeURIComponent(
@@ -272,14 +456,18 @@ export default function CommunityTabs({
                         bio:
                           user.bio ||
                           "Learning languages and connecting with people around the world!",
+                        city: user.city,
+                        country: user.country,
                         location:
                           user.city && user.country
                             ? `${user.city}, ${user.country}`
                             : user.city || user.country,
+                        nativeLanguages: user.nativeLanguages,
+                        targetLanguages: user.targetLanguages,
                         native_languages: user.nativeLanguages,
                         learning_languages: user.targetLanguages,
                         is_verified: true,
-                      }}
+                      } as any}
                       matchPercentage={user.matchPercentage || 85}
                       distance={user.distance ? `${user.distance}km` : "2.1km"}
                       isFollowing={false}
@@ -370,6 +558,28 @@ export default function CommunityTabs({
           )}
         </Box>
       )}
+      
+      {/* Filter Drawer */}
+      <Drawer
+        anchor="right"
+        open={filterDrawerOpen}
+        onClose={() => setFilterDrawerOpen(false)}
+        sx={{
+          "& .MuiDrawer-paper": {
+            backgroundColor: darkMode ? "#1a1a1a" : "#ffffff",
+            width: isMobile ? "100%" : 400,
+            maxWidth: 400,
+            p: 3,
+          },
+        }}
+      >
+        <ConnectFilters
+          onFiltersChange={handleFiltersChange}
+          onClose={() => setFilterDrawerOpen(false)}
+          darkMode={darkMode}
+          currentUserGender={currentUser?.gender}
+        />
+      </Drawer>
     </Box>
   );
 }

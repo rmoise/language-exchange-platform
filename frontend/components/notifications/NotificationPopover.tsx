@@ -223,46 +223,40 @@ export default function NotificationPopover({
                 <ListItemIcon sx={{ minWidth: 40 }}>
                   {getNotificationIcon(notification.type)}
                 </ListItemIcon>
-                <ListItemText
-                  primary={
-                    <Typography
-                      sx={{
-                        fontSize: '0.875rem',
-                        fontWeight: notification.read ? 400 : 500,
-                        color: notification.read ? '#e5e7eb' : 'white',
-                        mb: 0.5,
-                      }}
-                    >
-                      {notification.title}
-                    </Typography>
-                  }
-                  secondary={
-                    <>
-                      <Typography
-                        component="span"
-                        sx={{
-                          fontSize: '0.75rem',
-                          color: '#9ca3af',
-                          display: 'block',
-                          mb: 0.5,
-                        }}
-                      >
-                        {notification.message}
-                      </Typography>
-                      <Typography
-                        component="span"
-                        sx={{
-                          fontSize: '0.6875rem',
-                          color: '#6b7280',
-                        }}
-                      >
-                        {formatDistanceToNow(new Date(notification.createdAt), {
-                          addSuffix: true,
-                        })}
-                      </Typography>
-                    </>
-                  }
-                />
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    sx={{
+                      fontSize: '0.875rem',
+                      fontWeight: notification.read ? 400 : 500,
+                      color: notification.read ? '#e5e7eb' : 'white',
+                      mb: 0.5,
+                    }}
+                  >
+                    {notification.title}
+                  </Typography>
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontSize: '0.75rem',
+                      color: '#9ca3af',
+                      display: 'block',
+                      mb: 0.5,
+                    }}
+                  >
+                    {notification.message}
+                  </Typography>
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontSize: '0.6875rem',
+                      color: '#6b7280',
+                    }}
+                  >
+                    {formatDistanceToNow(new Date(notification.createdAt), {
+                      addSuffix: true,
+                    })}
+                  </Typography>
+                </Box>
                 {!notification.read && (
                   <Box
                     sx={{

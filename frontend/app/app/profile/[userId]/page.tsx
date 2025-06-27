@@ -777,7 +777,7 @@ export default async function UserProfilePage({
             The user profile you're looking for doesn't exist or has been
             removed.
           </Typography>
-          <Link href="/app/community" style={{ textDecoration: "none" }}>
+          <Link href="/app/connect" style={{ textDecoration: "none" }}>
             <Button variant="contained" sx={{ backgroundColor: "#6366f1" }}>
               Back to Community
             </Button>

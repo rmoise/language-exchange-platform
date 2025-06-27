@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Exchange Community - Discord Style</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Main Layout */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            background-color: #f1f5f9;
+        }
+
+        /* Server List (Leftmost Column) */
+        .server-list {
+            width: 72px;
+            background-color: #1e293b;
+            padding: 12px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+
+        .server-list::-webkit-scrollbar {
+            display: none;
+        }
+
+        .server-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            color: #ffffff;
+        }
+
+        .server-icon:hover {
+            border-radius: 35%;
+            background-color: #8b5cf6;
+        }
+
+        .server-icon.active {
+            border-radius: 35%;
+            background-color: #8b5cf6;
+        }
+
+        .server-icon.home {
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            margin-bottom: 8px;
+        }
+
+        .server-separator {
+            width: 32px;
+            height: 2px;
+            background-color: #334155;
+            border-radius: 1px;
+            margin: 4px 0;
+        }
+
+        .server-badge {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 16px;
+            height: 16px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            border: 3px solid #1e293b;
+            font-size: 0.625rem;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        /* Channel List */
+        .channel-sidebar {
+            width: 240px;
+            background-color: #ffffff;
+            border-right: 1px solid #e5e5e5;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .server-header {
+            padding: 16px;
+            border-bottom: 1px solid #e5e5e5;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .server-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .server-flag {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .channel-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .channel-category {
+            margin-bottom: 16px;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .channel-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            margin: 2px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #64748b;
+            transition: all 0.15s ease;
+        }
+
+        .channel-item:hover {
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        .channel-item.active {
+            background-color: #f1f5f9;
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        .channel-icon {
+            width: 20px;
+            text-align: center;
+            opacity: 0.7;
+        }
+
+        .user-area {
+            padding: 12px;
+            background-color: #f8fafc;
+            border-top: 1px solid #e5e5e5;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-weight: 600;
+            position: relative;
+        }
+
+        .user-status {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background-color: #10b981;
+            border-radius: 50%;
+            border: 2px solid #f8fafc;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .user-level {
+            font-size: 0.75rem;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .level-badge {
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            color: #ffffff;
+            padding: 2px 6px;
+            border-radius: 9999px;
+            font-size: 0.625rem;
+            font-weight: 600;
+        }
+
+        /* Main Chat Area */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+        }
+
+        .chat-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .channel-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .channel-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .channel-description {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .chat-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            padding: 8px 0;
+            transition: background-color 0.15s ease;
+        }
+
+        .message:hover {
+            background-color: #fafafa;
+            margin: 0 -20px;
+            padding: 8px 20px;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #8b5cf6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .message-author {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .message-timestamp {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .message-text {
+            color: #334155;
+            line-height: 1.5;
+        }
+
+        .message-xp {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background-color: #f3f0ff;
+            color: #8b5cf6;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        /* Member List */
+        .member-list {
+            width: 240px;
+            background-color: #f8fafc;
+            border-left: 1px solid #e5e5e5;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .member-category {
+            margin-bottom: 20px;
+        }
+
+        .member-category-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .member-item:hover {
+            background-color: #ffffff;
+        }
+
+        .member-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #8b5cf6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 0.875rem;
+            font-weight: 600;
+            position: relative;
+        }
+
+        .member-status-indicator {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid #f8fafc;
+        }
+
+        .status-online {
+            background-color: #10b981;
+        }
+
+        .status-away {
+            background-color: #f59e0b;
+        }
+
+        .status-offline {
+            background-color: #94a3b8;
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .member-details {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .xp-indicator {
+            background: linear-gradient(135deg, #f97316, #fb923c);
+            color: #ffffff;
+            padding: 2px 6px;
+            border-radius: 9999px;
+            font-size: 0.625rem;
+            font-weight: 600;
+        }
+
+        /* Chat Input */
+        .chat-input-container {
+            padding: 16px 20px;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        .chat-input-wrapper {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            font-size: 0.875rem;
+            color: #1e293b;
+        }
+
+        .chat-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            transition: all 0.15s ease;
+        }
+
+        .chat-action-btn:hover {
+            background-color: #ffffff;
+            color: #1e293b;
+        }
+
+        /* Gamification Elements */
+        .xp-notification {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .xp-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .achievement-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: linear-gradient(135deg, #10b981, #34d399);
+            color: #ffffff;
+            padding: 24px 32px;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.3);
+            text-align: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .achievement-popup.show {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        .achievement-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
+        .achievement-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .achievement-description {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        /* Voice Channel Indicator */
+        .voice-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background-color: #f3f0ff;
+            border-radius: 8px;
+            margin: 8px;
+        }
+
+        .voice-icon {
+            color: #8b5cf6;
+        }
+
+        .voice-info {
+            flex: 1;
+            font-size: 0.875rem;
+            color: #8b5cf6;
+            font-weight: 500;
+        }
+
+        .voice-leave {
+            background-color: #ef4444;
+            color: #ffffff;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .voice-leave:hover {
+            background-color: #dc2626;
+        }
+
+        /* Streak Counter */
+        .streak-counter {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #f97316, #fb923c);
+            color: #ffffff;
+            padding: 6px 12px;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 20px 8px;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 2px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #94a3b8;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Server List -->
+        <div class="server-list">
+            <div class="server-icon home">🏠</div>
+            <div class="server-separator"></div>
+            
+            <div class="server-icon active">
+                🇪🇸
+                <div class="server-badge">3</div>
+            </div>
+            <div class="server-icon">🇫🇷</div>
+            <div class="server-icon">🇯🇵</div>
+            <div class="server-icon">🇩🇪</div>
+            <div class="server-icon">🇮🇹</div>
+            <div class="server-icon">🇰🇷</div>
+            <div class="server-icon">+</div>
+        </div>
+
+        <!-- Channel Sidebar -->
+        <div class="channel-sidebar">
+            <div class="server-header">
+                <div class="server-name">
+                    <span class="server-flag">🇪🇸</span>
+                    <span>Spanish Community</span>
+                </div>
+                <span>⌄</span>
+            </div>
+
+            <div class="channel-list">
+                <!-- Voice Channels -->
+                <div class="channel-category">
+                    <div class="category-header">
+                        <span>▼</span>
+                        <span>Voice Channels</span>
+                    </div>
+                    <div class="channel-item">
+                        <span class="channel-icon">🔊</span>
+                        <span>Beginner Practice</span>
+                    </div>
+                    <div class="channel-item">
+                        <span class="channel-icon">🔊</span>
+                        <span>Intermediate Chat</span>
+                    </div>
+                    <div class="channel-item">
+                        <span class="channel-icon">🔊</span>
+                        <span>Native Speakers</span>
+                    </div>
+                </div>
+
+                <!-- Text Channels -->
+                <div class="channel-category">
+                    <div class="category-header">
+                        <span>▼</span>
+                        <span>Text Channels</span>
+                    </div>
+                    <div class="channel-item active">
+                        <span class="channel-icon">#</span>
+                        <span>general</span>
+                    </div>
+                    <div class="channel-item">
+                        <span class="channel-icon">#</span>
+                        <span>grammar-help</span>
+                    </div>
+                    <div class="channel-item">
+                        <span class="channel-icon">#</span>
+                        <span>vocabulary</span>
+                    </div>
+                    <div class="channel-item">
+                        <span class="channel-icon">#</span>
+                        <span>culture-exchange</span>
+                    </div>
+                </div>
+
+                <!-- Study Groups -->
+                <div class="channel-category">
+                    <div class="category-header">
+                        <span>▼</span>
+                        <span>Study Groups</span>
+                    </div>
+                    <div class="channel-item">
+                        <span class="channel-icon">📚</span>
+                        <span>Book Club</span>
+                    </div>
+                    <div class="channel-item">
+                        <span class="channel-icon">🎬</span>
+                        <span>Movie Nights</span>
+                    </div>
+                    <div class="channel-item">
+                        <span class="channel-icon">🎯</span>
+                        <span>Daily Challenges</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voice Channel Indicator -->
+            <div class="voice-indicator">
+                <span class="voice-icon">🔊</span>
+                <span class="voice-info">Beginner Practice</span>
+                <button class="voice-leave">Leave</button>
+            </div>
+
+            <!-- User Area -->
+            <div class="user-area">
+                <div class="user-avatar">
+                    Y
+                    <div class="user-status"></div>
+                </div>
+                <div class="user-info">
+                    <div class="user-name">You</div>
+                    <div class="user-level">
+                        <span class="level-badge">Lvl 4</span>
+                        <span>675 XP</span>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="chat-action-btn">⚙️</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="channel-info">
+                    <div>
+                        <div class="channel-name"># general</div>
+                        <div class="channel-description">General Spanish discussion and practice</div>
+                    </div>
+                </div>
+                <div class="streak-counter">
+                    🔥 12 day streak
+                </div>
+            </div>
+
+            <div class="chat-content">
+                <div class="messages-area">
+                    <!-- Messages -->
+                    <div class="message">
+                        <div class="message-avatar">MG</div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-author">Maria García</span>
+                                <span class="level-badge">Lvl 5</span>
+                                <span class="message-timestamp">Today at 10:30 AM</span>
+                            </div>
+                            <div class="message-text">
+                                ¡Hola a todos! How is everyone's Spanish practice going today? 
+                                <span class="message-xp">+10 XP</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="message">
+                        <div class="message-avatar">YT</div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-author">Yuki Tanaka</span>
+                                <span class="level-badge">Lvl 7</span>
+                                <span class="message-timestamp">Today at 10:32 AM</span>
+                            </div>
+                            <div class="message-text">
+                                Going great! I just completed my daily challenge. Anyone want to practice conversation?
+                                <span class="message-xp">+15 XP</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="message">
+                        <div class="message-avatar">PD</div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-author">Pierre Dubois</span>
+                                <span class="level-badge">Lvl 3</span>
+                                <span class="message-timestamp">Today at 10:35 AM</span>
+                            </div>
+                            <div class="message-text">
+                                I'd love to practice! I'm still working on my pronunciation. ¿Alguien puede ayudarme?
+                                <span class="message-xp">+12 XP</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="message">
+                        <div class="message-avatar">MG</div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-author">Maria García</span>
+                                <span class="level-badge">Lvl 5</span>
+                                <span class="message-timestamp">Today at 10:37 AM</span>
+                            </div>
+                            <div class="message-text">
+                                ¡Por supuesto! I can help with pronunciation. Let's hop into the voice channel!
+                                <span class="message-xp">+20 XP</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="message">
+                        <div class="message-avatar">Y</div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-author">You</span>
+                                <span class="level-badge">Lvl 4</span>
+                                <span class="message-timestamp">Today at 10:40 AM</span>
+                            </div>
+                            <div class="message-text">
+                                That sounds fun! I'll join too. I've been practicing the subjunctive mood this week.
+                                <span class="message-xp">+10 XP</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="message">
+                        <div class="message-avatar">AM</div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-author">Anna Mueller</span>
+                                <span class="level-badge">Lvl 6</span>
+                                <span class="message-timestamp">Today at 10:42 AM</span>
+                            </div>
+                            <div class="message-text">
+                                The subjunctive is tricky! Here's a tip: Remember "WEIRDO" - Wishes, Emotions, Impersonal expressions, Recommendations, Doubt/Denial, Ojalá
+                                <span class="message-xp">+25 XP</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Member List -->
+                <div class="member-list">
+                    <!-- Online Members -->
+                    <div class="member-category">
+                        <div class="member-category-title">Online — 15</div>
+                        
+                        <div class="member-item">
+                            <div class="member-avatar">
+                                MG
+                                <div class="member-status-indicator status-online"></div>
+                            </div>
+                            <div class="member-info">
+                                <div class="member-name">
+                                    Maria García
+                                    <span class="xp-indicator">520 XP</span>
+                                </div>
+                                <div class="member-details">Native Speaker</div>
+                            </div>
+                        </div>
+
+                        <div class="member-item">
+                            <div class="member-avatar">
+                                YT
+                                <div class="member-status-indicator status-online"></div>
+                            </div>
+                            <div class="member-info">
+                                <div class="member-name">
+                                    Yuki Tanaka
+                                    <span class="xp-indicator">485 XP</span>
+                                </div>
+                                <div class="member-details">Learning Spanish</div>
+                            </div>
+                        </div>
+
+                        <div class="member-item">
+                            <div class="member-avatar">
+                                SC
+                                <div class="member-status-indicator status-online"></div>
+                            </div>
+                            <div class="member-info">
+                                <div class="member-name">
+                                    Sarah Chen
+                                    <span class="xp-indicator">520 XP</span>
+                                </div>
+                                <div class="member-details">Advanced</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Away Members -->
+                    <div class="member-category">
+                        <div class="member-category-title">Away — 8</div>
+                        
+                        <div class="member-item">
+                            <div class="member-avatar">
+                                PD
+                                <div class="member-status-indicator status-away"></div>
+                            </div>
+                            <div class="member-info">
+                                <div class="member-name">
+                                    Pierre Dubois
+                                    <span class="xp-indicator">250 XP</span>
+                                </div>
+                                <div class="member-details">Intermediate</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Offline Members -->
+                    <div class="member-category">
+                        <div class="member-category-title">Offline — 42</div>
+                        
+                        <div class="member-item">
+                            <div class="member-avatar">
+                                AM
+                                <div class="member-status-indicator status-offline"></div>
+                            </div>
+                            <div class="member-info">
+                                <div class="member-name">
+                                    Anna Mueller
+                                    <span class="xp-indicator">380 XP</span>
+                                </div>
+                                <div class="member-details">Advanced</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Typing Indicator -->
+            <div class="typing-indicator">
+                <span>Maria García is typing</span>
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <button class="chat-action-btn">➕</button>
+                    <input type="text" class="chat-input" placeholder="Message #general">
+                    <div class="chat-actions">
+                        <button class="chat-action-btn">🎁</button>
+                        <button class="chat-action-btn">😊</button>
+                        <button class="chat-action-btn">📎</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- XP Notification -->
+    <div class="xp-notification" id="xpNotification">
+        <span style="font-size: 1.5rem;">✨</span>
+        <span>+10 XP for helping a learner!</span>
+    </div>
+
+    <!-- Achievement Popup -->
+    <div class="achievement-popup" id="achievementPopup">
+        <div class="achievement-icon">🏆</div>
+        <div class="achievement-title">Community Helper</div>
+        <div class="achievement-description">You've helped 5 learners!</div>
+    </div>
+
+    <script>
+        // Simulate XP notification
+        function showXPNotification() {
+            const notification = document.getElementById('xpNotification');
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Simulate achievement popup
+        function showAchievement() {
+            const popup = document.getElementById('achievementPopup');
+            popup.classList.add('show');
+            setTimeout(() => {
+                popup.classList.remove('show');
+            }, 4000);
+        }
+
+        // Simulate periodic notifications
+        setTimeout(showXPNotification, 2000);
+        setTimeout(showAchievement, 8000);
+
+        // Add interactivity to server icons
+        document.querySelectorAll('.server-icon').forEach(icon => {
+            icon.addEventListener('click', function() {
+                document.querySelectorAll('.server-icon').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Add interactivity to channel items
+        document.querySelectorAll('.channel-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.channel-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Simulate sending a message
+        document.querySelector('.chat-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && this.value.trim()) {
+                // In a real app, this would send the message
+                this.value = '';
+                showXPNotification();
+            }
+        });
+    </script>
+</body>
+</html>

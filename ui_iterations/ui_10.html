@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Learning Analytics Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background-color: #0F0F14;
+            color: #FFFFFF;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background-color: #1A1A24;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 2rem 1.5rem;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 3rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #8B7FDB 0%, #B8ACFF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+
+        .nav-section-title {
+            color: #7B7F8E;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            color: #B8BCC8;
+            text-decoration: none;
+            transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(139, 127, 219, 0.1);
+            color: #8B7FDB;
+        }
+
+        .nav-item.active {
+            background-color: rgba(139, 127, 219, 0.2);
+            color: #8B7FDB;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            opacity: 0.7;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .header-title {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .header-subtitle {
+            color: #7B7F8E;
+            font-size: 1rem;
+            margin-top: 0.25rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .date-range {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            padding: 0.5rem 1rem;
+            color: #B8BCC8;
+            font-size: 0.875rem;
+        }
+
+        .profile-button {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            padding: 0.5rem 1rem;
+            color: #FFFFFF;
+            cursor: pointer;
+            transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .profile-button:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .profile-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8B7FDB 0%, #B8ACFF 100%);
+        }
+
+        /* Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Metric Cards */
+        .metric-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .metric-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(139, 127, 219, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .metric-title {
+            color: #7B7F8E;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .metric-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .metric-icon.purple {
+            background: rgba(139, 127, 219, 0.2);
+            color: #A394FF;
+        }
+
+        .metric-icon.green {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ADE80;
+        }
+
+        .metric-icon.blue {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60A5FA;
+        }
+
+        .metric-icon.orange {
+            background: rgba(249, 115, 22, 0.2);
+            color: #FB923C;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-change {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .metric-change.positive {
+            color: #22C55E;
+        }
+
+        .metric-change.negative {
+            color: #EF4444;
+        }
+
+        .metric-subtext {
+            color: #7B7F8E;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Chart Card */
+        .chart-card {
+            background: #1E1E2E;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .chart-card:hover {
+            background: #262637;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .chart-tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.25rem;
+            border-radius: 0.5rem;
+        }
+
+        .chart-tab {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            color: #7B7F8E;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .chart-tab.active {
+            background: rgba(139, 127, 219, 0.2);
+            color: #8B7FDB;
+        }
+
+        .chart-container {
+            height: 300px;
+            background: linear-gradient(180deg, rgba(139, 127, 219, 0.05) 0%, rgba(139, 127, 219, 0) 100%);
+            border-radius: 0.75rem;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            padding: 1rem;
+        }
+
+        /* Language Portfolio */
+        .portfolio-card {
+            background: #1E1E2E;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+        }
+
+        .portfolio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .portfolio-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .portfolio-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #8B7FDB 0%, #B8ACFF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .language-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .language-item:last-child {
+            border-bottom: none;
+        }
+
+        .language-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .language-flag {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(139, 127, 219, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .language-name {
+            font-weight: 500;
+        }
+
+        .language-level {
+            color: #7B7F8E;
+            font-size: 0.875rem;
+        }
+
+        .language-stats {
+            text-align: right;
+        }
+
+        .language-progress {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #22C55E;
+        }
+
+        .language-hours {
+            color: #7B7F8E;
+            font-size: 0.75rem;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8B7FDB 0%, #B8ACFF 100%);
+            border-radius: 3px;
+            transition: width 500ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Leaderboard */
+        .leaderboard-card {
+            background: #1E1E2E;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 0;
+        }
+
+        .leaderboard-rank {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+
+        .leaderboard-rank.gold {
+            background: linear-gradient(135deg, #F59E0B 0%, #FCD34D 100%);
+            color: #1A1A24;
+        }
+
+        .leaderboard-rank.silver {
+            background: linear-gradient(135deg, #9CA3AF 0%, #D1D5DB 100%);
+            color: #1A1A24;
+        }
+
+        .leaderboard-rank.bronze {
+            background: linear-gradient(135deg, #DC2626 0%, #F87171 100%);
+            color: #1A1A24;
+        }
+
+        .leaderboard-rank.other {
+            background: rgba(255, 255, 255, 0.05);
+            color: #7B7F8E;
+        }
+
+        .leaderboard-user {
+            flex: 1;
+        }
+
+        .leaderboard-name {
+            font-weight: 500;
+        }
+
+        .leaderboard-score {
+            color: #7B7F8E;
+            font-size: 0.875rem;
+        }
+
+        .leaderboard-points {
+            font-weight: 600;
+            color: #8B7FDB;
+        }
+
+        /* Achievement Badge */
+        .achievement-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(139, 127, 219, 0.2);
+            color: #A394FF;
+            border-radius: 0.375rem;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Responsive Grid */
+        .col-3 { grid-column: span 3; }
+        .col-4 { grid-column: span 4; }
+        .col-6 { grid-column: span 6; }
+        .col-8 { grid-column: span 8; }
+        .col-12 { grid-column: span 12; }
+
+        /* Responsive */
+        @media (max-width: 1280px) {
+            .sidebar {
+                width: 80px;
+                padding: 2rem 1rem;
+            }
+
+            .logo {
+                justify-content: center;
+                font-size: 1.5rem;
+            }
+
+            .logo span {
+                display: none;
+            }
+
+            .nav-section-title {
+                display: none;
+            }
+
+            .nav-item {
+                justify-content: center;
+            }
+
+            .nav-item span {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 80px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .col-3, .col-4, .col-6, .col-8, .col-12 {
+                grid-column: span 1;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="logo">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+                <path d="M16 8L20 12L16 16L12 12L16 8Z" fill="white"/>
+                <path d="M16 16L20 20L16 24L12 20L16 16Z" fill="white" opacity="0.7"/>
+                <defs>
+                    <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                        <stop offset="0%" stop-color="#8B7FDB"/>
+                        <stop offset="100%" stop-color="#B8ACFF"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+            <span>LinguaYield</span>
+        </div>
+
+        <nav>
+            <div class="nav-section">
+                <div class="nav-section-title">Analytics</div>
+                <a href="#" class="nav-item active">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/>
+                        <path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/>
+                        <path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+                    </svg>
+                    <span>Performance</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"/>
+                    </svg>
+                    <span>Schedule</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Learning</div>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
+                    </svg>
+                    <span>Languages</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z"/>
+                    </svg>
+                    <span>Sessions</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
+                    </svg>
+                    <span>Flashcards</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Community</div>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                    </svg>
+                    <span>Partners</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm9 4a1 1 0 10-2 0v6a1 1 0 102 0V7zm-3 2a1 1 0 10-2 0v4a1 1 0 102 0V9zm-3 3a1 1 0 10-2 0v1a1 1 0 102 0v-1z"/>
+                    </svg>
+                    <span>Leaderboard</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div>
+                <h1 class="header-title">Learning Analytics</h1>
+                <p class="header-subtitle">Track your language learning performance and yields</p>
+            </div>
+            <div class="header-actions">
+                <div class="date-range">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"/>
+                    </svg>
+                    <span>Last 30 days</span>
+                </div>
+                <div class="profile-button">
+                    <div class="profile-avatar"></div>
+                    <span>Alex Chen</span>
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                    </svg>
+                </div>
+            </div>
+        </header>
+
+        <!-- Key Metrics -->
+        <div class="dashboard-grid">
+            <div class="col-3">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-title">Total Study Time</div>
+                        <div class="metric-icon purple">⏱️</div>
+                    </div>
+                    <div class="metric-value">124.5h</div>
+                    <div class="metric-change positive">
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z"/>
+                        </svg>
+                        +18.2%
+                    </div>
+                    <div class="metric-subtext">vs last period</div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-title">Learning Yield</div>
+                        <div class="metric-icon green">📈</div>
+                    </div>
+                    <div class="metric-value">87.3%</div>
+                    <div class="metric-change positive">
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z"/>
+                        </svg>
+                        +5.4%
+                    </div>
+                    <div class="metric-subtext">efficiency rate</div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-title">Active Languages</div>
+                        <div class="metric-icon blue">🌍</div>
+                    </div>
+                    <div class="metric-value">4</div>
+                    <div class="metric-change positive">
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
+                        </svg>
+                        +1 new
+                    </div>
+                    <div class="metric-subtext">languages in portfolio</div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-title">Streak Days</div>
+                        <div class="metric-icon orange">🔥</div>
+                    </div>
+                    <div class="metric-value">42</div>
+                    <div class="metric-change positive">
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z"/>
+                        </svg>
+                        Personal best!
+                    </div>
+                    <div class="metric-subtext">consecutive days</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts and Portfolio -->
+        <div class="dashboard-grid">
+            <!-- Performance Chart -->
+            <div class="col-8">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Learning Performance</h3>
+                        <div class="chart-tabs">
+                            <div class="chart-tab active">Daily</div>
+                            <div class="chart-tab">Weekly</div>
+                            <div class="chart-tab">Monthly</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <!-- Simplified bar chart visualization -->
+                        <div style="display: flex; align-items: flex-end; gap: 0.5rem; width: 100%; height: 100%;">
+                            <div style="flex: 1; height: 60%; background: linear-gradient(180deg, #8B7FDB 0%, rgba(139, 127, 219, 0.3) 100%); border-radius: 4px 4px 0 0;"></div>
+                            <div style="flex: 1; height: 75%; background: linear-gradient(180deg, #8B7FDB 0%, rgba(139, 127, 219, 0.3) 100%); border-radius: 4px 4px 0 0;"></div>
+                            <div style="flex: 1; height: 45%; background: linear-gradient(180deg, #8B7FDB 0%, rgba(139, 127, 219, 0.3) 100%); border-radius: 4px 4px 0 0;"></div>
+                            <div style="flex: 1; height: 85%; background: linear-gradient(180deg, #8B7FDB 0%, rgba(139, 127, 219, 0.3) 100%); border-radius: 4px 4px 0 0;"></div>
+                            <div style="flex: 1; height: 90%; background: linear-gradient(180deg, #8B7FDB 0%, rgba(139, 127, 219, 0.3) 100%); border-radius: 4px 4px 0 0;"></div>
+                            <div style="flex: 1; height: 70%; background: linear-gradient(180deg, #8B7FDB 0%, rgba(139, 127, 219, 0.3) 100%); border-radius: 4px 4px 0 0;"></div>
+                            <div style="flex: 1; height: 95%; background: linear-gradient(180deg, #22C55E 0%, rgba(34, 197, 94, 0.3) 100%); border-radius: 4px 4px 0 0;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Language Portfolio -->
+            <div class="col-4">
+                <div class="portfolio-card">
+                    <div class="portfolio-header">
+                        <h3 class="portfolio-title">Language Portfolio</h3>
+                        <div class="portfolio-value">A2-B2</div>
+                    </div>
+                    
+                    <div class="language-item">
+                        <div class="language-info">
+                            <div class="language-flag">🇪🇸</div>
+                            <div>
+                                <div class="language-name">Spanish</div>
+                                <div class="language-level">B2 - Upper Intermediate</div>
+                            </div>
+                        </div>
+                        <div class="language-stats">
+                            <div class="language-progress">+12.5%</div>
+                            <div class="language-hours">48.2h</div>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 75%;"></div>
+                    </div>
+
+                    <div class="language-item">
+                        <div class="language-info">
+                            <div class="language-flag">🇫🇷</div>
+                            <div>
+                                <div class="language-name">French</div>
+                                <div class="language-level">B1 - Intermediate</div>
+                            </div>
+                        </div>
+                        <div class="language-stats">
+                            <div class="language-progress">+8.3%</div>
+                            <div class="language-hours">32.5h</div>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 60%;"></div>
+                    </div>
+
+                    <div class="language-item">
+                        <div class="language-info">
+                            <div class="language-flag">🇯🇵</div>
+                            <div>
+                                <div class="language-name">Japanese</div>
+                                <div class="language-level">A2 - Elementary</div>
+                            </div>
+                        </div>
+                        <div class="language-stats">
+                            <div class="language-progress">+15.7%</div>
+                            <div class="language-hours">28.8h</div>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 40%;"></div>
+                    </div>
+
+                    <div class="language-item">
+                        <div class="language-info">
+                            <div class="language-flag">🇩🇪</div>
+                            <div>
+                                <div class="language-name">German</div>
+                                <div class="language-level">A1 - Beginner</div>
+                            </div>
+                        </div>
+                        <div class="language-stats">
+                            <div class="language-progress">+22.1%</div>
+                            <div class="language-hours">15.0h</div>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 25%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Section -->
+        <div class="dashboard-grid">
+            <!-- Session Yield -->
+            <div class="col-6">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Session Yield Analysis</h3>
+                        <span class="achievement-badge">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                            </svg>
+                            High Performer
+                        </span>
+                    </div>
+                    <div style="padding: 1.5rem 0;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; text-align: center;">
+                            <div>
+                                <div style="font-size: 0.875rem; color: #7B7F8E; margin-bottom: 0.5rem;">Speaking</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #22C55E;">92%</div>
+                                <div style="font-size: 0.75rem; color: #7B7F8E;">efficiency</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.875rem; color: #7B7F8E; margin-bottom: 0.5rem;">Reading</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #8B7FDB;">88%</div>
+                                <div style="font-size: 0.75rem; color: #7B7F8E;">efficiency</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.875rem; color: #7B7F8E; margin-bottom: 0.5rem;">Writing</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #F59E0B;">85%</div>
+                                <div style="font-size: 0.75rem; color: #7B7F8E;">efficiency</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Community Leaderboard -->
+            <div class="col-6">
+                <div class="leaderboard-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Community Leaderboard</h3>
+                        <a href="#" style="color: #8B7FDB; text-decoration: none; font-size: 0.875rem;">View all →</a>
+                    </div>
+                    
+                    <div class="leaderboard-item">
+                        <div class="leaderboard-rank gold">1</div>
+                        <div class="leaderboard-user">
+                            <div class="leaderboard-name">Maria Rodriguez</div>
+                            <div class="leaderboard-score">Spanish Expert • 142.5h</div>
+                        </div>
+                        <div class="leaderboard-points">2,847 pts</div>
+                    </div>
+
+                    <div class="leaderboard-item">
+                        <div class="leaderboard-rank silver">2</div>
+                        <div class="leaderboard-user">
+                            <div class="leaderboard-name">You</div>
+                            <div class="leaderboard-score">Multi-lingual • 124.5h</div>
+                        </div>
+                        <div class="leaderboard-points">2,654 pts</div>
+                    </div>
+
+                    <div class="leaderboard-item">
+                        <div class="leaderboard-rank bronze">3</div>
+                        <div class="leaderboard-user">
+                            <div class="leaderboard-name">James Wilson</div>
+                            <div class="leaderboard-score">Japanese Focus • 118.2h</div>
+                        </div>
+                        <div class="leaderboard-points">2,432 pts</div>
+                    </div>
+
+                    <div class="leaderboard-item">
+                        <div class="leaderboard-rank other">4</div>
+                        <div class="leaderboard-user">
+                            <div class="leaderboard-name">Sophie Chen</div>
+                            <div class="leaderboard-score">French Master • 105.8h</div>
+                        </div>
+                        <div class="leaderboard-points">2,198 pts</div>
+                    </div>
+
+                    <div class="leaderboard-item">
+                        <div class="leaderboard-rank other">5</div>
+                        <div class="leaderboard-user">
+                            <div class="leaderboard-name">Ahmed Hassan</div>
+                            <div class="leaderboard-score">Arabic Native • 98.3h</div>
+                        </div>
+                        <div class="leaderboard-points">2,054 pts</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

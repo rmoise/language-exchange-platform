@@ -8,13 +8,15 @@ interface HierarchicalBreadcrumbProps {
   showBackButton?: boolean
   showHomeIcon?: boolean
   userName?: string // For user profile pages
+  customLabel?: string // For custom last segment label
 }
 
 export default function HierarchicalBreadcrumb({ 
   variant = 'default',
   showBackButton = true,
   showHomeIcon = true,
-  userName
+  userName,
+  customLabel
 }: HierarchicalBreadcrumbProps) {
   const pathname = usePathname()
 
@@ -74,18 +76,28 @@ export default function HierarchicalBreadcrumb({
         case 'sessions':
           label = 'Sessions'
           break
+        case 'posts':
+          label = 'Posts'
+          break
         default:
           // Check if previous segment was 'profile' - this would be a user ID
           if (i > 0 && segments[i - 1] === 'profile') {
             label = userName || 'User Profile'
           } else if (i > 0 && segments[i - 1] === 'conversations') {
             label = 'Conversation'
+          } else if (i > 0 && segments[i - 1] === 'posts') {
+            label = 'Post Details'
           } else {
             // Capitalize first letter for other segments
             label = segment.charAt(0).toUpperCase() + segment.slice(1)
           }
       }
 
+      // Use custom label for last segment if provided
+      if (isLast && customLabel) {
+        label = customLabel
+      }
+      
       items.push({
         label,
         href: isLast ? undefined : currentPath,
