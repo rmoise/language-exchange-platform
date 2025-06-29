@@ -22,7 +22,7 @@ export const apiSlice = createApi({
       return headers
     },
   }),
-  tagTypes: ['User'],
+  tagTypes: ['User', 'ProfileVisits', 'Posts'],
   endpoints: (builder) => ({
     // Get current user
     getCurrentUser: builder.query<User, void>({
@@ -100,6 +100,41 @@ export const apiSlice = createApi({
         )
       },
     }),
+
+    // Profile visits endpoints
+    getProfileVisits: builder.query<{
+      count: number;
+      visibleCount: number;
+      recentVisits?: Array<{
+        id: string;
+        visitorId: string;
+        viewedId: string;
+        viewedAt: string;
+        isVisible: boolean;
+      }>;
+      visitors?: User[];
+    }, { timeWindow?: string; limit?: number; page?: number }>({
+      query: ({ timeWindow = 'week', limit = 10, page = 0 }) => 
+        `profile-visits?timeWindow=${timeWindow}&limit=${limit}&page=${page}`,
+      providesTags: ['ProfileVisits'],
+    }),
+
+    getRecentVisitorCount: builder.query<{
+      count: number;
+      timeWindow: string;
+    }, string>({
+      query: (timeWindow = 'week') => `profile-visits/count?timeWindow=${timeWindow}`,
+      providesTags: ['ProfileVisits'],
+    }),
+
+    recordProfileVisit: builder.mutation<{ message: string }, string>({
+      query: (viewedUserId) => ({
+        url: 'profile-visits',
+        method: 'POST',
+        body: { viewedUserId },
+      }),
+      invalidatesTags: ['ProfileVisits'],
+    }),
   }),
 })
 
@@ -108,4 +143,7 @@ export const {
   useGetCurrentUserQuery,
   useUpdateUserProfileMutation,
   useUpdateProfileImageCacheMutation,
+  useGetProfileVisitsQuery,
+  useGetRecentVisitorCountQuery,
+  useRecordProfileVisitMutation,
 } = apiSlice

@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"language-exchange/internal/models"
 	"language-exchange/internal/services"
+	"language-exchange/internal/websocket"
 	"language-exchange/pkg/errors"
 
 	"github.com/gin-gonic/gin"
@@ -14,12 +16,14 @@ import (
 type MessageHandler struct {
 	messageService      services.MessageService
 	conversationService services.ConversationService
+	wsHub              *websocket.Hub
 }
 
-func NewMessageHandler(messageService services.MessageService, conversationService services.ConversationService) *MessageHandler {
+func NewMessageHandler(messageService services.MessageService, conversationService services.ConversationService, wsHub *websocket.Hub) *MessageHandler {
 	return &MessageHandler{
 		messageService:      messageService,
 		conversationService: conversationService,
+		wsHub:              wsHub,
 	}
 }
 
@@ -152,6 +156,45 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 		}
 		errors.SendError(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "Failed to send message")
 		return
+	}
+
+	// Broadcast message via WebSocket to conversation participants
+	if h.wsHub != nil {
+		fmt.Printf("DEBUG: wsHub is not nil, attempting to broadcast message\n")
+		
+		// Get conversation to find all participants
+		conversation, err := h.conversationService.GetConversationByID(c.Request.Context(), conversationID, userID.(string))
+		if err != nil {
+			fmt.Printf("DEBUG: Error getting conversation for broadcast: %v\n", err)
+		} else if conversation == nil {
+			fmt.Printf("DEBUG: Conversation is nil\n")
+		} else {
+			fmt.Printf("DEBUG: Got conversation, participants: User1ID=%s, User2ID=%s\n", conversation.User1ID, conversation.User2ID)
+			
+			messageData := map[string]interface{}{
+				"id":              message.ID,
+				"conversation_id": message.ConversationID,
+				"sender_id":       message.SenderID,
+				"content":         message.Content,
+				"message_type":    message.MessageType,
+				"status":          message.Status,
+				"created_at":      message.CreatedAt,
+				"sender":          message.Sender,
+			}
+			
+			wsMessage := map[string]interface{}{
+				"type": "new_message",
+				"data": messageData,
+			}
+			
+			// Send to all participants
+			participantIDs := []string{conversation.User1ID, conversation.User2ID}
+			fmt.Printf("DEBUG: Broadcasting to participants: %v\n", participantIDs)
+			h.wsHub.SendToUsers(participantIDs, wsMessage)
+			fmt.Printf("DEBUG: Broadcast complete\n")
+		}
+	} else {
+		fmt.Printf("DEBUG: wsHub is nil, cannot broadcast message\n")
 	}
 
 	errors.SendCreated(c, message)

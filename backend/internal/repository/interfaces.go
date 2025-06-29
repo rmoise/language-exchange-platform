@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"language-exchange/internal/models"
+	"time"
 )
 
 type UserRepository interface {
@@ -12,6 +13,7 @@ type UserRepository interface {
 	GetByGoogleID(ctx context.Context, googleID string) (*models.User, error)
 	Update(ctx context.Context, user *models.User) error
 	Search(ctx context.Context, filters models.SearchFilters) ([]*models.User, error)
+	GetTotalCount(ctx context.Context) (int, error)
 }
 
 type MatchRepository interface {
@@ -90,4 +92,48 @@ type ConnectionRepository interface {
 	GetFollowers(ctx context.Context, userID string, limit, offset int) ([]*models.UserConnection, error)
 	GetConnectionStatus(ctx context.Context, userID, targetUserID string) (*models.ConnectionStatus, error)
 	GetConnectionCounts(ctx context.Context, userID string) (following int, followers int, err error)
+}
+
+type ProfileVisitRepository interface {
+	CreateVisit(ctx context.Context, visit *models.ProfileVisit) error
+	GetVisitsByUser(ctx context.Context, filters models.ProfileVisitsFilters) (*models.ProfileVisitsResponse, error)
+	GetRecentVisitCount(ctx context.Context, userID string, timeWindow string) (int, error)
+	HasVisitedRecently(ctx context.Context, visitorID, viewedID string) (bool, error)
+}
+
+type GamificationRepository interface {
+	// User Stats
+	GetUserStats(ctx context.Context, userID string) (*models.UserStats, error)
+	CreateUserStats(ctx context.Context, userID string) error
+	UpdateUserStats(ctx context.Context, stats *models.UserStats) error
+	IncrementUserStat(ctx context.Context, userID, statField string, increment int) error
+	
+	// XP and Streaks
+	UpdateUserXP(ctx context.Context, userID string, xpChange int) error
+	UpdateUserStreak(ctx context.Context, userID string) error
+	GetUserRank(ctx context.Context, userID string) (int, error)
+	
+	// Badges
+	GetAllBadges(ctx context.Context) ([]*models.Badge, error)
+	GetUserBadges(ctx context.Context, userID string) ([]*models.UserBadge, error)
+	AwardBadge(ctx context.Context, userID, badgeID string) error
+	UpdateBadgeProgress(ctx context.Context, userID, badgeID string, progress int) error
+	
+	// XP Transactions
+	CreateXPTransaction(ctx context.Context, transaction *models.XPTransaction) error
+	GetUserXPTransactions(ctx context.Context, userID string, limit, offset int) ([]*models.XPTransaction, error)
+	
+	// Daily Challenges
+	GetActiveDailyChallenges(ctx context.Context) ([]*models.DailyChallenge, error)
+	GetUserDailyChallenges(ctx context.Context, userID string, date time.Time) ([]*models.UserDailyChallenge, error)
+	CreateUserDailyChallenge(ctx context.Context, challenge *models.UserDailyChallenge) error
+	UpdateChallengeProgress(ctx context.Context, userID, challengeID string, progress int, date time.Time) error
+	CompleteDailyChallenge(ctx context.Context, userID, challengeID string, date time.Time) error
+	
+	// Leaderboard
+	GetLeaderboard(ctx context.Context, leaderboardType models.LeaderboardType, limit, offset int) ([]*models.LeaderboardEntry, error)
+	GetUserLeaderboardPosition(ctx context.Context, userID string, leaderboardType models.LeaderboardType) (int, error)
+	
+	// Complete Gamification Data
+	GetUserGamificationData(ctx context.Context, userID string) (*models.UserGamificationData, error)
 }

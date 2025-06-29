@@ -89,7 +89,7 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
 
   const handleUserClick = () => {
     if (reply.user.id) {
-      router.push(`/app/profile/${reply.user.id}`);
+      router.push(`/app/users/${reply.user.id}`);
     }
   };
 

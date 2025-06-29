@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   Box,
   Tabs,
@@ -73,7 +73,7 @@ export default function CommunityTabs({
   onRequestUpdate,
 }: CommunityTabsProps) {
   const [activeTab, setActiveTab] = useState(0);
-  const [displayCount, setDisplayCount] = useState(20);
+  const [displayCount, setDisplayCount] = useState(8);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
@@ -106,9 +106,10 @@ export default function CommunityTabs({
     }
   }, [searchParams]);
 
-  // Apply filters
-  const applyFilters = (userList: User[]) => {
-    return userList.filter((user) => {
+  // Memoized user processing for better performance
+  const { allUsers, nearbyUsers } = useMemo(() => {
+    // Apply filters
+    const filteredUsers = users.filter((user) => {
       // Age filter
       if (user.age && (user.age < filters.ageRange[0] || user.age > filters.ageRange[1])) {
         return false;
@@ -144,28 +145,45 @@ export default function CommunityTabs({
 
       return true;
     });
-  };
 
-  // Use all users directly (search now handled by main header)
-  const filteredUsers = applyFilters(users);
+    // Sort users by match percentage only
+    const sortedUsers = [...filteredUsers].sort((a, b) => {
+      const aMatch = a.matchPercentage || 0;
+      const bMatch = b.matchPercentage || 0;
+      return bMatch - aMatch;
+    });
 
-  // Sort users by match percentage only
-  const sortedUsers = [...filteredUsers].sort((a, b) => {
-    const aMatch = a.matchPercentage || 0;
-    const bMatch = b.matchPercentage || 0;
-    return bMatch - aMatch;
-  });
+    // Separate nearby users (those with distance data)
+    const nearbyUsers = sortedUsers.filter(
+      (user) => user.distance !== undefined
+    );
 
-  // Separate nearby users (those with distance data) and apply same sorting
-  const nearbyUsers = sortedUsers.filter(
-    (user) => user.distance !== undefined
-  );
-  const allUsers = sortedUsers;
+    return { allUsers: sortedUsers, nearbyUsers };
+  }, [users, filters, currentUser?.gender]);
 
+  // Memoized function to transform user data for ProfileCard
+  const transformUserForCard = useCallback((user: User) => {
+    return {
+      id: user.id,
+      name: user.name,
+      age: user.age || 25,
+      avatar: user.avatar,
+      profile_picture: user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6366f1&color=fff&size=400`,
+      bio: user.bio || "Learning languages and connecting with people around the world!",
+      city: user.city,
+      country: user.country,
+      location: user.city && user.country ? `${user.city}, ${user.country}` : user.city || user.country,
+      nativeLanguages: user.nativeLanguages,
+      targetLanguages: user.targetLanguages,
+      native_languages: user.nativeLanguages,
+      learning_languages: user.targetLanguages,
+      is_verified: true,
+    } as any;
+  }, []);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
-    setDisplayCount(20); // Reset display count when changing tabs
+    setDisplayCount(8); // Reset display count when changing tabs
   };
 
   const handleFiltersChange = (newFilters: FilterOptions) => {
@@ -178,7 +196,7 @@ export default function CommunityTabs({
     setIsLoadingMore(true);
     // Simulate loading delay for smooth UX
     setTimeout(() => {
-      setDisplayCount((prev) => prev + 20);
+      setDisplayCount((prev) => prev + 8);
       setIsLoadingMore(false);
     }, 300);
   }, [isLoadingMore]);
@@ -219,10 +237,15 @@ export default function CommunityTabs({
   return (
     <Box sx={{ minHeight: "100vh", position: "relative" }}>
       {/* Header */}
-      <Box sx={{ mb: 4, textAlign: "center" }}>
+      <Box sx={{ mt: 4, mb: 4, textAlign: "center" }}>
         <Typography
-          variant="h4"
-          sx={{ fontWeight: 300, mb: 2, color: "white" }}
+          variant="h1"
+          sx={{ 
+            fontWeight: 300, 
+            letterSpacing: '-0.02em',
+            mb: 2, 
+            color: "white" 
+          }}
         >
           Language Partners
         </Typography>
@@ -292,35 +315,11 @@ export default function CommunityTabs({
                     key={user.id}
                     sx={{
                       width: "322px",
-                      height: "360px",
+                      height: "420px",
                     }}
                   >
                     <ProfileCard
-                      user={{
-                        id: user.id,
-                        name: user.name,
-                        age: 25,
-                        avatar: user.avatar,
-                        profile_picture:
-                          user.avatar ||
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            user.name
-                          )}&background=6366f1&color=fff&size=400`,
-                        bio:
-                          user.bio ||
-                          "Learning languages and connecting with people around the world!",
-                        city: user.city,
-                        country: user.country,
-                        location:
-                          user.city && user.country
-                            ? `${user.city}, ${user.country}`
-                            : user.city || user.country,
-                        nativeLanguages: user.nativeLanguages,
-                        targetLanguages: user.targetLanguages,
-                        native_languages: user.nativeLanguages,
-                        learning_languages: user.targetLanguages,
-                        is_verified: true,
-                      } as any}
+                      user={transformUserForCard(user)}
                       matchPercentage={user.matchPercentage || 85}
                       distance={user.distance ? `${user.distance}km` : "2.1km"}
                       isFollowing={false}
@@ -358,35 +357,11 @@ export default function CommunityTabs({
                         key={user.id}
                         sx={{
                           width: "322px",
-                          height: "360px",
+                          height: "420px",
                         }}
                       >
                         <ProfileCard
-                          user={{
-                            id: user.id,
-                            name: user.name,
-                            age: 25,
-                            avatar: user.avatar,
-                            profile_picture:
-                              user.avatar ||
-                              `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                user.name
-                              )}&background=6366f1&color=fff&size=400`,
-                            bio:
-                              user.bio ||
-                              "Learning languages and connecting with people around the world!",
-                            city: user.city,
-                            country: user.country,
-                            location:
-                              user.city && user.country
-                                ? `${user.city}, ${user.country}`
-                                : user.city || user.country,
-                            nativeLanguages: user.nativeLanguages,
-                            targetLanguages: user.targetLanguages,
-                            native_languages: user.nativeLanguages,
-                            learning_languages: user.targetLanguages,
-                            is_verified: true,
-                          } as any}
+                          user={transformUserForCard(user)}
                           matchPercentage={user.matchPercentage || 85}
                           distance={user.distance ? `${user.distance}km` : "2.1km"}
                           isFollowing={false}
@@ -443,31 +418,7 @@ export default function CommunityTabs({
                     }}
                   >
                     <ProfileCard
-                      user={{
-                        id: user.id,
-                        name: user.name,
-                        age: 25,
-                        avatar: user.avatar,
-                        profile_picture:
-                          user.avatar ||
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            user.name
-                          )}&background=6366f1&color=fff&size=400`,
-                        bio:
-                          user.bio ||
-                          "Learning languages and connecting with people around the world!",
-                        city: user.city,
-                        country: user.country,
-                        location:
-                          user.city && user.country
-                            ? `${user.city}, ${user.country}`
-                            : user.city || user.country,
-                        nativeLanguages: user.nativeLanguages,
-                        targetLanguages: user.targetLanguages,
-                        native_languages: user.nativeLanguages,
-                        learning_languages: user.targetLanguages,
-                        is_verified: true,
-                      } as any}
+                      user={transformUserForCard(user)}
                       matchPercentage={user.matchPercentage || 85}
                       distance={user.distance ? `${user.distance}km` : "2.1km"}
                       isFollowing={false}
@@ -566,10 +517,14 @@ export default function CommunityTabs({
         onClose={() => setFilterDrawerOpen(false)}
         sx={{
           "& .MuiDrawer-paper": {
-            backgroundColor: darkMode ? "#1a1a1a" : "#ffffff",
+            backgroundColor: "transparent",
             width: isMobile ? "100%" : 400,
             maxWidth: 400,
-            p: 3,
+            p: 0,
+            boxShadow: "none",
+          },
+          "& .MuiBackdrop-root": {
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
           },
         }}
       >

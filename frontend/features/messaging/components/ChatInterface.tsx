@@ -6,7 +6,6 @@ import {
   Typography,
   Paper,
   CircularProgress,
-  Avatar,
   Divider
 } from '@mui/material';
 import { MessageBubble } from './MessageBubble';
@@ -19,6 +18,8 @@ import { useMessageStatus } from '../hooks/useMessageStatus';
 import { useTypingIndicator } from '../hooks/useTypingIndicator';
 import { TypingIndicator } from './TypingIndicator';
 import { Message, Conversation, MessageStatus } from '../types';
+import { useAppSelector } from '@/lib/hooks';
+import UserAvatar from '@/components/ui/UserAvatar';
 
 interface ChatInterfaceProps {
   conversationId: string;
@@ -58,12 +59,12 @@ function MessagesContent({
         alignItems="center"
         justifyContent="center"
         height="100%"
-        color="text.secondary"
+        sx={{ py: 8 }}
       >
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
           No messages yet
         </Typography>
-        <Typography variant="body2">
+        <Typography variant="body2" sx={{ color: '#9ca3af' }}>
           Start the conversation by sending a message!
         </Typography>
       </Box>
@@ -71,26 +72,61 @@ function MessagesContent({
   }
 
   return (
-    <Box sx={{ p: 2, height: '100%', overflow: 'auto' }}>
+    <Box sx={{ 
+      p: 3, 
+      height: '100%', 
+      overflow: 'auto',
+      display: 'flex',
+      flexDirection: 'column',
+      '&::-webkit-scrollbar': {
+        width: '8px',
+      },
+      '&::-webkit-scrollbar-track': {
+        background: 'rgba(255, 255, 255, 0.05)',
+      },
+      '&::-webkit-scrollbar-thumb': {
+        background: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: '4px',
+      },
+      '&::-webkit-scrollbar-thumb:hover': {
+        background: 'rgba(255, 255, 255, 0.3)',
+      }
+    }}>
       {messages.map((message, index) => {
         const isOwnMessage = message.sender_id === currentUserId;
-        const showAvatar = !isOwnMessage && (
-          index === 0 || 
-          messages[index - 1]?.sender_id !== message.sender_id
-        );
+        const showAvatar = !isOwnMessage; // Always show avatar for received messages
 
         const isUnsendable = isOwnMessage && unsendHook.isMessageUnsendable(message.id);
 
         return (
-          <MessageBubble
+          <Box
             key={message.id}
-            message={message}
-            isOwnMessage={isOwnMessage}
-            showAvatar={showAvatar}
-            isUnsendable={isUnsendable}
-            isPendingUnsend={unsendHook.isPending}
-            onRegisterElement={statusHook.registerMessageElement}
-          />
+            sx={{
+              width: '100%',
+              animationDelay: `${index * 0.05}s`,
+              animation: 'fadeInUp 0.3s ease-out forwards',
+              opacity: 0,
+              '@keyframes fadeInUp': {
+                from: {
+                  opacity: 0,
+                  transform: 'translateY(20px)',
+                },
+                to: {
+                  opacity: 1,
+                  transform: 'translateY(0)',
+                },
+              },
+            }}
+          >
+            <MessageBubble
+              message={message}
+              isOwnMessage={isOwnMessage}
+              showAvatar={showAvatar}
+              isUnsendable={isUnsendable}
+              isPendingUnsend={unsendHook.isPending}
+              onRegisterElement={statusHook.registerMessageElement}
+            />
+          </Box>
         );
       })}
       
@@ -117,29 +153,26 @@ function ConversationHeader({ conversationPromise }: {
   return (
     <Box
       sx={{
-        p: 2,
-        borderBottom: '1px solid',
-        borderColor: 'divider',
+        p: 3,
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         display: 'flex',
         alignItems: 'center',
         gap: 2,
-        bgcolor: 'background.default'
+        background: 'rgba(255, 255, 255, 0.05)'
       }}
     >
-      <Avatar
-        src={conversation.other_user?.profilePicture}
-        alt={conversation.other_user?.name}
-        sx={{ width: 40, height: 40 }}
-      >
-        {conversation.other_user?.name?.charAt(0).toUpperCase()}
-      </Avatar>
+      <UserAvatar
+        user={conversation.other_user}
+        size={40}
+        showOnlineStatus={false}
+      />
       
       <Box>
-        <Typography variant="h6" fontWeight="medium">
+        <Typography variant="h6" fontWeight="medium" sx={{ color: 'white', fontSize: '1rem' }}>
           {conversation.other_user?.name || 'Unknown User'}
         </Typography>
         {conversation.other_user?.isOnline && (
-          <Typography variant="caption" color="success.main">
+          <Typography variant="caption" sx={{ color: '#4ade80' }}>
             Online
           </Typography>
         )}
@@ -153,7 +186,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [messagesPromise, setMessagesPromise] = useState<Promise<Message[]>>();
   const [conversationPromise, setConversationPromise] = useState<Promise<Conversation>>();
-  const [currentUserId, setCurrentUserId] = useState<string>(''); // This should come from auth context
+  const currentUser = useAppSelector(state => state.auth.user);
+  const currentUserId = currentUser?.id || '';
   const [lastUnsent, setLastUnsent] = useState<string | null>(null);
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
 
@@ -220,28 +254,84 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   });
 
   const refreshMessages = useCallback(() => {
+    // Validate conversation ID
+    if (!conversationId || conversationId === 'undefined') {
+      console.error('Cannot refresh messages - invalid conversation ID:', conversationId);
+      setMessagesPromise(Promise.resolve([]));
+      return;
+    }
+    
     const msgPromise = MessagingService.getMessages(conversationId)
       .then(response => {
-        setLocalMessages(response.messages);
-        return response.messages;
+        setLocalMessages(response.messages || []);
+        return response.messages || [];
+      })
+      .catch(error => {
+        console.error('Failed to load messages:', error);
+        return [];
       });
     setMessagesPromise(msgPromise);
   }, [conversationId]);
   
   // Initialize promises
   useEffect(() => {
-    const loadData = () => {
+    const loadData = async () => {
+      // Validate conversation ID first
+      if (!conversationId || conversationId === 'undefined') {
+        console.error('Invalid conversation ID:', conversationId);
+        return;
+      }
+      
+      // Mark messages as read when conversation is opened
+      try {
+        await MessagingService.markAsRead(conversationId);
+      } catch (error) {
+        console.error('Failed to mark messages as read:', error);
+      }
+      
       // Create promises for React 19's use API
       refreshMessages();
-      const convPromise = MessagingService.getConversation(conversationId);
+      const convPromise = MessagingService.getConversation(conversationId)
+        .catch(error => {
+          console.error('Failed to load conversation:', error);
+          console.error('Conversation ID:', conversationId);
+          
+          // If it's a 400 error, it might be because the conversation doesn't exist yet
+          // This can happen during the brief moment between creating a conversation and loading it
+          if (error?.response?.status === 400) {
+            console.log('Conversation might not exist yet, retrying in 1 second...');
+            // Retry once after a delay
+            return new Promise((resolve) => {
+              setTimeout(() => {
+                MessagingService.getConversation(conversationId)
+                  .then(resolve)
+                  .catch(() => {
+                    // If still failing, return a default conversation object
+                    resolve({
+                      id: conversationId,
+                      other_user: null,
+                      last_message: null,
+                      last_message_at: new Date().toISOString(),
+                      unread_count: 0
+                    } as Conversation);
+                  });
+              }, 1000);
+            });
+          }
+          
+          // Return a default conversation object for other errors
+          return {
+            id: conversationId,
+            other_user: null,
+            last_message: null,
+            last_message_at: new Date().toISOString(),
+            unread_count: 0
+          } as Conversation;
+        });
       setConversationPromise(convPromise);
     };
 
     loadData();
-    
-    // TODO: Get current user ID from auth context
-    // For now, using a placeholder
-    setCurrentUserId('current-user-id');
   }, [conversationId, refreshMessages]);
 
   const handleMessageSent = useCallback((newMessage: Message) => {
@@ -269,38 +359,43 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   if (!messagesPromise || !conversationPromise) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-        <CircularProgress />
+        <CircularProgress sx={{ color: '#6366f1' }} />
       </Box>
     );
   }
 
   return (
-    <Paper 
-      elevation={1} 
+    <Box 
       sx={{ 
-        height: 'calc(100vh - 200px)', 
+        height: '100%', 
         display: 'flex', 
         flexDirection: 'column',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        background: 'transparent',
+        borderRadius: 1.5
       }}
     >
       {/* Header with conversation info */}
       <Suspense fallback={
-        <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-          <CircularProgress size={20} />
-          <Typography>Loading conversation...</Typography>
+        <Box sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <CircularProgress size={20} sx={{ color: '#6366f1' }} />
+          <Typography sx={{ color: 'white' }}>Loading conversation...</Typography>
         </Box>
       }>
         <ConversationHeader conversationPromise={conversationPromise} />
       </Suspense>
       
-      <Divider />
+      {/* Removed divider for cleaner look */}
       
       {/* Messages area */}
-      <Box sx={{ flex: 1, overflow: 'hidden' }}>
+      <Box sx={{ 
+        flex: 1, 
+        overflow: 'hidden',
+        background: 'rgba(0, 0, 0, 0.2)'
+      }}>
         <Suspense fallback={
           <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-            <CircularProgress />
+            <CircularProgress sx={{ color: '#6366f1' }} />
           </Box>
         }>
           <MessagesContent 
@@ -337,6 +432,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         onClose={handleUnsendClose}
         isPending={unsendHook.isPending}
       />
-    </Paper>
+    </Box>
   );
 };

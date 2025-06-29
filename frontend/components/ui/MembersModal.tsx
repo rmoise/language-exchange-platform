@@ -139,7 +139,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   }, [users.length]);
 
   const handleViewProfile = (userId: string) => {
-    router.push(`/app/profile/${userId}`);
+    router.push(`/app/users/${userId}`);
     onClose();
   };
 

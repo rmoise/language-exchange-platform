@@ -28,15 +28,20 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
   const [isConnecting, setIsConnecting] = useState(false);
 
   const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      return; // Already connected
+    // Check if already connected or connecting
+    if (wsRef.current?.readyState === WebSocket.OPEN || 
+        wsRef.current?.readyState === WebSocket.CONNECTING) {
+      return; // Already connected or connecting
     }
 
     setIsConnecting(true);
 
     try {
-      // Get token from localStorage or auth context
-      const token = localStorage.getItem('token');
+      // Get token from cookie
+      const cookies = document.cookie.split(';').map(c => c.trim());
+      const tokenCookie = cookies.find(c => c.startsWith('token='));
+      const token = tokenCookie ? tokenCookie.split('=')[1] : null;
+      
       if (!token) {
         console.error('No authentication token found for WebSocket connection');
         setIsConnecting(false);
@@ -74,7 +79,10 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
       };
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        // Only log errors if we're still trying to connect
+        if (isConnecting) {
+          console.warn('WebSocket connection failed, will retry if enabled');
+        }
         setIsConnecting(false);
         onError?.(error);
       };
@@ -152,7 +160,7 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
     return () => {
       disconnect();
     };
-  }, [connect, disconnect]);
+  }, []); // Empty dependency array - only run on mount/unmount
 
   // Cleanup on unmount
   useEffect(() => {

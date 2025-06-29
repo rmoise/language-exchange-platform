@@ -7,14 +7,16 @@ import (
 )
 
 type matchService struct {
-	matchRepo repository.MatchRepository
-	userRepo  repository.UserRepository
+	matchRepo           repository.MatchRepository
+	userRepo            repository.UserRepository
+	gamificationService GamificationService
 }
 
-func NewMatchService(matchRepo repository.MatchRepository, userRepo repository.UserRepository) MatchService {
+func NewMatchService(matchRepo repository.MatchRepository, userRepo repository.UserRepository, gamificationService GamificationService) MatchService {
 	return &matchService{
-		matchRepo: matchRepo,
-		userRepo:  userRepo,
+		matchRepo:           matchRepo,
+		userRepo:            userRepo,
+		gamificationService: gamificationService,
 	}
 }
 
@@ -53,6 +55,13 @@ func (s *matchService) SendRequest(ctx context.Context, senderID, recipientID st
 		return nil, err
 	}
 
+	// Award XP for sending a match request
+	if s.gamificationService != nil {
+		go func() {
+			_ = s.gamificationService.OnMatchRequestSent(context.Background(), senderID, request.ID)
+		}()
+	}
+
 	return request, nil
 }
 
@@ -87,6 +96,16 @@ func (s *matchService) HandleRequest(ctx context.Context, requestID, userID stri
 
 		if err := s.matchRepo.CreateMatch(ctx, match); err != nil {
 			return models.ErrInternalServer
+		}
+
+		// Award XP to both users for successful match
+		if s.gamificationService != nil {
+			go func() {
+				// Award XP to the recipient (current user) for accepting
+				_ = s.gamificationService.OnMatchRequestAccepted(context.Background(), request.RecipientID, match.ID)
+				// Award XP to the sender for having their request accepted
+				_ = s.gamificationService.OnMatchRequestAccepted(context.Background(), request.SenderID, match.ID)
+			}()
 		}
 
 		// Delete the request since it's now a match

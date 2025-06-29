@@ -15,11 +15,14 @@ import {
 import {
   Translate as TranslateIcon,
   Close as CloseIcon,
-  Error as ErrorIcon
+  Error as ErrorIcon,
+  AutoFixHigh as ImproveIcon
 } from '@mui/icons-material';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { useGesture } from 'react-use-gesture';
 import { useTranslation, useTranslationPreferences } from '@/hooks/useTranslation';
+import { aiImprovementService } from '@/services/aiImprovementService';
+import { UpgradeToProModal } from '@/components/ui/UpgradeToProModal';
 
 interface SessionMessage {
   id: string;
@@ -62,6 +65,15 @@ export const SwipeTranslateSessionMessage: React.FC<SwipeTranslateSessionMessage
   const [showTranslation, setShowTranslation] = useState(false);
   const [hasTriggeredTranslation, setHasTriggeredTranslation] = useState(false);
   const [swipeThreshold] = useState(80); // pixels
+  
+  // Improvement state
+  const [isImproving, setIsImproving] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeModalData, setUpgradeModalData] = useState<{
+    preview?: string;
+    originalText?: string;
+    usageInfo?: { used: number; limit: number };
+  }>({});
   
   // Hooks
   const { 
@@ -127,6 +139,38 @@ export const SwipeTranslateSessionMessage: React.FC<SwipeTranslateSessionMessage
     setShowTranslation(false);
   }, []);
 
+  // Handle improve message
+  const handleImprove = async () => {
+    if (isImproving) return;
+    
+    setIsImproving(true);
+    try {
+      const response = await aiImprovementService.improveMessage(message.content);
+      
+      if (response.needs_upgrade) {
+        // Show upgrade modal
+        setUpgradeModalData({
+          preview: response.preview,
+          originalText: message.content,
+          usageInfo: response.used && response.limit ? {
+            used: response.used,
+            limit: response.limit
+          } : undefined
+        });
+        setShowUpgradeModal(true);
+      } else if (response.improved) {
+        // TODO: Show improved message or update the message
+        console.log('Improved message:', response.improved);
+        // For now, just show an alert - in production, you'd update the message
+        alert(`Improved: ${response.improved}`);
+      }
+    } catch (error) {
+      console.error('Failed to improve message:', error);
+    } finally {
+      setIsImproving(false);
+    }
+  };
+
   // Gesture handlers for swipe detection
   const bind = useGesture({
     onDrag: ({ active, movement: [mx], direction: [xDir], velocity: [vx], cancel }: any) => {
@@ -191,6 +235,7 @@ export const SwipeTranslateSessionMessage: React.FC<SwipeTranslateSessionMessage
   const translationError = currentTranslation?.error;
 
   return (
+    <>
     <Box
       ref={containerRef}
       sx={{
@@ -388,16 +433,42 @@ export const SwipeTranslateSessionMessage: React.FC<SwipeTranslateSessionMessage
               )}
             </AnimatePresence>
 
-            {/* Translation Controls */}
-            {enableTranslation && !isCurrentUser && (
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'flex-end', 
-                  mt: 0.5,
-                  gap: 0.5
-                }}
-              >
+            {/* Translation and Improvement Controls */}
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                justifyContent: 'flex-end', 
+                mt: 0.5,
+                gap: 0.5
+              }}
+            >
+              {/* Improve button for current user */}
+              {isCurrentUser && (
+                <Tooltip title="Improve with AI">
+                  <IconButton
+                    size="small"
+                    onClick={handleImprove}
+                    disabled={isImproving}
+                    sx={{
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      padding: '2px',
+                      '&:hover': {
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                      }
+                    }}
+                  >
+                    {isImproving ? (
+                      <CircularProgress size={14} sx={{ color: 'inherit' }} />
+                    ) : (
+                      <ImproveIcon sx={{ fontSize: '14px' }} />
+                    )}
+                  </IconButton>
+                </Tooltip>
+              )}
+              
+              {/* Translation controls for non-current user */}
+              {enableTranslation && !isCurrentUser && (
+                <>
                 {/* Manual Translation Button */}
                 <Tooltip title={hasTranslation ? (showTranslation ? "Hide translation" : "Show translation") : "Translate"}>
                   <IconButton
@@ -434,8 +505,9 @@ export const SwipeTranslateSessionMessage: React.FC<SwipeTranslateSessionMessage
                     </IconButton>
                   </Tooltip>
                 )}
-              </Box>
-            )}
+                </>
+              )}
+            </Box>
           </Paper>
         </motion.div>
 
@@ -454,5 +526,15 @@ export const SwipeTranslateSessionMessage: React.FC<SwipeTranslateSessionMessage
         )}
       </Box>
     </Box>
+    
+    {/* Upgrade Modal */}
+    <UpgradeToProModal
+      open={showUpgradeModal}
+      onClose={() => setShowUpgradeModal(false)}
+      preview={upgradeModalData.preview}
+      originalText={upgradeModalData.originalText}
+      usageInfo={upgradeModalData.usageInfo}
+    />
+    </>
   );
 };

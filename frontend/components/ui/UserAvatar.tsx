@@ -132,12 +132,12 @@ export default function UserAvatar({
     )
   })()
 
-  // If no online status needed, return just the avatar
-  if (!showOnlineStatus) {
+  // If no online status needed OR user is not online, return just the avatar
+  if (!showOnlineStatus || !user?.isOnline) {
     return avatarElement
   }
 
-  // Return avatar with online status indicator
+  // Return avatar with online status indicator (only when user is online)
   return (
     <Box 
       sx={{ 
@@ -151,13 +151,13 @@ export default function UserAvatar({
       <Box
         sx={{
           position: 'absolute',
-          bottom: 0,
-          right: 0,
-          width: size * 0.25,
-          height: size * 0.25,
+          bottom: '8%',
+          right: '8%',
+          width: typeof size === 'number' ? size * 0.15 : { xs: 15, sm: 18 },
+          height: typeof size === 'number' ? size * 0.15 : { xs: 15, sm: 18 },
           backgroundColor: '#4ade80', // Green for online
           borderRadius: '50%',
-          border: '2px solid white',
+          border: '1px solid white',
           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
         }}
       />

@@ -96,7 +96,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   
   const handleUserClick = () => {
     if (post.user.id) {
-      router.push(`/app/profile/${post.user.id}`);
+      router.push(`/app/users/${post.user.id}`);
     }
   };
 
@@ -163,6 +163,9 @@ export const PostCard: React.FC<PostCardProps> = ({
       sx={{
         position: "relative",
         borderRadius: "12px",
+        willChange: "transform",
+        transform: "translateZ(0)", // Force GPU acceleration
+        backfaceVisibility: "hidden", // Prevent flickering
       }}
     >
       <Stack spacing={0}>
@@ -280,6 +283,8 @@ export const PostCard: React.FC<PostCardProps> = ({
             boxShadow: darkMode
               ? "0 20px 40px -12px rgba(0, 0, 0, 0.3)"
               : "0 20px 40px -12px rgba(0, 0, 0, 0.08)",
+            willChange: "auto",
+            containIntrinsicSize: "auto 500px", // Helps with layout stability
           }}
         >
         <CardContent sx={{ p: { xs: 2, sm: 3 }, pb: { xs: 3, sm: 4 } }}>
@@ -316,7 +321,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                           textDecoration: "underline",
                         },
                       }}
-                      onClick={() => router.push(`/app/profile/${post.user.id}`)}
+                      onClick={() => router.push(`/app/users/${post.user.id}`)}
                     >
                       {post.user.name}
                     </Typography>

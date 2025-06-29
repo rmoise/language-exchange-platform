@@ -137,6 +137,8 @@ func (h *Hub) BroadcastToAll(message interface{}) {
 
 // SendToUser sends a message to all clients of a specific user
 func (h *Hub) SendToUser(userID string, message interface{}) {
+	log.Printf("SendToUser called for userID: %s", userID)
+	
 	data, err := json.Marshal(message)
 	if err != nil {
 		log.Printf("Error marshaling message: %v", err)
@@ -147,11 +149,15 @@ func (h *Hub) SendToUser(userID string, message interface{}) {
 	clients := h.userClients[userID]
 	h.mutex.RUnlock()
 	
+	log.Printf("Found %d clients for user %s", len(clients), userID)
+	
 	for _, client := range clients {
 		select {
 		case client.send <- data:
+			log.Printf("Successfully sent message to client for user %s", userID)
 		default:
 			// Client send channel is full, remove it
+			log.Printf("Client send channel full for user %s, unregistering", userID)
 			h.unregister <- client
 		}
 	}
@@ -159,6 +165,7 @@ func (h *Hub) SendToUser(userID string, message interface{}) {
 
 // SendToUsers sends a message to multiple users
 func (h *Hub) SendToUsers(userIDs []string, message interface{}) {
+	log.Printf("SendToUsers called with userIDs: %v", userIDs)
 	for _, userID := range userIDs {
 		h.SendToUser(userID, message)
 	}

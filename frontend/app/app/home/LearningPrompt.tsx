@@ -2,10 +2,10 @@
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import { useTheme as useCustomTheme } from "@/contexts/ThemeContext";
+import { useColorScheme } from '@mui/material/styles';
 
 export function LearningPrompt() {
-  const { mode } = useCustomTheme();
+  const { mode } = useColorScheme();
   
   return (
     <Box

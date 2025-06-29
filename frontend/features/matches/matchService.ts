@@ -1,4 +1,5 @@
 import { api } from '../../utils/api';
+import { notifyXPGain } from '@/features/gamification/utils/xpNotifications';
 
 export interface User {
   id: string;
@@ -47,6 +48,8 @@ export class MatchService {
 
   static async sendMatchRequest(recipientId: string): Promise<{ id: string }> {
     const response = await api.post('/matches/requests', { recipientId });
+    // Show XP notification for sending a match request
+    notifyXPGain('MATCH_REQUEST');
     // Backend wraps response in 'data' field
     return response.data.data || response.data;
   }
@@ -63,6 +66,10 @@ export class MatchService {
 
   static async handleRequest(requestId: string, accept: boolean): Promise<void> {
     await api.put(`/matches/requests/${requestId}`, { accept });
+    // Show XP notification for accepting a match
+    if (accept) {
+      notifyXPGain('MATCH_ACCEPTED');
+    }
   }
 
   static async cancelMatchRequest(requestId: string): Promise<void> {
@@ -70,7 +77,14 @@ export class MatchService {
   }
 
   static async startConversationFromMatch(matchId: string): Promise<Conversation> {
+    console.log('Calling API to start conversation for match:', matchId);
     const response = await api.post(`/matches/${matchId}/conversation`);
-    return response.data;
+    console.log('API response:', response);
+    console.log('Response data:', response.data);
+    console.log('Response data.data:', response.data.data);
+    // Backend wraps response in 'data' field
+    const conversation = response.data.data || response.data;
+    console.log('Extracted conversation:', conversation);
+    return conversation;
   }
 }

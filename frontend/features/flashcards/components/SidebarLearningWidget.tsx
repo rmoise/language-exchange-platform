@@ -33,13 +33,13 @@ import { FlashcardReview } from './FlashcardReview';
 import { useAuth } from '@/hooks/useAuth';
 import { UserLearningProfile, FlashcardDeck, Flashcard } from '../types';
 import { motion } from 'framer-motion';
-import { useTheme as useCustomTheme } from '@/contexts/ThemeContext';
+import { useColorScheme } from '@mui/material/styles';
 
 interface SidebarLearningWidgetProps {
 }
 
 export const SidebarLearningWidget: React.FC<SidebarLearningWidgetProps> = () => {
-  const { mode } = useCustomTheme();
+  const { mode } = useColorScheme();
   const darkMode = mode === 'dark';
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserLearningProfile | null>(null);
@@ -149,7 +149,7 @@ export const SidebarLearningWidget: React.FC<SidebarLearningWidgetProps> = () =>
           <Stack direction="row" alignItems="center" justifyContent="space-between">
             <Stack direction="row" alignItems="center" spacing={1}>
               <School sx={{ color: '#6366f1', fontSize: 20 }} />
-              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '16px' }}>
+              <Typography variant="h6" sx={{ fontWeight: 400 }}>
                 Your Learning
               </Typography>
             </Stack>

@@ -57,8 +57,6 @@ export default async function SessionsPage() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', p: { xs: 2, md: 4 } }}>
-      <SessionsClient currentUser={currentUser} />
-    </Box>
+    <SessionsClient currentUser={currentUser} />
   )
 }

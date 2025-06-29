@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Box } from "@mui/material";
-import { useTheme as useCustomTheme } from "@/contexts/ThemeContext";
+import { useColorScheme } from '@mui/material/styles';
 
 interface ThemeBoxProps {
   children: React.ReactNode;
@@ -10,7 +10,7 @@ interface ThemeBoxProps {
 }
 
 export function ThemeBox({ children, sx }: ThemeBoxProps) {
-  const { mode } = useCustomTheme();
+  const { mode } = useColorScheme();
   
   // If sx is a function, call it with the mode
   const computedSx = typeof sx === 'function' ? sx(mode) : sx;

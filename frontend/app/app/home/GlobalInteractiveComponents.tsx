@@ -8,10 +8,11 @@ import { ImageTranslationFAB, ImageTranslationModal } from "@/features/image-tra
 import { CreateSessionModal } from "@/features/booking/components/CreateSessionModal";
 import { getLanguageCode } from "@/utils/languageMapping";
 import { useAuth } from "@/hooks/useAuth";
-import { useTheme as useCustomTheme } from "@/contexts/ThemeContext";
+import { useColorScheme } from '@mui/material/styles';
+import { XPNotificationContainer } from "@/features/gamification/components/XPNotification";
 
 export default function GlobalInteractiveComponents() {
-  const { mode } = useCustomTheme();
+  const { mode } = useColorScheme();
   const { user } = useAuth();
   
   const [membersModalOpen, setMembersModalOpen] = useState(false);
@@ -95,6 +96,9 @@ export default function GlobalInteractiveComponents() {
         onCreateSession={handleCreateSession}
         darkMode={mode === "dark"}
       />
+      
+      {/* XP Notifications */}
+      <XPNotificationContainer />
     </>
   );
 }

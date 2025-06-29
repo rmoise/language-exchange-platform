@@ -28,7 +28,7 @@ import {
 import React, { useState } from "react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { useAuth } from "@/hooks/useAuth";
-import { useTheme as useCustomTheme } from "@/contexts/ThemeContext";
+import { useColorScheme } from '@mui/material/styles';
 
 interface AskMembersQuestionProps {
     onPost?: (title: string, text: string, category: string) => void;
@@ -61,7 +61,7 @@ export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = React.memo(
     const [category, setCategory] = useState("general");
     const [isFocused, setIsFocused] = useState(false);
     const { user } = useAuth();
-    const { mode } = useCustomTheme();
+    const { mode } = useColorScheme();
     const darkMode = darkModeProp ?? (mode === "dark");
 
     const handlePost = () => {
@@ -138,6 +138,14 @@ export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = React.memo(
                             onFocus={() => setIsFocused(true)}
                             onBlur={() => setIsFocused(false)}
                             fullWidth
+                            autoComplete="off"
+                            inputProps={{
+                                'aria-label': 'Post title',
+                                autoComplete: 'off',
+                                autoCorrect: 'off',
+                                autoCapitalize: 'off',
+                                spellCheck: false,
+                            }}
                             InputProps={{
                                 disableUnderline: true,
                                 sx: {
@@ -172,6 +180,13 @@ export const AskMembersQuestion: React.FC<AskMembersQuestionProps> = React.memo(
                             minRows={2}
                             maxRows={10}
                             fullWidth
+                            autoComplete="off"
+                            inputProps={{
+                                'aria-label': 'Post content',
+                                autoComplete: 'off',
+                                autoCorrect: 'off',
+                                spellCheck: true,
+                            }}
                             InputProps={{
                                 disableUnderline: true,
                                 sx: {

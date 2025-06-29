@@ -24,7 +24,7 @@ import {
   Forum
 } from '@mui/icons-material'
 import { LanguageSession, SessionService } from '@/services/sessionService'
-import { useTheme as useCustomTheme } from '@/contexts/ThemeContext'
+import { useColorScheme } from '@mui/material/styles'
 
 interface SessionCardProps {
   session: LanguageSession
@@ -33,7 +33,7 @@ interface SessionCardProps {
 }
 
 export default function SessionCard({ session, onJoinSession, currentUserId }: SessionCardProps) {
-  const { mode } = useCustomTheme()
+  const { mode } = useColorScheme()
   const darkMode = mode === 'dark'
   const [joining, setJoining] = useState(false)
   const [shareSuccess, setShareSuccess] = useState(false)

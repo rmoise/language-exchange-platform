@@ -13,17 +13,20 @@ export class MessagingService {
   // Conversation endpoints
   static async getConversations(limit = 50, offset = 0): Promise<ConversationListResponse> {
     const response = await api.get(`/conversations?limit=${limit}&offset=${offset}`);
-    return response.data;
+    // Backend might wrap response in 'data' field
+    return response.data.data || response.data;
   }
 
   static async createConversation(request: CreateConversationRequest): Promise<Conversation> {
     const response = await api.post('/conversations', request);
-    return response.data;
+    // Backend might wrap response in 'data' field
+    return response.data.data || response.data;
   }
 
   static async getConversation(conversationId: string): Promise<Conversation> {
     const response = await api.get(`/conversations/${conversationId}`);
-    return response.data;
+    // Backend might wrap response in 'data' field
+    return response.data.data || response.data;
   }
 
   // Message endpoints
@@ -35,7 +38,8 @@ export class MessagingService {
     const response = await api.get(
       `/conversations/${conversationId}/messages?limit=${limit}&offset=${offset}`
     );
-    return response.data;
+    // Backend might wrap response in 'data' field
+    return response.data.data || response.data;
   }
 
   static async sendMessage(
@@ -43,7 +47,8 @@ export class MessagingService {
     request: SendMessageRequest
   ): Promise<Message> {
     const response = await api.post(`/conversations/${conversationId}/messages`, request);
-    return response.data;
+    // Backend might wrap response in 'data' field
+    return response.data.data || response.data;
   }
 
   static async markAsRead(conversationId: string): Promise<void> {
@@ -76,7 +81,10 @@ export class MessagingService {
   static createWebSocketConnection(): WebSocket | null {
     try {
       const wsUrl = process.env.NEXT_PUBLIC_API_URL?.replace('http', 'ws').replace('/api', '') || 'ws://localhost:8080';
-      const token = localStorage.getItem('token'); // Assuming token is stored in localStorage
+      // Get token from cookie
+      const cookies = document.cookie.split(';').map(c => c.trim());
+      const tokenCookie = cookies.find(c => c.startsWith('token='));
+      const token = tokenCookie ? tokenCookie.split('=')[1] : null;
       
       if (!token) {
         console.error('No authentication token found');

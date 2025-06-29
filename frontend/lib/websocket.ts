@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 
 export interface WebSocketMessage {
   type: string;
@@ -29,10 +29,10 @@ export class WebSocketManager {
   private shouldReconnect: boolean = true;
 
   // Callbacks
-  private onConnect?: () => void;
-  private onDisconnect?: () => void;
-  private onMessage?: (message: WebSocketMessage) => void;
-  private onError?: (error: Event) => void;
+  public onConnect?: () => void;
+  public onDisconnect?: () => void;
+  public onMessage?: (message: WebSocketMessage) => void;
+  public onError?: (error: Event) => void;
 
   constructor(options: WebSocketOptions = {}) {
     this.url = options.url || this.getWebSocketUrl();
@@ -46,10 +46,33 @@ export class WebSocketManager {
 
   private getWebSocketUrl(): string {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = process.env.NEXT_PUBLIC_WS_URL || 
-                 process.env.NEXT_PUBLIC_API_URL?.replace(/^https?:/, '') || 
-                 window.location.host;
-    return `${protocol}//${host}/ws`;
+    
+    // Handle NEXT_PUBLIC_API_URL which might include /api path
+    let host: string;
+    let wsPath = '/api/ws';
+    
+    if (process.env.NEXT_PUBLIC_WS_URL) {
+      // Use explicit WebSocket URL if provided
+      return process.env.NEXT_PUBLIC_WS_URL;
+    } else if (process.env.NEXT_PUBLIC_API_URL) {
+      // Parse the API URL to extract host
+      const apiUrl = new URL(process.env.NEXT_PUBLIC_API_URL);
+      host = apiUrl.host;
+      // Always use /api/ws path
+      wsPath = '/api/ws';
+    } else {
+      // Fallback to current host
+      host = window.location.host;
+      wsPath = '/api/ws';
+    }
+    
+    // Get token from cookie
+    const cookies = document.cookie.split(';').map(c => c.trim());
+    const tokenCookie = cookies.find(c => c.startsWith('token='));
+    const token = tokenCookie ? tokenCookie.split('=')[1] : null;
+    
+    const baseUrl = `${protocol}//${host}${wsPath}`;
+    return token ? `${baseUrl}?token=${encodeURIComponent(token)}` : baseUrl;
   }
 
   connect(): void {
@@ -91,7 +114,8 @@ export class WebSocketManager {
       };
 
       this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        // Don't log the error object directly as it doesn't serialize well
+        // The connection status is already logged in onclose
         this.onError?.(error);
       };
 
@@ -109,6 +133,8 @@ export class WebSocketManager {
   }
 
   private handleMessage(message: WebSocketMessage): void {
+    console.log('WebSocketManager - Received message:', message);
+    
     // Call global message handler
     this.onMessage?.(message);
 
@@ -171,30 +197,54 @@ export function getWebSocketManager(): WebSocketManager {
 // React hook for WebSocket
 export function useWebSocket(options: WebSocketOptions = {}) {
   const wsManager = useRef<WebSocketManager | null>(null);
-  const isConnected = useRef(false);
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // Create WebSocket manager
-    wsManager.current = new WebSocketManager({
-      ...options,
-      onConnect: () => {
-        isConnected.current = true;
-        options.onConnect?.();
-      },
-      onDisconnect: () => {
-        isConnected.current = false;
-        options.onDisconnect?.();
-      }
-    });
+    // Use the global WebSocket manager
+    wsManager.current = getWebSocketManager();
+    
+    // Set up event handlers for this component
+    const originalOnConnect = wsManager.current.onConnect;
+    const originalOnDisconnect = wsManager.current.onDisconnect;
+    const originalOnMessage = wsManager.current.onMessage;
+    const originalOnError = wsManager.current.onError;
+    
+    wsManager.current.onConnect = () => {
+      setIsConnected(true);
+      originalOnConnect?.();
+      options.onConnect?.();
+    };
+    
+    wsManager.current.onDisconnect = () => {
+      setIsConnected(false);
+      originalOnDisconnect?.();
+      options.onDisconnect?.();
+    };
+    
+    wsManager.current.onMessage = (message: WebSocketMessage) => {
+      originalOnMessage?.(message);
+      options.onMessage?.(message);
+    };
+    
+    wsManager.current.onError = (error: Event) => {
+      originalOnError?.(error);
+      options.onError?.(error);
+    };
+    
+    // Connect if not already connected
+    if (!wsManager.current.getConnectionStatus()) {
+      wsManager.current.connect();
+    } else {
+      setIsConnected(true);
+    }
 
-    // Connect
-    wsManager.current.connect();
-
-    // Cleanup on unmount
+    // Cleanup - restore original handlers but don't disconnect
     return () => {
       if (wsManager.current) {
-        wsManager.current.disconnect();
-        wsManager.current = null;
+        wsManager.current.onConnect = originalOnConnect;
+        wsManager.current.onDisconnect = originalOnDisconnect;
+        wsManager.current.onMessage = originalOnMessage;
+        wsManager.current.onError = originalOnError;
       }
     };
   }, []);
@@ -215,6 +265,6 @@ export function useWebSocket(options: WebSocketOptions = {}) {
     subscribe,
     send,
     getConnectionStatus,
-    isConnected: isConnected.current
+    isConnected
   };
 }

@@ -88,3 +88,43 @@ type TranslationService interface {
 	GetSupportedLanguages(ctx context.Context) (*models.LanguagesResponse, error)
 	IsLanguageSupported(languageCode string) bool
 }
+
+type ProfileVisitService interface {
+	RecordVisit(ctx context.Context, visitorID, viewedID string) error
+	GetProfileVisits(ctx context.Context, userID string, filters models.ProfileVisitsFilters) (*models.ProfileVisitsResponse, error)
+	GetRecentVisitorCount(ctx context.Context, userID string, timeWindow string) (int, error)
+}
+
+type GamificationService interface {
+	// XP Management
+	AwardXP(ctx context.Context, userID string, amount int, actionType string, actionID *string, description string) error
+	GetUserGamificationData(ctx context.Context, userID string) (*models.UserGamificationData, error)
+	
+	// Stats Management
+	IncrementStat(ctx context.Context, userID string, statField string, increment int) error
+	UpdateSessionStats(ctx context.Context, userID string, minutes int, wordsLearned int) error
+	
+	// Streak Management
+	UpdateUserStreak(ctx context.Context, userID string) error
+	
+	// Badge Management
+	CheckAndAwardBadges(ctx context.Context, userID string) error
+	GetAllBadges(ctx context.Context) ([]*models.Badge, error)
+	GetUserBadges(ctx context.Context, userID string) ([]*models.UserBadge, error)
+	
+	// Daily Challenges
+	GetUserDailyChallenges(ctx context.Context, userID string) ([]*models.UserDailyChallenge, error)
+	UpdateChallengeProgress(ctx context.Context, userID string, actionType string, increment int) error
+	
+	// Leaderboard
+	GetLeaderboard(ctx context.Context, leaderboardType models.LeaderboardType, limit, offset int) ([]*models.LeaderboardEntry, error)
+	GetUserLeaderboardPosition(ctx context.Context, userID string, leaderboardType models.LeaderboardType) (int, error)
+	
+	// Triggered by various actions
+	OnSessionComplete(ctx context.Context, userID string, sessionMinutes int) error
+	OnMatchRequestSent(ctx context.Context, userID string, requestID string) error
+	OnMatchRequestAccepted(ctx context.Context, userID string, matchID string) error
+	OnPostCreated(ctx context.Context, userID string, postID string) error
+	OnHelpfulReply(ctx context.Context, userID string, replyID string) error
+	OnProfileComplete(ctx context.Context, userID string) error
+}

@@ -24,12 +24,12 @@ import {
   FilterList as FilterListIcon,
 } from "@mui/icons-material";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import NotificationIcon from "@/components/notifications/NotificationIcon";
 import UserAvatar from "@/components/ui/UserAvatar";
 import type { Notification } from "@/app/actions/notifications";
 import { useAppSelector } from "@/lib/hooks";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useColorScheme } from "@mui/material/styles";
 
 // Main tab navigation items
 const tabNavigationItems = [
@@ -52,10 +52,50 @@ export default function UnifiedHeader({
 }: UnifiedHeaderProps) {
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isNavigating, setIsNavigating] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const user = useAppSelector((state) => state.auth.user);
-  const { mode, toggleTheme } = useTheme();
+  const { mode, setMode } = useColorScheme();
+  
+  const toggleTheme = () => {
+    setMode(mode === 'dark' ? 'light' : 'dark');
+  };
+
+  // Prefetch all tab routes on component mount for faster navigation
+  useEffect(() => {
+    tabNavigationItems.forEach(item => {
+      router.prefetch(item.href);
+    });
+  }, [router]);
+
+  // Memoized tab value calculation for better performance
+  const currentTabValue = useMemo(() => {
+    // Special handling for requests pages - they should highlight "Matches"
+    if (pathname.startsWith("/app/requests")) {
+      const matchesIndex = tabNavigationItems.findIndex(item => item.href === "/app/matches");
+      return matchesIndex !== -1 ? matchesIndex : 0;
+    }
+    
+    // Special handling for posts pages - no tab should be highlighted
+    if (pathname.startsWith("/app/posts/") || pathname === "/app/profile/posts") {
+      return false; // This will unselect all tabs
+    }
+    
+    // Special handling for users pages (viewing other users) - no tab should be highlighted
+    if (pathname.startsWith("/app/users/")) {
+      return false; // This will unselect all tabs
+    }
+    
+    // Special handling for profile sub-pages - highlight "Profile"
+    if (pathname.startsWith("/app/profile/")) {
+      const profileIndex = tabNavigationItems.findIndex(item => item.href === "/app/profile");
+      return profileIndex !== -1 ? profileIndex : false;
+    }
+    
+    const currentItem = tabNavigationItems.find((item) => pathname === item.href);
+    return currentItem ? tabNavigationItems.indexOf(currentItem) : false;
+  }, [pathname]);
 
   // Handle search functionality
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -242,31 +282,18 @@ export default function UnifiedHeader({
           }}
         >
           <Tabs
-            value={(() => {
-              // Special handling for requests pages - they should highlight "Matches"
-              if (pathname.startsWith("/app/requests")) {
-                const matchesIndex = tabNavigationItems.findIndex(item => item.href === "/app/matches");
-                return matchesIndex !== -1 ? matchesIndex : 0;
-              }
-              
-              // Special handling for posts pages - no tab should be highlighted
-              if (pathname.startsWith("/app/posts/") || pathname === "/app/profile/posts") {
-                return false; // This will unselect all tabs
-              }
-              
-              // Special handling for profile sub-pages - highlight "Profile"
-              if (pathname.startsWith("/app/profile/")) {
-                const profileIndex = tabNavigationItems.findIndex(item => item.href === "/app/profile");
-                return profileIndex !== -1 ? profileIndex : false;
-              }
-              
-              const currentItem = tabNavigationItems.find((item) => pathname === item.href);
-              return currentItem ? tabNavigationItems.indexOf(currentItem) : false;
-            })()}
+            value={currentTabValue}
             onChange={(event: React.SyntheticEvent, newValue: number) => {
               const selectedItem = tabNavigationItems[newValue];
               if (selectedItem) {
+                // Always allow navigation, even to the same route
+                // This allows users to click Profile tab to go back to main profile from sub-pages
+                setIsNavigating(true);
+                // Use prefetch for faster navigation
+                router.prefetch(selectedItem.href);
                 router.push(selectedItem.href);
+                // Reset loading state after a short delay
+                setTimeout(() => setIsNavigating(false), 500);
               }
             }}
             sx={{
@@ -282,6 +309,8 @@ export default function UnifiedHeader({
                 minWidth: "auto",
                 px: 2,
                 py: 1.5,
+                transition: "all 0.2s ease",
+                opacity: isNavigating ? 0.6 : 1,
                 "&:hover": {
                   color: "#e5e7eb",
                   backgroundColor: "rgba(99, 102, 241, 0.05)",

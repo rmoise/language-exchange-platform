@@ -16,15 +16,26 @@ export const useStartConversation = (options: UseStartConversationOptions = {}) 
   const { onError, onSuccess } = options;
 
   const startConversation = async (matchId: string) => {
+    console.log('Starting conversation for match:', matchId);
     startTransition(async () => {
       try {
         const conversation = await MatchService.startConversationFromMatch(matchId);
+        console.log('Conversation created/found:', conversation);
         
-        // Call success callback if provided
+        if (!conversation?.id) {
+          console.error('No conversation ID in response:', conversation);
+          throw new Error('Invalid conversation response - no ID');
+        }
+        
+        // Call success callback if provided (this triggers refetch in MatchList)
         onSuccess?.(conversation.id);
         
-        // Navigate to the conversation
-        router.push(`/app/conversations/${conversation.id}` as any);
+        // Add a longer delay to ensure state updates and refetch are complete
+        setTimeout(() => {
+          // Navigate to the conversation with query parameter
+          console.log('Navigating to:', `/app/conversations?id=${conversation.id}`);
+          router.push(`/app/conversations?id=${conversation.id}`);
+        }, 800);
       } catch (error) {
         console.error('Failed to start conversation:', error);
         

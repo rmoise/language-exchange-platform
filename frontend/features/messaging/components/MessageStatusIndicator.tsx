@@ -9,8 +9,7 @@ import {
 import {
   Schedule as PendingIcon,
   Done as SentIcon,
-  DoneAll as DeliveredIcon,
-  CheckCircle as ReadIcon,
+  DoneAll as ReadIcon,
   Error as ErrorIcon
 } from '@mui/icons-material';
 import { MessageStatus } from '../types';
@@ -50,10 +49,10 @@ export const MessageStatusIndicator: React.FC<MessageStatusIndicatorProps> = ({
         );
       case MessageStatus.DELIVERED:
         return (
-          <DeliveredIcon 
+          <ReadIcon 
             sx={{ 
               fontSize: iconSize, 
-              color: 'primary.main',
+              color: 'text.secondary',
               transition: 'color 0.2s ease'
             }} 
           />
@@ -63,7 +62,7 @@ export const MessageStatusIndicator: React.FC<MessageStatusIndicatorProps> = ({
           <ReadIcon 
             sx={{ 
               fontSize: iconSize, 
-              color: 'success.main',
+              color: '#4fc3f7', // Light blue color for read status
               transition: 'color 0.2s ease'
             }} 
           />

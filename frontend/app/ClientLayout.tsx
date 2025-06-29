@@ -9,29 +9,57 @@ import CssBaseline from '@mui/material/CssBaseline'
 import { makeStore, makePersistor, AppStore } from '@/lib/store'
 import { useAppDispatch } from '@/lib/hooks'
 import { getCurrentUser } from '@/features/auth/authSlice'
-import { ThemeContextProvider, useTheme as useCustomTheme } from '@/contexts/ThemeContext'
-import { initializeTheme } from '@/features/theme/themeSlice'
 import SimpleLoading from '@/components/ui/SimpleLoading'
 import createEmotionCache from '@/utils/createEmotionCache'
 import { apiSlice } from '@/features/api/apiSlice'
+import { XPNotificationManagerElegant } from '@/components/ui/XPNotificationElegant'
+import { LevelUpManager } from '@/components/ui/LevelUpNotification'
+import { NotificationProvider } from '@/contexts/NotificationContext'
+import { WebSocketProvider } from '@/contexts/WebSocketContext'
+import { MessageNotificationManager } from '@/components/notifications/MessageNotificationManager'
+import { ToastNotificationManager } from '@/components/notifications/ToastNotification'
 
-// Create theme function that returns theme based on mode
-const createAppTheme = (mode: 'light' | 'dark') => createTheme({
-  palette: {
-    mode,
-    primary: {
-      main: mode === 'light' ? '#6366f1' : '#8b5cf6',
-      light: mode === 'light' ? '#8b5cf6' : '#a78bfa',
-      dark: mode === 'light' ? '#4f46e5' : '#7c3aed',
+// Create theme with CSS variables enabled for proper dark mode support
+const createAppThemeWithCssVars = () => createTheme({
+  cssVariables: {
+    colorSchemeSelector: 'data',
+  },
+  colorSchemes: {
+    light: {
+      palette: {
+        primary: {
+          main: '#6366f1',
+          light: '#8b5cf6',
+          dark: '#4f46e5',
+        },
+        secondary: {
+          main: '#f59e0b',
+          light: '#fbbf24',
+          dark: '#d97706',
+        },
+        background: {
+          default: '#f8fafc',
+          paper: '#ffffff',
+        },
+      },
     },
-    secondary: {
-      main: mode === 'light' ? '#f59e0b' : '#fbbf24',
-      light: mode === 'light' ? '#fbbf24' : '#fcd34d',
-      dark: mode === 'light' ? '#d97706' : '#f59e0b',
-    },
-    background: {
-      default: mode === 'light' ? '#f8fafc' : '#0f172a',
-      paper: mode === 'light' ? '#ffffff' : '#1e293b',
+    dark: {
+      palette: {
+        primary: {
+          main: '#8b5cf6',
+          light: '#a78bfa',
+          dark: '#7c3aed',
+        },
+        secondary: {
+          main: '#fbbf24',
+          light: '#fcd34d',
+          dark: '#f59e0b',
+        },
+        background: {
+          default: '#0f172a',
+          paper: '#1e293b',
+        },
+      },
     },
   },
   typography: {
@@ -85,7 +113,7 @@ const createAppTheme = (mode: 'light' | 'dark') => createTheme({
   components: {
     MuiButton: {
       styleOverrides: {
-        root: {
+        root: ({ theme }) => ({
           textTransform: 'none',
           fontWeight: 600,
           borderRadius: 8,
@@ -96,21 +124,21 @@ const createAppTheme = (mode: 'light' | 'dark') => createTheme({
             transform: 'translateY(-1px)',
           },
           transition: 'all 0.2s ease-in-out',
-        },
+        }),
       },
     },
     MuiCard: {
       styleOverrides: {
-        root: {
+        root: ({ theme }) => ({
           borderRadius: 16,
-          boxShadow: mode === 'light' 
-            ? '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)'
-            : '0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.8)',
-          border: mode === 'light' 
-            ? '1px solid rgba(255, 255, 255, 0.1)'
-            : '1px solid rgba(255, 255, 255, 0.05)',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
           backdropFilter: 'blur(10px)',
-        },
+          ...theme.applyStyles('dark', {
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.8)',
+            border: '1px solid rgba(255, 255, 255, 0.05)',
+          }),
+        }),
       },
     },
     MuiChip: {
@@ -135,69 +163,81 @@ const createAppTheme = (mode: 'light' | 'dark') => createTheme({
     },
     MuiTooltip: {
       defaultProps: {
-        disableInteractive: false,
-        followCursor: false,
+        arrow: true,
+        placement: 'top',
         PopperProps: {
-          modifiers: [
-            {
-              name: 'flip',
-              enabled: true,
-              options: {
-                fallbackPlacements: ['top', 'left', 'right', 'bottom'],
-                altBoundary: true,
+          disablePortal: false,
+          popperOptions: {
+            modifiers: [
+              {
+                name: 'flip',
+                enabled: true,
+                options: {
+                  fallbackPlacements: ['top', 'left', 'right', 'bottom'],
+                  altBoundary: true,
+                },
               },
-            },
-            {
-              name: 'preventOverflow',
-              enabled: true,
-              options: {
-                boundary: 'window',
-                padding: 16,
-                altBoundary: false,
-                tether: false,
+              {
+                name: 'preventOverflow',
+                enabled: true,
+                options: {
+                  boundary: 'window',
+                  padding: 16,
+                  altBoundary: false,
+                  tether: false,
+                },
               },
-            },
-            {
-              name: 'offset',
-              enabled: true,
-              options: {
-                offset: [0, 12],
+              {
+                name: 'offset',
+                enabled: true,
+                options: {
+                  offset: [0, 12],
+                },
               },
-            },
-            {
-              name: 'computeStyles',
-              options: {
-                gpuAcceleration: false,
-                adaptive: false,
+              {
+                name: 'computeStyles',
+                options: {
+                  gpuAcceleration: false,
+                  adaptive: false,
+                },
               },
-            },
-          ],
-          strategy: 'fixed',
-          placement: 'top',
+            ],
+            strategy: 'fixed',
+            placement: 'top',
+          },
         },
       },
       styleOverrides: {
-        tooltip: {
-          backgroundColor: mode === 'light' ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.95)',
-          color: mode === 'light' ? '#fff' : '#000',
+        tooltip: ({ theme }) => ({
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          color: '#fff',
           fontSize: '0.875rem',
           fontWeight: 500,
           padding: '8px 12px',
           borderRadius: 8,
-          boxShadow: mode === 'light' 
-            ? '0 4px 12px rgba(0, 0, 0, 0.15)'
-            : '0 4px 12px rgba(0, 0, 0, 0.5)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
           maxWidth: 300,
           wordWrap: 'break-word',
           position: 'relative',
           transform: 'none !important',
-        },
-        arrow: {
-          color: mode === 'light' ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+          ...theme.applyStyles('dark', {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            color: '#000',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+          }),
+        }),
+        arrow: ({ theme }) => ({
+          color: 'rgba(0, 0, 0, 0.9)',
           '&::before': {
-            backgroundColor: mode === 'light' ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
           },
-        },
+          ...theme.applyStyles('dark', {
+            color: 'rgba(255, 255, 255, 0.95)',
+            '&::before': {
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            },
+          }),
+        }),
         popper: {
           zIndex: 9999,
           '&[data-popper-reference-hidden="true"]': {
@@ -216,7 +256,8 @@ const createAppTheme = (mode: 'light' | 'dark') => createTheme({
       },
     },
   },
-})
+});
+
 
 function StoreInitializer({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch()
@@ -244,13 +285,16 @@ function StoreInitializer({ children }: { children: React.ReactNode }) {
 }
 
 function ThemedApp({ children }: { children: React.ReactNode }) {
-  const { mode } = useCustomTheme()
-  const theme = createAppTheme(mode)
+  const theme = useMemo(() => createAppThemeWithCssVars(), [])
   
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <StoreInitializer>
+        <XPNotificationManagerElegant />
+        <LevelUpManager />
+        <MessageNotificationManager />
+        <ToastNotificationManager />
         {children}
       </StoreInitializer>
     </ThemeProvider>
@@ -278,11 +322,13 @@ export default function ClientLayout({
     <CacheProvider value={emotionCache}>
       <Provider store={storeRef.current}>
         <PersistGate loading={<SimpleLoading />} persistor={persistorRef.current}>
-          <ThemeContextProvider>
-            <ThemedApp>
-              {children}
-            </ThemedApp>
-          </ThemeContextProvider>
+          <NotificationProvider>
+            <WebSocketProvider>
+              <ThemedApp>
+                {children}
+              </ThemedApp>
+            </WebSocketProvider>
+          </NotificationProvider>
         </PersistGate>
       </Provider>
     </CacheProvider>

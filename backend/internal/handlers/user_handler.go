@@ -11,12 +11,14 @@ import (
 )
 
 type UserHandler struct {
-	userService services.UserService
+	userService         services.UserService
+	profileVisitService services.ProfileVisitService
 }
 
-func NewUserHandler(userService services.UserService) *UserHandler {
+func NewUserHandler(userService services.UserService, profileVisitService services.ProfileVisitService) *UserHandler {
 	return &UserHandler{
-		userService: userService,
+		userService:         userService,
+		profileVisitService: profileVisitService,
 	}
 }
 
@@ -47,6 +49,14 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 	if err != nil {
 		errors.HandleError(c, err)
 		return
+	}
+
+	// Record profile visit if there's an authenticated user viewing another user's profile
+	if visitorID := c.GetString("userID"); visitorID != "" && visitorID != targetUserID {
+		// Record the visit asynchronously to not block the response
+		go func() {
+			_ = h.profileVisitService.RecordVisit(c.Request.Context(), visitorID, targetUserID)
+		}()
 	}
 
 	// Don't return sensitive information for other users

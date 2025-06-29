@@ -355,3 +355,12 @@ func (r *userRepository) GetByGoogleID(ctx context.Context, googleID string) (*m
 
 	return user, err
 }
+func (r *userRepository) GetTotalCount(ctx context.Context) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM users`
+	err := r.db.QueryRowContext(ctx, query).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}

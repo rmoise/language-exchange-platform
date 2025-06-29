@@ -5,12 +5,14 @@ import { redirect } from 'next/navigation';
 
 export interface Notification {
   id: string;
-  type: 'info' | 'success' | 'warning' | 'error' | 'match_request';
+  type: 'info' | 'success' | 'warning' | 'error' | 'match_request' | 'message';
   title: string;
   message: string;
   read: boolean;
   createdAt: string;
   data?: any;
+  actionUrl?: string;
+  metadata?: any;
 }
 
 export async function getNotifications(): Promise<Notification[]> {

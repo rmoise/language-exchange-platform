@@ -1,4 +1,5 @@
 import { Session, BookingRequest, TimeSlot, Availability } from './types';
+import { notifyXPGain } from '@/features/gamification/utils/xpNotifications';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
@@ -67,6 +68,11 @@ export const bookingService = {
     
     if (!response.ok) {
       throw new Error('Failed to update session status');
+    }
+    
+    // Show XP notification when session is completed
+    if (status === 'completed') {
+      notifyXPGain('SESSION_COMPLETE');
     }
     
     return response.json();

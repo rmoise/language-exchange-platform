@@ -145,7 +145,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     fullName: user.name || "Jay Vaughn", // Keep full name for other uses
     description: truncateText(
       user.bio || "Friendly language learner seeking conversation practice. I love talking about food, music, movies, and travel adventures.",
-      90 // Maximum 90 characters to match the clean look of test users 3 and 4
+      70 // Maximum 70 characters to match HighlightedProfileCard
     ),
     location: locationString,
     profileImage: displayImage,
@@ -258,7 +258,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
 
   const handleCardClick = () => {
     // Use router to navigate to user profile
-    router.push(`/app/profile/${user.id}`);
+    router.push(`/app/users/${user.id}`);
     
     // Also call the optional onViewProfile callback if provided
     onViewProfile?.(user.id);
@@ -279,7 +279,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           backgroundColor: darkMode ? "rgba(30, 30, 30, 0.5)" : "rgba(255, 255, 255, 0.8)",
           backdropFilter: "blur(20px)",
           width: 322,
-          height: 360,
+          height: 420,
           p: 3.5,
           borderRadius: "16px",
           border: "1px solid",
@@ -307,58 +307,49 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         {user.isNew && <NewUserBadge variant="compact" darkMode={darkMode} />}
         
         <Stack spacing={3.5} sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          <Stack direction="row" spacing={3} alignItems="center">
+          {/* Top section with avatar, name and location - matching HighlightedProfileCard */}
+          <Stack direction="row" spacing={2.5} alignItems="center">
+            {/* Profile image */}
             <UserAvatar
               user={{ ...user, profileImage: profileData.profileImage || undefined }}
-              size={94}
-              showOnlineStatus={false}
+              size={80}
+              showOnlineStatus={true}
+              showBorderForNonImage={false}
             />
-
-            <Stack spacing={1.5} sx={{ flex: 1 }}>
+            
+            {/* Name and location */}
+            <Stack spacing={1} sx={{ flex: 1 }}>
               <Stack spacing={0.5}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <Typography
+                    sx={{
+                      color: darkMode ? "#ffffff" : "black",
+                      fontSize: "18px",
+                      fontWeight: 600,
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    {profileData.name}
+                  </Typography>
+                </Box>
                 <Typography
-                  variant="h6"
                   sx={{
-                    fontFamily: "Inter",
-                    fontWeight: 600,
-                    fontSize: "18.7px",
-                    color: darkMode ? "#ffffff" : "black",
-                    letterSpacing: "-0.19px",
-                  }}
-                >
-                  {profileData.name}
-                </Typography>
-
-                <Typography
-                  sx={{
-                    fontFamily: "Inter",
-                    fontWeight: 500,
-                    fontSize: "11px",
-                    color: darkMode ? "#b0b0b0" : "#303030",
-                    letterSpacing: "-0.11px",
-                    width: 142,
+                    color: darkMode ? "rgba(255, 255, 255, 0.8)" : "rgba(0, 0, 0, 0.8)",
+                    fontSize: "13px",
                     lineHeight: 1.6,
+                    width: 142,
                   }}
                 >
                   {profileData.description}
                 </Typography>
               </Stack>
-
-              <Stack direction="row" spacing={1} alignItems="center">
-                <LocationOn
-                  sx={{
-                    width: 12,
-                    height: 12,
-                    color: darkMode ? "#888" : "#9e9ea2",
-                  }}
-                />
+              
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <LocationOn sx={{ fontSize: 14, color: darkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }} />
                 <Typography
                   sx={{
-                    fontFamily: "Inter",
-                    fontWeight: 500,
-                    fontSize: "10px",
-                    color: darkMode ? "#888" : "#9e9ea2",
-                    letterSpacing: "-0.10px",
+                    color: darkMode ? "rgba(255, 255, 255, 0.6)" : "rgba(0, 0, 0, 0.6)",
+                    fontSize: "12px",
                   }}
                 >
                   {profileData.location}
@@ -366,69 +357,65 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               </Stack>
             </Stack>
           </Stack>
-
+          
           <Stack spacing={3} alignItems="center">
-            <Divider sx={{ width: "100%", borderColor: darkMode ? "#444" : "#e0e0e0" }} />
-
+            {/* Divider between location and languages */}
+            <Divider sx={{ 
+              width: "100%", 
+              borderColor: darkMode ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.15)"
+            }} />
+            
+            {/* Languages section - simplified like HighlightedProfileCard */}
             <Stack direction="row" spacing={1} alignItems="center">
               <Typography
                 sx={{
-                  fontFamily: "Inter",
-                  fontWeight: 500,
+                  color: darkMode ? "rgba(255, 255, 255, 0.6)" : "rgba(0, 0, 0, 0.6)",
                   fontSize: "11px",
-                  color: darkMode ? "#888" : "#9e9ea2",
+                  fontWeight: 500,
                   letterSpacing: "-0.11px",
                 }}
               >
                 Fluent
               </Typography>
-
               <Typography sx={{ fontSize: "16px" }}>
                 {profileData.languages.fluent.flag}
               </Typography>
-
               <Typography
                 sx={{
-                  fontFamily: "Inter",
-                  fontWeight: 500,
+                  color: darkMode ? "rgba(255, 255, 255, 0.6)" : "rgba(0, 0, 0, 0.6)",
                   fontSize: "11px",
-                  color: darkMode ? "#888" : "#9e9ea2",
+                  fontWeight: 500,
                   letterSpacing: "-0.11px",
                 }}
               >
                 +{profileData.languages.fluent.count}
               </Typography>
-
               <Box
                 sx={{
                   width: "1.5px",
                   height: "11px",
-                  backgroundColor: darkMode ? "#555" : "#9e9ea2",
+                  backgroundColor: darkMode ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.3)",
+                  mx: 0.5,
                 }}
               />
-
               <Typography
                 sx={{
-                  fontFamily: "Inter",
-                  fontWeight: 500,
+                  color: darkMode ? "rgba(255, 255, 255, 0.6)" : "rgba(0, 0, 0, 0.6)",
                   fontSize: "11px",
-                  color: darkMode ? "#888" : "#9e9ea2",
+                  fontWeight: 500,
                   letterSpacing: "-0.11px",
                 }}
               >
                 Learns
               </Typography>
-
               <Typography sx={{ fontSize: "16px" }}>
                 {profileData.languages.learning.flag}
               </Typography>
-
               <Typography
                 sx={{
-                  fontFamily: "Inter",
-                  fontWeight: 500,
+                  color: darkMode ? "rgba(255, 255, 255, 0.6)" : "rgba(0, 0, 0, 0.6)",
                   fontSize: "11px",
-                  color: darkMode ? "#888" : "#9e9ea2",
+                  fontWeight: 500,
                   letterSpacing: "-0.11px",
                 }}
               >
@@ -437,8 +424,73 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             </Stack>
           </Stack>
         </Stack>
-
-        <Stack direction="row" spacing={1.5} sx={{ mt: "auto" }}>
+      
+        {/* Stats section - simplified */}
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: "space-around",
+          px: 2,
+        }}>
+          <Box sx={{ textAlign: "center" }}>
+            <Typography sx={{ 
+              fontSize: "18px", 
+              fontWeight: 600, 
+              color: darkMode ? "white" : "black",
+              lineHeight: 1,
+            }}>
+              #12
+            </Typography>
+            <Typography sx={{ 
+              fontSize: "10px", 
+              color: darkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              mt: 0.5,
+            }}>
+              Rank
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: "center" }}>
+            <Typography sx={{ 
+              fontSize: "18px", 
+              fontWeight: 600, 
+              color: darkMode ? "white" : "black",
+              lineHeight: 1,
+            }}>
+              Native
+            </Typography>
+            <Typography sx={{ 
+              fontSize: "10px", 
+              color: darkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              mt: 0.5,
+            }}>
+              Level
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: "center" }}>
+            <Typography sx={{ 
+              fontSize: "18px", 
+              fontWeight: 600, 
+              color: darkMode ? "white" : "black",
+              lineHeight: 1,
+            }}>
+              128
+            </Typography>
+            <Typography sx={{ 
+              fontSize: "10px", 
+              color: darkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              mt: 0.5,
+            }}>
+              Sessions
+            </Typography>
+          </Box>
+        </Box>
+        
+        <Stack direction="row" spacing={1.5} sx={{ mt: 2.5 }}>
           <Button
             onClick={handleFollow}
             variant={hasRequestSent && !isFollowing ? "contained" : "outlined"}

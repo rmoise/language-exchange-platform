@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Box, Stack, Typography, Chip } from "@mui/material";
-import { useTheme as useCustomTheme } from "@/contexts/ThemeContext";
+import { useColorScheme } from '@mui/material/styles';
 
 interface CategoriesCardProps {
   selectedCategory: string | null;
@@ -10,7 +10,7 @@ interface CategoriesCardProps {
 }
 
 export function CategoriesCard({ selectedCategory, onCategorySelect }: CategoriesCardProps) {
-  const { mode } = useCustomTheme();
+  const { mode } = useColorScheme();
   
   const categoryMap = [
     { name: "General Discussion", value: "general", count: 234, color: "#6366f1", icon: "💡" },
@@ -33,7 +33,7 @@ export function CategoriesCard({ selectedCategory, onCategorySelect }: Categorie
       }}
     >
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "16px" }}>
+        <Typography variant="h6" sx={{ fontWeight: 400 }}>
           Categories
         </Typography>
         {selectedCategory && (

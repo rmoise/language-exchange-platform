@@ -86,10 +86,9 @@ export const CommunityBanner: React.FC<CommunityBannerProps> = ({
             </Avatar>
             <Stack spacing={0.5}>
               <Typography
-                variant="h5"
+                variant="h1"
                 sx={{
-                  fontWeight: 700,
-                  fontSize: { xs: "20px", sm: "24px" },
+                  fontWeight: 300,
                   color: darkMode ? "#fff" : "#0f172a",
                   letterSpacing: "-0.02em",
                 }}

@@ -38,11 +38,12 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       setConnectionStatus(false);
     },
     onMessage: (message: WebSocketMessage) => {
-      console.log('WebSocket message received:', message);
+      console.log('WebSocketContext - Received message:', message);
       setLastMessage(message);
     },
     onError: (error: Event) => {
-      console.error('WebSocket error:', error);
+      // WebSocket errors are handled internally
+      // The error event object doesn't serialize well for logging
     }
   });
 

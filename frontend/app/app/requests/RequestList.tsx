@@ -51,14 +51,25 @@ export default function RequestList({ requests, type }: RequestListProps) {
   const [loadingActions, setLoadingActions] = useState<Set<string>>(new Set())
   const [processedRequests, setProcessedRequests] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
+  const [localRequests, setLocalRequests] = useState<MatchRequest[]>(requests)
 
   const handleAccept = async (requestId: string) => {
     setLoadingActions(prev => new Set(prev).add(requestId))
     setError(null)
 
     try {
-      await api.put(`/matches/requests/${requestId}/accept`)
+      await api.put(`/matches/requests/${requestId}`, { accept: true })
       setProcessedRequests(prev => new Set(prev).add(requestId))
+      
+      // Update local state to reflect the change immediately
+      setLocalRequests(prev => prev.map(req => 
+        req.id === requestId ? { ...req, status: 'accepted' as const } : req
+      ))
+      
+      // Optional: Remove accepted requests from the list after a short delay
+      setTimeout(() => {
+        setLocalRequests(prev => prev.filter(req => req.id !== requestId))
+      }, 1000)
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to accept request')
     } finally {
@@ -75,8 +86,18 @@ export default function RequestList({ requests, type }: RequestListProps) {
     setError(null)
 
     try {
-      await api.put(`/matches/requests/${requestId}/decline`)
+      await api.put(`/matches/requests/${requestId}`, { accept: false })
       setProcessedRequests(prev => new Set(prev).add(requestId))
+      
+      // Update local state to reflect the change immediately
+      setLocalRequests(prev => prev.map(req => 
+        req.id === requestId ? { ...req, status: 'declined' as const } : req
+      ))
+      
+      // Optional: Remove declined requests from the list after a short delay
+      setTimeout(() => {
+        setLocalRequests(prev => prev.filter(req => req.id !== requestId))
+      }, 1000)
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to decline request')
     } finally {
@@ -129,7 +150,7 @@ export default function RequestList({ requests, type }: RequestListProps) {
     }
   }
 
-  if (requests.length === 0) {
+  if (localRequests.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 6 }}>
         <Person sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -160,11 +181,11 @@ export default function RequestList({ requests, type }: RequestListProps) {
       )}
       
       <Typography variant="h6" gutterBottom>
-        {requests.length} {type} request{requests.length !== 1 ? 's' : ''}
+        {localRequests.length} {type} request{localRequests.length !== 1 ? 's' : ''}
       </Typography>
       
       <Grid container spacing={3}>
-        {requests.map((request) => {
+        {localRequests.map((request) => {
           const user = type === 'incoming' ? request.sender : request.recipient
           const isLoading = loadingActions.has(request.id)
           const isProcessed = processedRequests.has(request.id) || request.status !== 'pending'

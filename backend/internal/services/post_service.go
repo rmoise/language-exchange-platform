@@ -27,10 +27,11 @@ type PostService interface {
 }
 
 type postService struct {
-	postRepo     repository.PostRepository
-	commentRepo  repository.CommentRepository
-	reactionRepo repository.ReactionRepository
-	userRepo     repository.UserRepository
+	postRepo            repository.PostRepository
+	commentRepo         repository.CommentRepository
+	reactionRepo        repository.ReactionRepository
+	userRepo            repository.UserRepository
+	gamificationService GamificationService
 	
 	// Simple in-memory cache (replace with Redis in production)
 	cache      *postCache
@@ -53,12 +54,14 @@ func NewPostService(
 	commentRepo repository.CommentRepository,
 	reactionRepo repository.ReactionRepository,
 	userRepo repository.UserRepository,
+	gamificationService GamificationService,
 ) PostService {
 	return &postService{
-		postRepo:     postRepo,
-		commentRepo:  commentRepo,
-		reactionRepo: reactionRepo,
-		userRepo:     userRepo,
+		postRepo:            postRepo,
+		commentRepo:         commentRepo,
+		reactionRepo:        reactionRepo,
+		userRepo:            userRepo,
+		gamificationService: gamificationService,
 		cache: &postCache{
 			posts:      make(map[string]*cacheEntry),
 			categories: make(map[string]*cacheEntry),
@@ -96,6 +99,13 @@ func (s *postService) CreatePost(ctx context.Context, userID string, input model
 	// Invalidate relevant caches
 	s.invalidateCache("trending")
 	s.invalidateCache("category:" + input.Category)
+
+	// Award XP for creating a post
+	if s.gamificationService != nil {
+		go func() {
+			_ = s.gamificationService.OnPostCreated(context.Background(), userID, post.ID)
+		}()
+	}
 
 	return post, nil
 }

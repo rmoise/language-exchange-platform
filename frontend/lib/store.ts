@@ -13,23 +13,40 @@ import storage from 'redux-persist/lib/storage'
 import authReducer from '@/features/auth/authSlice'
 import userReducer from '@/features/user/userSlice'
 import onboardingReducer from '@/features/onboarding/onboardingSlice'
-import themeReducer from '@/features/theme/themeSlice'
+import gamificationReducer from '@/features/gamification/gamificationSlice'
+import flashcardReducer from '@/features/flashcards/flashcardSlice'
 import { apiSlice } from '@/features/api/apiSlice'
 
 const rootReducer = combineReducers({
   auth: authReducer,
   user: userReducer,
   onboarding: onboardingReducer,
-  theme: themeReducer,
+  gamification: gamificationReducer,
+  flashcards: flashcardReducer,
   [apiSlice.reducerPath]: apiSlice.reducer,
 })
 
 const persistConfig = {
   key: 'root',
-  version: 1,
+  version: 3, // Increment version to trigger migration
   storage,
-  whitelist: ['theme'], // Only persist theme state
+  whitelist: ['flashcards'], // Persist flashcards state
   blacklist: ['api'], // Don't persist RTK Query cache
+  migrate: (state: any, version: number) => {
+    if (version < 2) {
+      // Remove theme key from persisted state
+      const { theme, ...newState } = state || {}
+      return Promise.resolve(newState)
+    }
+    if (version < 3) {
+      // Add flashcards state if not present
+      return Promise.resolve({
+        ...state,
+        flashcards: { savedFlashcards: {}, isLoading: false, error: null }
+      })
+    }
+    return Promise.resolve(state)
+  },
 }
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)

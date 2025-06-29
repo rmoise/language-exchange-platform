@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { Box, Stack, Typography } from "@mui/material";
-import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from "@mui/icons-material";
-import { useTheme as useCustomTheme } from "@/contexts/ThemeContext";
+import React from "react";
+import { Box, Typography, Button } from "@mui/material";
+import { AutoAwesome as AutoAwesomeIcon, Stars as StarsIcon } from "@mui/icons-material";
+import { useColorScheme } from '@mui/material/styles';
 import { HighlightedProfileCard } from "./HighlightedProfileCard";
 import { highlightedProfiles } from "../data/mockData";
-import UserAvatar from "@/components/ui/UserAvatar";
 
 interface User {
   id: string;
@@ -22,155 +21,176 @@ interface HighlightedProfilesSectionProps {
 }
 
 export function HighlightedProfilesSection({ currentUser }: HighlightedProfilesSectionProps) {
-  const { mode } = useCustomTheme();
+  const { mode } = useColorScheme();
+  const darkMode = mode === 'dark';
   
-  // Show only first 3 profiles
-  const displayProfiles = highlightedProfiles.slice(0, 3);
+  // Show 4 highlighted profiles
+  const displayProfiles = highlightedProfiles.slice(0, 4);
   
-  // Get user's first name
-  const userFirstName = currentUser?.name?.split(' ')[0] || 'there';
-  
-  // CTA Card for LinguaConnect Pro
-  const ProCTACard = () => (
-    <Box
-      sx={{
-        width: 320,
-        minWidth: 320,
-        maxWidth: 320,
-        height: 320,
-        borderRadius: "16px",
-        background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        cursor: "pointer",
-        transition: "all 0.3s ease",
-        boxShadow: "0 4px 20px rgba(99, 102, 241, 0.3)",
-        flexShrink: 0,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        p: 3,
-        textAlign: "center",
-        position: "relative",
-        overflow: "hidden",
-        "&:hover": {
-          boxShadow: "0 16px 40px rgba(99, 102, 241, 0.5)",
-          transform: "translateY(-8px)",
-        },
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "radial-gradient(circle at top right, rgba(255, 255, 255, 0.1) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }
-      }}
-    >
-      {/* User Avatar */}
-      {currentUser && (
-        <Box sx={{ mb: 2 }}>
-          <UserAvatar
-            user={currentUser}
-            size={80}
-            showOnlineStatus={false}
-            showBorderForNonImage={true}
-          />
-        </Box>
-      )}
-      
-      <Typography
-        variant="h5"
-        sx={{
-          color: "white",
-          fontWeight: 700,
-          mb: 1,
-          fontSize: "22px",
-        }}
-      >
-        Hey {userFirstName}!
-      </Typography>
-      <Typography
-        sx={{
-          color: "rgba(255, 255, 255, 0.9)",
-          fontSize: "14px",
-          mb: 3,
-          lineHeight: 1.6,
-          maxWidth: "250px",
-        }}
-      >
-        Get featured in the spotlight and connect with 3x more language partners. Stand out from the crowd!
-      </Typography>
-      <Box
-        sx={{
-          backgroundColor: "white",
-          color: "#6366f1",
-          width: 129,
-          height: 41,
-          borderRadius: "14px",
-          fontWeight: 500,
-          fontSize: "13.7px",
-          letterSpacing: "-0.14px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 0.5,
-          cursor: "pointer",
-          transition: "background-color 0.2s",
-          "&:hover": {
-            backgroundColor: "rgba(255, 255, 255, 0.9)",
-          }
-        }}
-      >
-        Upgrade Now
-        <ChevronRightIcon sx={{ fontSize: 16 }} />
-      </Box>
-    </Box>
-  );
 
   return (
     <Box sx={{ 
-      mt: 3, 
-      mb: 4, 
-      position: 'relative', 
-      zIndex: 10,
-      maxWidth: 1600,
-      mx: "auto",
-      px: { xs: 2, lg: 3 },
+      mt: 8,
+      mb: 6,
+      position: 'relative',
+      width: '100%',
+      overflow: 'hidden',
     }}>
-      <Typography 
-        variant="h6" 
-        sx={{ 
-          fontWeight: 600, 
-          fontSize: "20px",
-          color: mode === "dark" ? "white" : "#1a1a1a",
-          mb: 2.5,
+      {/* Premium background gradient */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '200%',
+          height: '100%',
+          background: 'radial-gradient(ellipse at center, rgba(99, 102, 241, 0.08) 0%, transparent 70%)',
+          pointerEvents: 'none',
+          zIndex: 0,
         }}
-      >
-        Highlighted Profiles
-      </Typography>
+      />
       
+      {/* Content container */}
       <Box sx={{ 
-        display: 'flex', 
-        gap: 2.5,
-        justifyContent: 'center',
-        flexWrap: 'wrap',
+        position: 'relative',
+        zIndex: 1,
+        maxWidth: 1400,
+        mx: 'auto',
+        px: { xs: 2, lg: 3 },
       }}>
-        {/* Static Pro CTA Card */}
-        <ProCTACard />
+        {/* Premium header */}
+        <Box sx={{ 
+          textAlign: 'center',
+          mb: 5,
+        }}>
+          <Box sx={{ 
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 1.5,
+            mb: 2,
+          }}>
+            <StarsIcon sx={{ 
+              fontSize: 28,
+              color: '#6366f1',
+              filter: 'drop-shadow(0 2px 4px rgba(99, 102, 241, 0.3))',
+            }} />
+            <Typography 
+              variant="h4" 
+              sx={{ 
+                fontWeight: 300,
+                fontSize: { xs: '28px', md: '36px' },
+                letterSpacing: '-0.02em',
+                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              Featured Members
+            </Typography>
+            <StarsIcon sx={{ 
+              fontSize: 28,
+              color: '#8b5cf6',
+              filter: 'drop-shadow(0 2px 4px rgba(139, 92, 246, 0.3))',
+            }} />
+          </Box>
+          <Typography
+            sx={{
+              color: 'rgba(255, 255, 255, 0.6)',
+              fontSize: '16px',
+              maxWidth: 600,
+              mx: 'auto',
+              lineHeight: 1.6,
+            }}
+          >
+            Connect with our most active language learners who are ready to practice now
+          </Typography>
+        </Box>
         
-        {/* Static profile cards */}
-        {displayProfiles.map((profile) => (
-          <HighlightedProfileCard
-            key={profile.id}
-            profile={profile}
-            darkMode={mode === "dark"}
-            onFollow={() => console.log("Follow", profile.name)}
-            onMessage={() => console.log("Message", profile.name)}
-          />
-        ))}
+        {/* Premium profile cards grid */}
+        <Box sx={{ 
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: 'repeat(auto-fit, minmax(280px, 1fr))',
+            sm: 'repeat(auto-fit, minmax(300px, 1fr))',
+            lg: 'repeat(4, 1fr)',
+          },
+          gap: 3,
+          justifyItems: 'center',
+          mb: 4,
+          minHeight: 400,
+        }}>
+          {displayProfiles.map((profile, index) => (
+            <Box
+              key={profile.id}
+              sx={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: 320,
+                animation: 'fadeInUp 0.6s ease-out',
+                animationDelay: `${index * 0.1}s`,
+                animationFillMode: 'both',
+                '@keyframes fadeInUp': {
+                  '0%': {
+                    opacity: 0,
+                    transform: 'translateY(20px)',
+                  },
+                  '100%': {
+                    opacity: 1,
+                    transform: 'translateY(0)',
+                  },
+                },
+              }}
+            >
+              <HighlightedProfileCard
+                profile={profile}
+                darkMode={true}
+                onFollow={() => console.log("Follow", profile.name)}
+                onMessage={() => console.log("Message", profile.name)}
+              />
+            </Box>
+          ))}
+        </Box>
+        
+        {/* Premium CTA */}
+        <Box sx={{
+          textAlign: 'center',
+          mt: 4,
+        }}>
+          <Typography
+            sx={{
+              color: 'rgba(255, 255, 255, 0.6)',
+              fontSize: '14px',
+              mb: 2,
+            }}
+          >
+            Want to be featured? Upgrade to Pro and get 3x more visibility
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AutoAwesomeIcon />}
+            sx={{
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              color: 'white',
+              px: 4,
+              py: 1.5,
+              borderRadius: '12px',
+              fontSize: '15px',
+              fontWeight: 600,
+              textTransform: 'none',
+              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 20px rgba(99, 102, 241, 0.4)',
+              },
+            }}
+          >
+            Upgrade to Pro
+          </Button>
+        </Box>
       </Box>
     </Box>
   );

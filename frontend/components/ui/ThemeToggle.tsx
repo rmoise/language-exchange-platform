@@ -3,10 +3,14 @@
 import React from 'react'
 import { IconButton, Tooltip } from '@mui/material'
 import { LightMode, DarkMode } from '@mui/icons-material'
-import { useTheme as useCustomTheme } from '@/contexts/ThemeContext'
+import { useColorScheme } from '@mui/material/styles'
 
 export default function ThemeToggle() {
-  const { mode, toggleTheme } = useCustomTheme()
+  const { mode, setMode } = useColorScheme()
+  
+  const toggleTheme = () => {
+    setMode(mode === 'light' ? 'dark' : 'light')
+  }
 
   return (
     <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>

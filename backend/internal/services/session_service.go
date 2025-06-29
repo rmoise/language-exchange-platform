@@ -12,16 +12,18 @@ import (
 
 
 type sessionService struct {
-	sessionRepo repository.SessionRepository
-	userRepo    repository.UserRepository
-	matchRepo   repository.MatchRepository
+	sessionRepo         repository.SessionRepository
+	userRepo            repository.UserRepository
+	matchRepo           repository.MatchRepository
+	gamificationService GamificationService
 }
 
-func NewSessionService(sessionRepo repository.SessionRepository, userRepo repository.UserRepository, matchRepo repository.MatchRepository) SessionService {
+func NewSessionService(sessionRepo repository.SessionRepository, userRepo repository.UserRepository, matchRepo repository.MatchRepository, gamificationService GamificationService) SessionService {
 	return &sessionService{
-		sessionRepo: sessionRepo,
-		userRepo:    userRepo,
-		matchRepo:   matchRepo,
+		sessionRepo:         sessionRepo,
+		userRepo:            userRepo,
+		matchRepo:           matchRepo,
+		gamificationService: gamificationService,
 	}
 }
 
@@ -151,6 +153,27 @@ func (s *sessionService) EndSession(ctx context.Context, sessionID, userID strin
 	err = s.sessionRepo.EndSession(ctx, sessionID)
 	if err != nil {
 		return fmt.Errorf("failed to end session: %w", err)
+	}
+	
+	// Calculate session duration and award XP to participants
+	if s.gamificationService != nil {
+		// Get updated session to have the EndedAt time
+		endedSession, err := s.sessionRepo.GetSessionByID(ctx, sessionID)
+		if err == nil && endedSession.EndedAt != nil {
+			// Get all participants who were in the session
+			participants, err := s.sessionRepo.GetActiveParticipants(ctx, sessionID)
+			if err == nil {
+				// Calculate session duration in minutes
+				sessionMinutes := int(endedSession.EndedAt.Sub(session.CreatedAt).Minutes())
+				
+				// Award XP to each participant
+				for _, participant := range participants {
+					go func(userID string) {
+						_ = s.gamificationService.OnSessionComplete(context.Background(), userID, sessionMinutes)
+					}(participant.UserID)
+				}
+			}
+		}
 	}
 	
 	return nil

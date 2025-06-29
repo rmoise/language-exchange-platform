@@ -1,17 +1,25 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   Box,
   Typography,
-  Avatar,
   Paper,
-  Chip
+  Chip,
+  IconButton,
+  Tooltip,
+  CircularProgress,
+  Popover,
+  Button,
 } from '@mui/material';
+import { AutoFixHigh as ImproveIcon } from '@mui/icons-material';
 import { format, formatRelative } from 'date-fns';
 import { Message, MessageStatus } from '../types';
 import { MessageStatusIndicator } from './MessageStatusIndicator';
 import { SwipeTranslateMessageBubble } from './SwipeTranslateMessageBubble';
+import { aiImprovementService } from '@/services/aiImprovementService';
+import { UpgradeToProModal } from '@/components/ui/UpgradeToProModal';
+import UserAvatar from '@/components/ui/UserAvatar';
 
 interface MessageBubbleProps {
   message: Message;
@@ -39,6 +47,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   sourceLang,
   targetLang
 }) => {
+  const [isImproving, setIsImproving] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeModalData, setUpgradeModalData] = useState<{
+    preview?: string;
+    originalText?: string;
+    usageInfo?: { used: number; limit: number };
+  }>({});
   // Use SwipeTranslateMessageBubble if translation is enabled
   if (enableTranslation && useSwipeTranslation) {
     return (
@@ -92,53 +107,90 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
   };
 
-  return (
-    <Box
-      ref={messageRef}
-      data-message-id={message.id}
-      sx={{
-        display: 'flex',
-        flexDirection: isOwnMessage ? 'row-reverse' : 'row',
-        alignItems: 'flex-end',
-        gap: 1,
-        mb: 2,
-        mx: 1
-      }}
-    >
-      {showAvatar && !isOwnMessage && (
-        <Avatar
-          src={message.sender?.profilePicture}
-          alt={message.sender?.name}
-          sx={{ width: 32, height: 32 }}
-        >
-          {message.sender?.name?.charAt(0).toUpperCase()}
-        </Avatar>
-      )}
+  const handleImprove = async () => {
+    if (isImproving) return;
+    
+    setIsImproving(true);
+    try {
+      const response = await aiImprovementService.improveMessage(message.content);
       
-      {showAvatar && isOwnMessage && <Box sx={{ width: 32 }} />}
+      if (response.needs_upgrade) {
+        // Show upgrade modal
+        setUpgradeModalData({
+          preview: response.preview,
+          originalText: message.content,
+          usageInfo: response.used && response.limit ? {
+            used: response.used,
+            limit: response.limit
+          } : undefined
+        });
+        setShowUpgradeModal(true);
+      } else if (response.improved) {
+        // TODO: Show improved message or update the message
+        console.log('Improved message:', response.improved);
+        // For now, just show an alert - in production, you'd update the message
+        alert(`Improved: ${response.improved}`);
+      }
+    } catch (error) {
+      console.error('Failed to improve message:', error);
+    } finally {
+      setIsImproving(false);
+    }
+  };
+
+
+  return (
+    <>
+      <Box
+        ref={messageRef}
+        data-message-id={message.id}
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'flex-end',
+          justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
+          gap: 1,
+          mb: 2,
+          px: 2,
+          width: '100%'
+        }}
+      >
+      {showAvatar && !isOwnMessage && (
+        <UserAvatar
+          user={message.sender}
+          size={32}
+          showOnlineStatus={false}
+        />
+      )}
 
       <Box
         sx={{
           maxWidth: '70%',
-          minWidth: '100px'
+          minWidth: '100px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: isOwnMessage ? 'flex-end' : 'flex-start'
         }}
       >
-        <Paper
-          elevation={1}
+        <Box
           sx={{
             px: 2,
             py: 1.5,
             backgroundColor: isPendingUnsend 
-              ? 'warning.light' 
+              ? 'rgba(251, 191, 36, 0.2)' 
               : isUnsendable 
-                ? (isOwnMessage ? 'primary.light' : 'grey.200')
-                : (isOwnMessage ? 'primary.main' : 'grey.100'),
-            color: isPendingUnsend 
-              ? 'warning.contrastText'
-              : isOwnMessage ? 'white' : 'text.primary',
-            borderRadius: 2,
-            borderTopLeftRadius: isOwnMessage ? 2 : 0.5,
-            borderTopRightRadius: isOwnMessage ? 0.5 : 2,
+                ? (isOwnMessage ? 'rgba(139, 92, 246, 0.3)' : 'rgba(255, 255, 255, 0.1)')
+                : (isOwnMessage ? 'rgba(139, 92, 246, 0.8)' : '#f3f4f6'),
+            color: isOwnMessage ? 'white' : '#111827',
+            borderRadius: '16px',
+            borderTopLeftRadius: isOwnMessage ? '16px' : '4px',
+            borderTopRightRadius: isOwnMessage ? '4px' : '16px',
+            border: '1px solid',
+            borderColor: isPendingUnsend
+              ? 'rgba(251, 191, 36, 0.3)'
+              : isOwnMessage 
+                ? 'rgba(139, 92, 246, 0.2)' 
+                : '#e5e7eb',
             position: 'relative',
             opacity: isPendingUnsend ? 0.7 : 1,
             transition: 'all 0.2s ease-in-out'
@@ -152,34 +204,71 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             sx={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'flex-end',
+              justifyContent: isOwnMessage ? 'space-between' : 'flex-end',
               gap: 0.5,
               mt: 0.5
             }}
           >
-            <Typography
-              variant="caption"
-              sx={{
-                color: isOwnMessage ? 'rgba(255, 255, 255, 0.8)' : 'text.secondary',
-                fontSize: '0.75rem'
-              }}
-              suppressHydrationWarning
-            >
-              {formatTime(message.created_at)}
-            </Typography>
-            
+            {/* Improve button for own messages */}
             {isOwnMessage && (
-              <MessageStatusIndicator
-                status={message.status}
-                timestamp={message.created_at}
-                isOwnMessage={isOwnMessage}
-                size="small"
-                showTooltip={true}
-              />
+              <Tooltip title="Improve with AI">
+                <IconButton
+                  size="small"
+                  onClick={handleImprove}
+                  disabled={isImproving || isPendingUnsend}
+                  sx={{
+                    p: 0.5,
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    '&:hover': {
+                      color: 'white',
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                    }
+                  }}
+                >
+                  {isImproving ? (
+                    <CircularProgress size={16} sx={{ color: 'inherit' }} />
+                  ) : (
+                    <ImproveIcon sx={{ fontSize: 16 }} />
+                  )}
+                </IconButton>
+              </Tooltip>
             )}
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  fontSize: '0.75rem'
+                }}
+                suppressHydrationWarning
+              >
+                {formatTime(message.created_at)}
+              </Typography>
+              
+              {isOwnMessage && (
+                <MessageStatusIndicator
+                  status={message.status}
+                  timestamp={message.created_at}
+                  isOwnMessage={isOwnMessage}
+                  size="small"
+                  showTooltip={true}
+                />
+              )}
+            </Box>
           </Box>
-        </Paper>
+        </Box>
       </Box>
-    </Box>
+      </Box>
+      
+      {/* Upgrade Modal */}
+      <UpgradeToProModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        preview={upgradeModalData.preview}
+        originalText={upgradeModalData.originalText}
+        usageInfo={upgradeModalData.usageInfo}
+      />
+    </>
   );
 };

@@ -24,6 +24,13 @@ export const ChatClient: React.FC<ChatClientProps> = ({ conversationId }) => {
   const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Validate conversation ID
+  useEffect(() => {
+    if (!conversationId || conversationId === 'undefined') {
+      router.push('/app/conversations');
+    }
+  }, [conversationId, router]);
 
   useEffect(() => {
     loadConversations();
@@ -32,9 +39,10 @@ export const ChatClient: React.FC<ChatClientProps> = ({ conversationId }) => {
   const loadConversations = async () => {
     try {
       const response = await MessagingService.getConversations();
-      setConversations(response.conversations);
+      setConversations(response.conversations || []);
     } catch (error) {
       console.error('Failed to load conversations:', error);
+      setConversations([]);
     } finally {
       setLoading(false);
     }

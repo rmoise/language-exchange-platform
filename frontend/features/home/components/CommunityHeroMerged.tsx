@@ -1,7 +1,9 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Box, Stack, Typography, Avatar, LinearProgress, Tooltip, Button, Chip } from '@mui/material';
+import { keyframes } from '@mui/system';
+import { showLevelUpNotification } from '@/components/ui/LevelUpNotification';
 import { 
   TrendingUp as TrendingUpIcon,
   LocalFireDepartment as FireIcon,
@@ -13,7 +15,19 @@ import {
 import { UserProgress } from '../types/gamification';
 import { getLevelInfo, calculateProgress, USER_LEVELS } from '../types/gamification';
 import UserAvatar from '@/components/ui/UserAvatar';
-import { useTheme as useCustomTheme } from '@/contexts/ThemeContext';
+import { useColorScheme } from '@mui/material/styles';
+
+const levelBadgePulse = keyframes`
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+`;
 
 interface CommunityHeroMergedProps {
   userProgress: UserProgress;
@@ -25,17 +39,32 @@ interface CommunityHeroMergedProps {
 
 export const CommunityHeroMerged: React.FC<CommunityHeroMergedProps> = ({ 
   userProgress, 
-  memberCount = 26905,
+  memberCount = 0,
   onViewProfile,
   onInviteClick,
   onMembersClick,
 }) => {
-  const { mode } = useCustomTheme();
+  console.log('CommunityHeroMerged - memberCount:', memberCount);
+  const { mode } = useColorScheme();
   const darkMode = mode === 'dark';
   const levelInfo = getLevelInfo(userProgress.totalXP);
   const progressData = calculateProgress(userProgress.totalXP);
   const nextLevel = USER_LEVELS[levelInfo.level] || USER_LEVELS[USER_LEVELS.length - 1];
-  const formattedMemberCount = memberCount.toLocaleString();
+  const formattedMemberCount = memberCount ? memberCount.toLocaleString() : '0';
+  const previousLevelRef = useRef(userProgress.level);
+  const [levelChanged, setLevelChanged] = React.useState(false);
+  
+  // Detect level changes
+  useEffect(() => {
+    if (previousLevelRef.current && userProgress.level > previousLevelRef.current) {
+      // User leveled up!
+      showLevelUpNotification(userProgress.level, levelInfo.title);
+      setLevelChanged(true);
+      // Reset animation after 1 second
+      setTimeout(() => setLevelChanged(false), 1000);
+    }
+    previousLevelRef.current = userProgress.level;
+  }, [userProgress.level, levelInfo.title]);
 
   const stats = [
     { 
@@ -136,7 +165,7 @@ export const CommunityHeroMerged: React.FC<CommunityHeroMergedProps> = ({
             <Typography
               variant="h5"
               sx={{
-                fontWeight: 700,
+                fontWeight: 300,
                 fontSize: { xs: "20px", sm: "24px" },
                 color: darkMode ? "#fff" : "#0f172a",
                 letterSpacing: "-0.02em",
@@ -193,7 +222,7 @@ export const CommunityHeroMerged: React.FC<CommunityHeroMergedProps> = ({
                     fontWeight: 700,
                   }}
                 >
-                  {formattedMemberCount}
+                  {memberCount !== undefined ? formattedMemberCount : '...'}
                 </Box>
                 members
               </Typography>
@@ -274,6 +303,8 @@ export const CommunityHeroMerged: React.FC<CommunityHeroMergedProps> = ({
                 border: '2px solid',
                 borderColor: darkMode ? '#0a0a0a' : 'white',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                animation: levelChanged ? `${levelBadgePulse} 0.5s ease-in-out` : 'none',
+                transition: 'background-color 0.3s ease',
               }}
             >
               {levelInfo.level}
@@ -286,7 +317,7 @@ export const CommunityHeroMerged: React.FC<CommunityHeroMergedProps> = ({
           {/* Name and Title */}
           <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
             <Typography variant="h5" sx={{ fontWeight: 700, color: darkMode ? 'white' : '#1a1a1a' }}>
-              Welcome back, {userProgress.username}!
+              {userProgress.totalXP > 0 ? `Welcome back, ${userProgress.username}!` : `Hello, ${userProgress.username}!`}
             </Typography>
             <Chip
               label={levelInfo.title}

@@ -142,19 +142,20 @@ export const useMessageStatus = ({
     };
   }, [messages]);
 
-  // Auto-mark own messages as delivered when they appear
+  // Auto-mark OTHER users' messages as delivered when they appear in the conversation
   useEffect(() => {
-    const ownUndeliveredMessages = messages
+    const othersUndeliveredMessages = messages
       .filter(message => 
-        message.sender_id === currentUserId && 
-        message.status === MessageStatus.SENT
+        message.sender_id !== currentUserId && 
+        message.status === MessageStatus.SENT &&
+        !processedMessagesRef.current.has(message.id)
       )
       .map(message => message.id);
 
-    if (ownUndeliveredMessages.length > 0) {
+    if (othersUndeliveredMessages.length > 0) {
       // Small delay to ensure message is properly displayed
       const timer = setTimeout(() => {
-        markAsDelivered(ownUndeliveredMessages);
+        markAsDelivered(othersUndeliveredMessages);
       }, 500);
 
       return () => clearTimeout(timer);

@@ -1,6 +1,7 @@
 export { AboutSection } from './components/AboutSection';
 export { CommunityBanner } from './components/CommunityBanner';
 export { CommunityHeroMerged } from './components/CommunityHeroMerged';
+export { CommunityHeroSkeleton } from './components/CommunityHeroSkeleton';
 export { HighlightedProfileCard } from './components/HighlightedProfileCard';
 export { HighlightedProfilesSection } from './components/HighlightedProfilesSection';
 export { LanguageLearningCommunityCard } from './components/LanguageLearningCommunityCard';

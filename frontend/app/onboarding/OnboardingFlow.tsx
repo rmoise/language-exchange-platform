@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Box, Typography, useTheme, Alert } from '@mui/material'
-import { useTheme as useCustomTheme } from '@/contexts/ThemeContext'
+import { useColorScheme } from '@mui/material/styles'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import ThemeAwareLoading from '@/components/ui/ThemeAwareLoading'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
@@ -54,7 +54,7 @@ export default function OnboardingFlow() {
   const onboardingLoading = useAppSelector(selectOnboardingLoading)
   const router = useRouter()
   const theme = useTheme()
-  const { mode } = useCustomTheme()
+  const { mode } = useColorScheme()
   const [mounted, setMounted] = useState(false)
 
 

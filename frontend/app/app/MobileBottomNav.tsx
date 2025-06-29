@@ -31,6 +31,11 @@ export default function MobileBottomNav() {
       return -1; // This will unselect all items
     }
     
+    // Special handling for users pages (viewing other users) - no item should be highlighted
+    if (pathname.startsWith("/app/users/")) {
+      return -1; // This will unselect all items
+    }
+    
     // Special handling for profile sub-pages - highlight "Profile"
     if (pathname.startsWith("/app/profile/")) {
       const profileItem = bottomNavItems.find(item => item.href === "/app/profile");

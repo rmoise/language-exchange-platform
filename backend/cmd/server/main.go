@@ -48,6 +48,8 @@ func main() {
 	reactionRepo := postgres.NewReactionRepository(db.DB)
 	bookmarkRepo := postgres.NewBookmarkRepository(db.DB)
 	connectionRepo := postgres.NewConnectionRepository(db.DB)
+	profileVisitRepo := postgres.NewProfileVisitRepository(db.DB.DB)
+	gamificationRepo := postgres.NewGamificationRepository(db.DB)
 
 	// Initialize WebSocket hub
 	wsHub := websocket.NewHub()
@@ -56,13 +58,15 @@ func main() {
 	// Initialize services
 	authService := services.NewAuthService(userRepo, tokenService, cfg.GoogleClientID, cfg.GoogleClientSecret, cfg.GoogleRedirectURL)
 	userService := services.NewUserService(userRepo)
-	matchService := services.NewMatchService(matchRepo, userRepo)
+	gamificationService := services.NewGamificationService(gamificationRepo, userRepo)
+	matchService := services.NewMatchService(matchRepo, userRepo, gamificationService)
 	conversationService := services.NewConversationService(conversationRepo, userRepo, messageRepo, matchRepo)
 	messageService := services.NewMessageService(messageRepo, conversationRepo, userRepo, wsHub)
-	sessionService := services.NewSessionService(sessionRepo, userRepo, matchRepo)
-	postService := services.NewPostService(postRepo, commentRepo, reactionRepo, userRepo)
+	sessionService := services.NewSessionService(sessionRepo, userRepo, matchRepo, gamificationService)
+	postService := services.NewPostService(postRepo, commentRepo, reactionRepo, userRepo, gamificationService)
 	bookmarkService := services.NewBookmarkService(bookmarkRepo, postRepo)
 	connectionService := services.NewConnectionService(connectionRepo, userRepo)
+	profileVisitService := services.NewProfileVisitService(profileVisitRepo)
 	log.Println("DEBUG: Creating translation service with URL:", cfg.LibreTranslateURL)
 	translationService := services.NewTranslationService(cfg.LibreTranslateURL, cfg.LibreTranslateAPIKey)
 	log.Println("DEBUG: Creating upload service with dir:", cfg.UploadsDir, "max size:", cfg.MaxUploadSize)
@@ -73,19 +77,22 @@ func main() {
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService, userService)
-	userHandler := handlers.NewUserHandler(userService)
+	userHandler := handlers.NewUserHandler(userService, profileVisitService)
 	matchHandler := handlers.NewMatchHandler(matchService)
 	conversationHandler := handlers.NewConversationHandler(conversationService)
-	messageHandler := handlers.NewMessageHandler(messageService, conversationService)
+	messageHandler := handlers.NewMessageHandler(messageService, conversationService, wsHub)
 	sessionHandler := handlers.NewSessionHandler(sessionService, wsHub)
 	wsHandler := handlers.NewWebSocketHandler(wsHub, sessionService)
 	postHandler := handlers.NewPostHandler(postService)
 	bookmarkHandler := handlers.NewBookmarkHandler(bookmarkService)
 	connectionHandler := handlers.NewConnectionHandler(connectionService)
+	profileVisitHandler := handlers.NewProfileVisitHandler(profileVisitService)
+	gamificationHandler := handlers.NewGamificationHandler(gamificationService)
 	log.Println("DEBUG: Creating translation handler")
 	translationHandler := handlers.NewTranslationHandler(translationService)
 	log.Println("DEBUG: Creating upload handler")
 	uploadHandler := handlers.NewUploadHandler(uploadService, userService)
+	aiHandler := handlers.NewAIHandler(db.DB)
 	
 	// Start rate limit cleanup goroutine
 	go handlers.CleanupRateLimits()
@@ -223,14 +230,38 @@ func main() {
 				bookmarks.GET("/status/:postId", bookmarkHandler.CheckBookmarkStatus)
 			}
 
-			// WebSocket routes  
-			ws := protected.Group("/ws")
+			// Profile Visit routes
+			profileVisits := protected.Group("/profile-visits")
 			{
-				ws.GET("", wsHandler.HandleWebSocket)
-				ws.GET("/online", wsHandler.GetOnlineUsers)
-				ws.GET("/online/:userId", wsHandler.CheckUserOnline)
-				ws.GET("/sessions/:sessionId/participants", wsHandler.GetSessionParticipants)
+				profileVisits.POST("", profileVisitHandler.RecordProfileVisit)
+				profileVisits.GET("", profileVisitHandler.GetProfileVisits)
+				profileVisits.GET("/count", profileVisitHandler.GetRecentVisitorCount)
 			}
+
+			// Gamification routes
+			gamificationHandler.RegisterRoutes(protected)
+
+			// AI routes
+			ai := protected.Group("/ai")
+			{
+				ai.POST("/improve", aiHandler.ImproveMessage)
+				ai.GET("/usage", aiHandler.GetUsageStats)
+			}
+
+			// WebSocket routes (except main WebSocket connection)
+			wsProtected := protected.Group("/ws")
+			{
+				wsProtected.GET("/online", wsHandler.GetOnlineUsers)
+				wsProtected.GET("/online/:userId", wsHandler.CheckUserOnline)
+				wsProtected.GET("/sessions/:sessionId/participants", wsHandler.GetSessionParticipants)
+			}
+		}
+		
+		// Main WebSocket route with special auth middleware
+		ws := api.Group("/ws")
+		ws.Use(handlers.WebSocketAuthMiddleware(authService))
+		{
+			ws.GET("", wsHandler.HandleWebSocket)
 		}
 		
 		// WebSocket session routes with special auth middleware

@@ -1,5 +1,4 @@
-import React from 'react';
-import { ChatClient } from './ChatClient';
+import { redirect } from 'next/navigation';
 
 interface ChatPageProps {
   params: Promise<{ conversationId: string }>;
@@ -8,5 +7,6 @@ interface ChatPageProps {
 export default async function ChatPage({ params }: ChatPageProps) {
   const { conversationId } = await params;
   
-  return <ChatClient conversationId={conversationId} />;
+  // Redirect to the new single-page conversations with query parameter
+  redirect(`/app/conversations?id=${conversationId}`);
 }

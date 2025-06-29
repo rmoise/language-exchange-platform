@@ -21,6 +21,7 @@ import {
   FavoriteBorder as MatchRequestIcon,
   Close as CloseIcon,
   DoneAll as DoneAllIcon,
+  Message as MessageIcon,
 } from "@mui/icons-material";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
@@ -51,6 +52,8 @@ const getNotificationIcon = (type: string) => {
       return <ErrorIcon sx={{ color: '#ef4444' }} />;
     case 'match_request':
       return <MatchRequestIcon sx={{ color: '#a855f7' }} />;
+    case 'message':
+      return <MessageIcon sx={{ color: '#3b82f6' }} />;
     default:
       return <InfoIcon sx={{ color: '#3b82f6' }} />;
   }
@@ -85,6 +88,10 @@ export default function NotificationPopover({
       // Navigate to matches page with incoming requests tab selected
       // The tab=1 parameter will select the "Incoming Requests" tab
       router.push('/app/matches?tab=1');
+      onClose();
+    } else if (notification.type === 'message' && notification.actionUrl) {
+      // Navigate to the conversation
+      router.push(notification.actionUrl);
       onClose();
     }
   };

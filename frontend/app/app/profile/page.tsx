@@ -39,6 +39,7 @@ import PhotosSection from "./[userId]/PhotosSection";
 import CombinedLanguageModal from "@/features/users/components/CombinedLanguageModal";
 import PreferencesModal from "@/features/users/components/PreferencesModal";
 import LearningPreferencesModal from "@/features/users/components/LearningPreferencesModal";
+import ProfileVisitors from "@/components/profile/ProfileVisitors";
 import { api } from "@/utils/api";
 import { useGetCurrentUserQuery, useUpdateProfileImageCacheMutation, useUpdateUserProfileMutation } from "@/features/api/apiSlice";
 import ImageUpload from "./ImageUpload";
@@ -104,7 +105,6 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [userPosts, setUserPosts] = useState<any[]>([]);
-  const [totalPostsCount, setTotalPostsCount] = useState<number>(0);
   const [postsLoading, setPostsLoading] = useState(true);
   const [userConnections, setUserConnections] = useState<any[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(true);
@@ -219,7 +219,7 @@ export default function ProfilePage() {
 
   // Navigation handler for follower cards
   const handleFollowerClick = (userId: string) => {
-    router.push(`/app/profile/${userId}`);
+    router.push(`/app/users/${userId}`);
   };
 
   // Fetch user connections (following)
@@ -252,7 +252,6 @@ export default function ProfilePage() {
       });
       const posts = response.data.posts || [];
       setUserPosts(posts);
-      setTotalPostsCount(posts.length);
     } catch (error) {
       console.error('Failed to fetch user posts:', error);
       setUserPosts([]);
@@ -851,7 +850,7 @@ export default function ProfilePage() {
           }}
         >
           <ProfileHeader
-            user={user}
+            user={{...user, isOnline: isPreviewMode ? true : user.isOnline}}
             onEditName={!isPreviewMode ? () => {
               setEditName(user.name || "");
               setEditBirthday(user.birthday ? new Date(user.birthday) : null);
@@ -916,7 +915,7 @@ export default function ProfilePage() {
                     mb: 3,
                   }}
                 >
-                  <Typography variant="h5" sx={{ fontWeight: 400 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 400 }}>
                     Languages
                   </Typography>
                   {!isPreviewMode && <EditIconButton onClick={() => setLanguageModalOpen(true)} />}
@@ -1290,6 +1289,11 @@ export default function ProfilePage() {
                 </Box>
               </Box>
 
+              {/* Profile Visitors Section - Hidden in preview mode */}
+              {!isPreviewMode && (
+                <ProfileVisitors isPremium={false} />
+              )}
+
               {/* Following Section - Hidden in preview mode */}
               {!isPreviewMode && (
               <Box
@@ -1568,17 +1572,6 @@ export default function ProfilePage() {
                     </Typography>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       {userPosts.length > 0 && (
-                        <Chip 
-                          label={`${totalPostsCount} posts`}
-                          size="small"
-                          sx={{
-                            backgroundColor: "rgba(99, 102, 241, 0.2)",
-                            color: "#a5b4fc",
-                            fontSize: "12px",
-                          }}
-                        />
-                      )}
-                      {userPosts.length > 0 && (
                         <Button
                           variant="outlined"
                           size="small"
@@ -1694,14 +1687,6 @@ export default function ProfilePage() {
                                   {timeAgo}
                                 </Typography>
                               </Box>
-                              <Typography
-                                sx={{
-                                  color: "rgba(255, 255, 255, 0.6)",
-                                  fontSize: "0.75rem",
-                                }}
-                              >
-                                {post.bookmark_count || 0} bookmarks
-                              </Typography>
                             </Box>
                           </Box>
                         );
@@ -1750,17 +1735,6 @@ export default function ProfilePage() {
                       Bookmarks
                     </Typography>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      {userBookmarks.length > 0 && (
-                        <Chip 
-                          label={`${userBookmarks.length} saved`}
-                          size="small"
-                          sx={{
-                            backgroundColor: "rgba(245, 158, 11, 0.2)",
-                            color: "#fbbf24",
-                            fontSize: "12px",
-                          }}
-                        />
-                      )}
                       {userBookmarks.length > 0 && (
                         <Button
                           variant="outlined"
@@ -1875,14 +1849,6 @@ export default function ProfilePage() {
                                 }}
                               />
                             </Box>
-                            <Typography
-                              sx={{
-                                color: "rgba(255, 255, 255, 0.6)",
-                                fontSize: "0.75rem",
-                              }}
-                            >
-                              {post.bookmark_count || 0} bookmarks
-                            </Typography>
                           </Box>
                         </Box>
                       ))

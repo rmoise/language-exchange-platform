@@ -27,7 +27,7 @@ import {
   KeyboardDoubleArrowRight,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTheme as useCustomTheme } from '@/contexts/ThemeContext';
+import { useColorScheme } from '@mui/material/styles';
 
 interface TimeSlot {
   id: string;
@@ -91,7 +91,7 @@ export const CompactScheduler: React.FC<CompactSchedulerProps> = ({
   onAddSession,
   onSlotClick,
 }) => {
-  const { mode } = useCustomTheme();
+  const { mode } = useColorScheme();
   const darkMode = mode === 'dark';
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -281,7 +281,7 @@ export const CompactScheduler: React.FC<CompactSchedulerProps> = ({
         }}
       >
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "16px" }}>
+          <Typography variant="h6" sx={{ fontWeight: 400 }}>
             Book a session
           </Typography>
           <Stack direction="row" spacing={0.5}>

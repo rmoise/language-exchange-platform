@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Grid,
   Card,
@@ -18,6 +18,7 @@ import {
 import { Chat, Person, Schedule, ChatBubble } from '@mui/icons-material'
 import { useStartConversation } from '../../../features/matches/hooks/useStartConversation'
 import { useMatchConversations } from '../../../features/matches/hooks/useMatchConversations'
+import { useAppSelector } from '@/lib/hooks'
 
 interface User {
   id: string
@@ -42,8 +43,16 @@ interface MatchListProps {
 export default function MatchList({ matches }: MatchListProps) {
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
+  const currentUser = useAppSelector(state => state.auth.user);
   
-  const { findConversationWithUser } = useMatchConversations();
+  const { findConversationWithUser, conversations, loading: conversationsLoading, refetch } = useMatchConversations();
+  
+  // Log conversations to debug
+  useEffect(() => {
+    console.log('Current user:', currentUser);
+    console.log('All conversations:', conversations);
+    console.log('Conversations loading:', conversationsLoading);
+  }, [conversations, conversationsLoading, currentUser]);
   
   const { startConversation, isPending } = useStartConversation({
     onError: (errorMessage) => {
@@ -51,6 +60,8 @@ export default function MatchList({ matches }: MatchListProps) {
     },
     onSuccess: (conversationId) => {
       setSuccess('Conversation started successfully!');
+      // Refetch conversations to update the UI
+      refetch();
     },
   });
 
@@ -99,10 +110,16 @@ export default function MatchList({ matches }: MatchListProps) {
     <Grid container spacing={3}>
       {matches.map((match) => {
         // Determine which user is the partner (not the current user)
-        // For now, we'll show both users since we don't have current user context
-        // In a real app, you'd filter out the current user
-        const partner = match.user1 // This would be determined by current user
+        const partner = currentUser?.id === match.user1.id ? match.user2 : match.user1;
         const { canTeach, wantsToLearn } = getLanguageExchange(partner)
+        
+        console.log('Processing match:', {
+          matchId: match.id,
+          currentUserId: currentUser?.id,
+          user1: match.user1,
+          user2: match.user2,
+          partner: partner
+        });
         
         return (
           <Grid size={{ xs: 12, sm: 6, md: 4 }} key={match.id}>
@@ -175,14 +192,20 @@ export default function MatchList({ matches }: MatchListProps) {
               <Box sx={{ p: 2, pt: 0 }}>
                 {(() => {
                   const existingConversation = findConversationWithUser(partner.id);
+                  console.log('Looking for conversation with partner:', partner.id, partner.name);
+                  console.log('Found conversation:', existingConversation);
                   
                   if (existingConversation) {
+                    console.log('Navigating to existing conversation:', existingConversation.id);
                     return (
                       <Button
                         fullWidth
                         variant="contained"
                         startIcon={<ChatBubble />}
-                        href={`/app/conversations/${existingConversation.id}`}
+                        onClick={() => {
+                          console.log('Continue Chat clicked, navigating to:', existingConversation.id);
+                          window.location.href = `/app/conversations?id=${existingConversation.id}`;
+                        }}
                         color="success"
                       >
                         Continue Chat
@@ -195,7 +218,11 @@ export default function MatchList({ matches }: MatchListProps) {
                       fullWidth
                       variant="contained"
                       startIcon={isPending ? <CircularProgress size={20} color="inherit" /> : <Chat />}
-                      onClick={() => startConversation(match.id)}
+                      onClick={() => {
+                        console.log('Button clicked for match:', match.id);
+                        console.log('Match data:', match);
+                        startConversation(match.id);
+                      }}
                       disabled={isPending}
                     >
                       {isPending ? 'Starting...' : 'Start Conversation'}

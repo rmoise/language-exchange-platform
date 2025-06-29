@@ -31,6 +31,8 @@ type User struct {
 	EnableLocationMatching *bool          `json:"enableLocationMatching,omitempty" db:"enable_location_matching"`
 	PreferredMeetingTypes  pq.StringArray `json:"preferredMeetingTypes,omitempty" db:"preferred_meeting_types"`
 	OnboardingStep         int            `json:"onboardingStep" db:"onboarding_step"`
+	PlanType              string         `json:"planType" db:"plan_type"`
+	PlanExpiresAt         *time.Time     `json:"planExpiresAt,omitempty" db:"plan_expires_at"`
 	CreatedAt              time.Time      `json:"createdAt" db:"created_at"`
 	UpdatedAt              time.Time      `json:"updatedAt" db:"updated_at"`
 }

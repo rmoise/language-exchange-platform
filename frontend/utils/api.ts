@@ -29,6 +29,16 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Log error details for debugging
+    if (error.response) {
+      console.error('API Error:', {
+        status: error.response.status,
+        data: error.response.data,
+        url: error.config?.url,
+        method: error.config?.method
+      });
+    }
+    
     if (error.response?.status === 401) {
       // Clear token and redirect to login
       if (typeof window !== 'undefined') {

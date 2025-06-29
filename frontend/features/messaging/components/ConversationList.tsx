@@ -6,7 +6,6 @@ import {
   ListItem,
   ListItemAvatar,
   ListItemText,
-  Avatar,
   Typography,
   Box,
   Badge,
@@ -15,6 +14,7 @@ import {
 } from '@mui/material';
 import { format, isToday, isYesterday, formatRelative } from 'date-fns';
 import { Conversation } from '../types';
+import UserAvatar from '@/components/ui/UserAvatar';
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -64,7 +64,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
     return 'No messages yet';
   };
 
-  if (conversations.length === 0) {
+  if (!conversations || conversations.length === 0) {
     return (
       <Paper elevation={1} sx={{ p: 3, textAlign: 'center' }}>
         <Typography variant="body1" color="text.secondary">
@@ -92,22 +92,11 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           onClick={() => onConversationSelect(conversation)}
         >
           <ListItemAvatar>
-            <Badge
-              color="success"
-              variant="dot"
-              invisible={!conversation.other_user?.isOnline}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'right',
-              }}
-            >
-              <Avatar 
-                src={conversation.other_user?.profilePicture}
-                alt={conversation.other_user?.name}
-              >
-                {conversation.other_user?.name?.charAt(0).toUpperCase()}
-              </Avatar>
-            </Badge>
+            <UserAvatar
+              user={conversation.other_user}
+              size={40}
+              showOnlineStatus={true}
+            />
           </ListItemAvatar>
           
           <Box sx={{ flex: 1 }}>

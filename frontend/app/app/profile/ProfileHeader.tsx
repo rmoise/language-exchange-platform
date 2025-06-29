@@ -255,24 +255,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 user={{ ...user, profileImage: displayImage || undefined } as any}
                 size={{ xs: 100, sm: 120 }}
                 onClick={handleAvatarClick}
-                showOnlineStatus={false}
+                showOnlineStatus={true}
                 showBorderForNonImage={true}
-              />
-            )}
-            {/* Online Status Dot for user profiles */}
-            {isUserProfile && user.isOnline && (
-              <Box
-                sx={{
-                  position: "absolute",
-                  bottom: 8,
-                  right: 8,
-                  width: 16,
-                  height: 16,
-                  backgroundColor: "#22c55e",
-                  borderRadius: "50%",
-                  border: "2px solid white",
-                  zIndex: 1,
-                }}
               />
             )}
           </Box>

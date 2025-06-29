@@ -122,7 +122,7 @@ export default async function MatchesPage() {
       {/* Header */}
       <Box sx={{ mb: 4, textAlign: "center" }}>
         <Typography
-          variant="h4"
+          variant="h1"
           sx={{ fontWeight: 300, mb: 2, color: "white" }}
         >
           Matches & Requests

@@ -87,7 +87,7 @@ func (r *MessageRepository) GetByConversationID(ctx context.Context, conversatio
 		FROM messages m
 		JOIN users u ON m.sender_id = u.id
 		WHERE m.conversation_id = $1
-		ORDER BY m.created_at DESC
+		ORDER BY m.created_at ASC
 		LIMIT $2 OFFSET $3`
 	
 	rows, err := r.db.QueryContext(ctx, query, conversationID, limit, offset)
@@ -174,7 +174,7 @@ func (r *MessageRepository) GetLastMessage(ctx context.Context, conversationID s
 		FROM messages m
 		JOIN users u ON m.sender_id = u.id
 		WHERE m.conversation_id = $1
-		ORDER BY m.created_at DESC
+		ORDER BY m.created_at ASC
 		LIMIT 1`
 	
 	var message models.Message

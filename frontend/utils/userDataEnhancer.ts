@@ -122,7 +122,7 @@ export function enhanceUserData(user: any, index?: number): any {
     age: user.age || calculateAge(user.birthday) || Math.floor(18 + ageRandom * 40), // Calculate from birthday first, then use existing age, then random
     
     // Activity data
-    isOnline: onlineRandom > 0.7, // 30% chance of being online
+    isOnline: user.isOnline || false, // Use actual online status from backend, default to false
     lastActive: user.updatedAt || new Date(Date.now() - timeRandom * 7 * 24 * 60 * 60 * 1000).toISOString(),
     
     // Topics and interests - ensure we always have something

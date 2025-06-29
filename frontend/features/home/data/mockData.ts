@@ -235,6 +235,7 @@ export const highlightedProfiles = [
     id: "1",
     name: "María García", 
     location: "Madrid, Spain",
+    profileImage: "https://i.pravatar.cc/150?img=49",
     languages: {
       fluent: { flags: ["🇪🇸", "🇬🇧"], count: 2 },
       learns: { flags: ["🇯🇵"], count: 1 }
@@ -253,6 +254,7 @@ export const highlightedProfiles = [
     id: "2",
     name: "Yuki Tanaka", 
     location: "Tokyo, Japan",
+    profileImage: "https://i.pravatar.cc/150?img=60",
     languages: {
       fluent: { flags: ["🇯🇵", "🇬🇧"], count: 2 },
       learns: { flags: ["🇪🇸", "🇰🇷"], count: 2 }
@@ -272,6 +274,7 @@ export const highlightedProfiles = [
     id: "3",
     name: "Jean Dupont", 
     location: "Paris, France",
+    profileImage: "https://i.pravatar.cc/150?img=11",
     languages: {
       fluent: { flags: ["🇫🇷", "🇬🇧", "🇩🇪"], count: 3 },
       learns: { flags: ["🇨🇳"], count: 1 }
@@ -290,6 +293,7 @@ export const highlightedProfiles = [
     id: "4",
     name: "Sarah Chen", 
     location: "Shanghai, China",
+    profileImage: "https://i.pravatar.cc/150?img=32",
     languages: {
       fluent: { flags: ["🇨🇳", "🇬🇧"], count: 2 },
       learns: { flags: ["🇫🇷", "🇯🇵"], count: 2 }

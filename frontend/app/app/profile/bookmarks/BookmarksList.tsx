@@ -87,17 +87,6 @@ export default function BookmarksList({ user }: BookmarksListProps) {
           <Typography variant="h5" sx={{ color: "white", fontWeight: 600 }}>
             Bookmarks
           </Typography>
-          {bookmarks && bookmarks.length > 0 && (
-            <Chip 
-              label={`${bookmarks.length} saved`}
-              size="small"
-              sx={{
-                backgroundColor: "rgba(245, 158, 11, 0.2)",
-                color: "#fbbf24",
-                fontSize: "12px",
-              }}
-            />
-          )}
         </Box>
 
         <Typography sx={{ color: "rgba(255, 255, 255, 0.6)", mb: 2 }}>

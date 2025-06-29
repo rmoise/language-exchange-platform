@@ -59,17 +59,16 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   );
 
   return (
-    <Paper 
-      elevation={1} 
+    <Box 
       sx={{ 
-        p: 2, 
-        borderTop: '1px solid',
-        borderColor: 'divider'
+        p: 3, 
+        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+        background: 'rgba(255, 255, 255, 0.05)'
       }}
     >
       {/* Using React 19's form Actions */}
       <form ref={formRef} action={submitAction}>
-        <Box display="flex" alignItems="center" gap={1}>
+        <Box display="flex" alignItems="center" gap={2}>
           <TextField
             name="message"
             placeholder="Type a message..."
@@ -99,30 +98,54 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: 1,
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: 'white',
+                fontSize: '0.875rem',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                },
+                '&.Mui-focused': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                },
+                '& fieldset': {
+                  border: 'none',
+                },
+              },
+              '& .MuiOutlinedInput-input': {
+                padding: '10px 12px',
+                '&::placeholder': {
+                  color: '#9ca3af',
+                  opacity: 1,
+                },
               },
             }}
           />
           
           <IconButton 
             type="submit"
-            color="primary"
             disabled={isPending}
             sx={{ 
-              bgcolor: 'primary.main',
+              background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
               color: 'white',
+              width: 40,
+              height: 40,
+              borderRadius: 1,
               '&:hover': {
-                bgcolor: 'primary.dark',
+                background: 'linear-gradient(135deg, #7c3aed, #9333ea)',
               },
               '&:disabled': {
-                bgcolor: 'grey.300',
+                background: 'rgba(255, 255, 255, 0.1)',
+                color: 'rgba(255, 255, 255, 0.3)',
               }
             }}
           >
             {isPending ? (
               <CircularProgress size={20} color="inherit" />
             ) : (
-              <SendIcon />
+              <SendIcon sx={{ fontSize: 20 }} />
             )}
           </IconButton>
         </Box>
@@ -132,8 +155,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             <Box
               component="span"
               sx={{
-                color: 'error.main',
-                fontSize: '0.875rem',
+                color: '#ef4444',
+                fontSize: '0.75rem',
                 display: 'block'
               }}
             >
@@ -142,6 +165,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           </Box>
         )}
       </form>
-    </Paper>
+    </Box>
   );
 };

@@ -92,15 +92,6 @@ export default function PostsList({ user }: PostsListProps) {
           <Typography variant="h5" sx={{ color: "white", fontWeight: 600 }}>
             My Posts
           </Typography>
-          <Chip 
-            label={`${posts.length} post${posts.length !== 1 ? 's' : ''}`}
-            size="small"
-            sx={{
-              backgroundColor: "rgba(99, 102, 241, 0.2)",
-              color: "#a5b4fc",
-              fontSize: "12px",
-            }}
-          />
         </Box>
 
         <Typography sx={{ color: "rgba(255, 255, 255, 0.6)", mb: 2 }}>

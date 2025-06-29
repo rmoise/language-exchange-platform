@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"language-exchange/internal/models"
 	"language-exchange/internal/services"
@@ -103,7 +104,7 @@ func (h *ConversationHandler) GetConversation(c *gin.Context) {
 		return
 	}
 
-	conversationID := c.Param("id")
+	conversationID := c.Param("conversationId")
 	if conversationID == "" {
 		errors.SendError(c, http.StatusBadRequest, "INVALID_PARAMETER", "Conversation ID is required")
 		return
@@ -112,15 +113,16 @@ func (h *ConversationHandler) GetConversation(c *gin.Context) {
 	// Get conversation
 	conversation, err := h.conversationService.GetConversationByID(c.Request.Context(), conversationID, userID.(string))
 	if err != nil {
-		if err.Error() == "conversation not found" {
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "conversation not found") {
 			errors.SendError(c, http.StatusNotFound, "NOT_FOUND", "Conversation not found")
 			return
 		}
-		if err.Error() == "access denied: user is not a participant in this conversation" {
+		if strings.Contains(errMsg, "access denied") {
 			errors.SendError(c, http.StatusForbidden, "ACCESS_DENIED", "Access denied")
 			return
 		}
-		errors.SendError(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "Failed to get conversation")
+		errors.SendError(c, http.StatusBadRequest, "BAD_REQUEST", errMsg)
 		return
 	}
 

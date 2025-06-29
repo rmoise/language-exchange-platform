@@ -1,17 +1,20 @@
 "use client";
 
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle, useCallback } from "react";
 import { Stack, Box, Typography } from "@mui/material";
-import InfiniteScroll from "react-infinite-scroll-component";
+import { useInView } from "react-intersection-observer";
 import { PostCard } from "./PostCard";
 import { usePosts } from "@/features/posts/hooks/usePosts";
 import { transformPost } from "@/features/posts/utils/postAdapter";
 import { Post as ApiPost, postService } from "@/features/posts/services/postService";
 import { Post as UIPost } from "@/features/comments/types";
-import { useTheme as useCustomTheme } from "@/contexts/ThemeContext";
+import { useColorScheme } from '@mui/material/styles';
 import ConfirmationModal from "@/features/users/components/ConfirmationModal";
 import { EmojiPicker } from "@/features/emoji";
 import { useAuth } from "@/hooks/useAuth";
+import { useAppSelector, useAppDispatch } from "@/lib/hooks";
+import { selectRecentLevelUps, clearLevelUpEvent, type LevelUpEvent } from "@/features/gamification/gamificationSlice";
+import LevelUpCelebrationCard from "@/components/ui/LevelUpCelebrationCard";
 
 interface PostsFeedProps {
   initialPosts: ApiPost[];
@@ -26,8 +29,10 @@ export interface PostsFeedRef {
 
 export const PostsFeed = forwardRef<PostsFeedRef, PostsFeedProps>(
   ({ initialPosts, hasMoreInitial, nextCursorInitial, categoryFilter }, ref) => {
-  const { mode } = useCustomTheme();
+  const { mode } = useColorScheme();
   const { user } = useAuth();
+  const dispatch = useAppDispatch();
+  const recentLevelUps = useAppSelector(selectRecentLevelUps);
   const [allPosts, setAllPosts] = useState<UIPost[]>(() => 
     (initialPosts || []).map(transformPost)
   );
@@ -35,24 +40,6 @@ export const PostsFeed = forwardRef<PostsFeedRef, PostsFeedProps>(
   const [newlyCreatedPosts, setNewlyCreatedPosts] = useState<Set<string>>(new Set());
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
-  
-  // Compute filtered posts based on category filter
-  const postsState = React.useMemo(() => {
-    if (!categoryFilter) {
-      return allPosts;
-    }
-    
-    return allPosts.filter(post => {
-      // Show newly created posts regardless of category
-      if (newlyCreatedPosts.has(post.id)) {
-        return true;
-      }
-      
-      // For existing posts, check category from initial data
-      const originalPost = initialPosts.find(p => p.id === post.id);
-      return originalPost?.category === categoryFilter;
-    });
-  }, [allPosts, categoryFilter, newlyCreatedPosts, initialPosts]);
   
   // State for reply interactions
   const [replyTexts, setReplyTexts] = useState<{ [key: string]: string }>({});
@@ -72,6 +59,7 @@ export const PostsFeed = forwardRef<PostsFeedRef, PostsFeedProps>(
     hasMore,
     loadMore,
     toggleReaction,
+    refresh,
   } = usePosts({ 
     filters: { 
       sort: 'created_at',
@@ -80,24 +68,56 @@ export const PostsFeed = forwardRef<PostsFeedRef, PostsFeedProps>(
     autoLoad: false // Don't auto-load since we have initial data
   });
 
-  // Update allPosts when apiPosts change
+  // Initialize allPosts only once with initial data
   useEffect(() => {
-    if (apiPosts.length > 0) {
+    if (!categoryFilter && allPosts.length === 0 && initialPosts.length > 0) {
+      setAllPosts(initialPosts.map(transformPost));
+      setHasMoreState(hasMoreInitial);
+    }
+  }, [initialPosts.length, hasMoreInitial]); // Only depend on the length to avoid re-running
+
+  // Update posts when apiPosts change (after filtering)
+  useEffect(() => {
+    if (categoryFilter && apiPosts.length >= 0) {
       setAllPosts(apiPosts.map(transformPost));
       setHasMoreState(hasMore);
     }
-  }, [apiPosts, hasMore]);
+  }, [apiPosts, hasMore, categoryFilter]);
+
+  // When category filter changes, fetch new data
+  const prevCategoryRef = useRef(categoryFilter);
+  useEffect(() => {
+    if (prevCategoryRef.current !== categoryFilter) {
+      prevCategoryRef.current = categoryFilter;
+      
+      if (categoryFilter) {
+        refresh();
+      } else {
+        // Reset to initial posts when clearing filter
+        setAllPosts((initialPosts || []).map(transformPost));
+        setHasMoreState(hasMoreInitial);
+      }
+    }
+  }, [categoryFilter, refresh, initialPosts, hasMoreInitial]);
+
+  // Use allPosts directly as postsState
+  const postsState = allPosts;
 
   // Expose method to add a new post
   useImperativeHandle(ref, () => ({
     addPost: (newPost: ApiPost) => {
       const transformedPost = transformPost(newPost);
-      setAllPosts(prev => [transformedPost, ...prev]);
       
-      // Mark this post as newly created so it won't be filtered out
-      setNewlyCreatedPosts(prev => new Set([...prev, newPost.id]));
+      // If we have a category filter and the new post matches, refresh to get it from API
+      if (categoryFilter && newPost.category === categoryFilter) {
+        refresh();
+      } else if (!categoryFilter) {
+        // No filter, add to the beginning
+        setAllPosts(prev => [transformedPost, ...prev]);
+      }
+      // If category doesn't match, don't add it to the view
     }
-  }), []);
+  }), [categoryFilter, refresh]);
 
   const handleEmojiClick = (event: React.MouseEvent<HTMLElement>, target: 'main' | string = 'main') => {
     setEmojiPickerAnchor(event.currentTarget);
@@ -397,22 +417,78 @@ export const PostsFeed = forwardRef<PostsFeedRef, PostsFeedProps>(
     // TODO: Call bookmark API
   };
 
+  // Handle level up celebration dismissal
+  const handleDismissLevelUp = (timestamp: string) => {
+    dispatch(clearLevelUpEvent(timestamp));
+  };
+
+  // Handle level up sharing
+  const handleShareLevelUp = (levelUpEvent: LevelUpEvent) => {
+    // TODO: Implement sharing functionality
+    console.log('Sharing level up:', levelUpEvent);
+  };
+
+  // Handle level up reactions
+  const handleLevelUpReaction = (timestamp: string, reaction: any) => {
+    // TODO: Implement level up reaction functionality
+    console.log('Level up reaction:', timestamp, reaction);
+  };
+
+  // Handle level up replies
+  const handleLevelUpReply = (timestamp: string, replyText: string) => {
+    // TODO: Implement level up reply functionality
+    console.log('Level up reply:', timestamp, replyText);
+  };
+
+  // Set up intersection observer for infinite scroll
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0,
+    rootMargin: '100px',
+  });
+
+  // Load more posts when the loader comes into view
+  useEffect(() => {
+    if (inView && hasMoreState && !postsLoading) {
+      loadMore();
+    }
+  }, [inView, hasMoreState, postsLoading, loadMore]);
+
   // Show empty state if no posts and not loading more
-  if (postsState.length === 0 && !hasMoreState) {
+  if (postsState.length === 0 && !hasMoreState && !postsLoading) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
         <Typography variant="h6" color="text.secondary" gutterBottom>
-          No posts yet
+          {categoryFilter ? `No ${categoryFilter} posts yet` : 'No posts yet'}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Be the first to share something with the community!
+          {categoryFilter 
+            ? `Be the first to share something about ${categoryFilter}!`
+            : 'Be the first to share something with the community!'}
+        </Typography>
+      </Box>
+    );
+  }
+
+  // Show loading state if loading and no posts yet
+  if (postsState.length === 0 && postsLoading) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 8 }}>
+        <Typography variant="body2" color="text.secondary">
+          Loading posts...
         </Typography>
       </Box>
     );
   }
 
   return (
-    <Box>
+    <Box
+      sx={{
+        // Container optimizations for smooth scrolling
+        isolation: 'isolate', // Create new stacking context
+        position: 'relative',
+        zIndex: 0,
+      }}
+    >
       {categoryFilter && (
         <Box sx={{ 
           mb: 2, 
@@ -428,56 +504,114 @@ export const PostsFeed = forwardRef<PostsFeedRef, PostsFeedProps>(
           </Typography>
         </Box>
       )}
-      <InfiniteScroll
-        dataLength={postsState.length}
-        next={loadMore}
-        hasMore={hasMoreState}
-        loader={
-            <Box sx={{ textAlign: 'center', py: 2 }}>
+      <Stack 
+        spacing={3}
+        sx={{
+          // Optimize for scrolling performance
+          contain: 'layout style paint',
+          willChange: 'contents',
+        }}
+      >
+        {/* Level Up Celebration Cards */}
+        {recentLevelUps.map((levelUpEvent) => (
+          user && levelUpEvent.userId === user.id && (
+            <LevelUpCelebrationCard
+              key={levelUpEvent.timestamp}
+              user={{
+                id: user.id,
+                name: user.name,
+                profileImage: user.profileImage,
+              }}
+              currentUser={user}
+              newLevel={levelUpEvent.newLevel}
+              xpGained={levelUpEvent.xpGained}
+              onDismiss={() => handleDismissLevelUp(levelUpEvent.timestamp)}
+              onShare={() => handleShareLevelUp(levelUpEvent)}
+              onEmojiClick={(e) => handleEmojiClick(e, `levelup-${levelUpEvent.timestamp}`)}
+              onReactionToggle={(reaction) => handleLevelUpReaction(levelUpEvent.timestamp, reaction)}
+              onReplySubmit={(replyText) => handleLevelUpReply(levelUpEvent.timestamp, replyText)}
+              reactions={[
+                // Mock reactions for demo - replace with real data
+                { emoji: "🎉", count: 3, hasReacted: false, users: ["Alice", "Bob", "Charlie"] },
+                { emoji: "👏", count: 2, hasReacted: true, users: ["Dave", "Eve"] },
+              ]}
+              replies={[
+                // Mock replies for demo - replace with real data
+                {
+                  id: "reply1",
+                  user: { name: "Alice", initials: "AL", avatarColor: "#6366f1" },
+                  content: "Congratulations! Well deserved! 🎉",
+                  timeAgo: "2m ago"
+                },
+                {
+                  id: "reply2", 
+                  user: { name: "Bob", initials: "BO", avatarColor: "#10b981" },
+                  content: "Amazing progress, keep it up!",
+                  timeAgo: "5m ago"
+                }
+              ]}
+              darkMode={mode === "dark"}
+            />
+          )
+        ))}
+        
+        {postsState.map((post) => (
+          <PostCard
+            key={post.id}
+            post={post}
+            onEmojiClick={handleEmojiClick}
+            onReactionToggle={handleReactionToggle}
+            replyTexts={replyTexts}
+            onReplyTextChange={handleReplyTextChange}
+            onReplySubmit={handleReplySubmit}
+            replyingTo={replyingTo[post.id]}
+            onReplyingToChange={(value) => setReplyingTo(prev => ({ ...prev, [post.id]: value }))}
+            onReplyClick={handleReplyClick}
+            activeReplyFields={activeReplyFields}
+            onNestedReplySubmit={handleNestedReplySubmit}
+            replyFieldRefs={replyFieldRefs}
+            onPostReactionToggle={handlePostReactionToggle}
+            collapsedReplies={collapsedReplies}
+            onToggleReplyCollapse={toggleReplyCollapse}
+            onEditPost={handleEditPost}
+            onDeletePost={handleDeletePost}
+            onBookmarkToggle={handleBookmarkToggle}
+            darkMode={mode === "dark"}
+          />
+        ))}
+        
+        {/* Loading indicator and intersection observer target */}
+        {hasMoreState && (
+          <Box 
+            ref={loadMoreRef} 
+            sx={{ 
+              textAlign: 'center', 
+              py: 2,
+              minHeight: 50,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            {postsLoading ? (
               <Typography variant="body2" color="text.secondary">
                 Loading more posts...
               </Typography>
-            </Box>
-          }
-          endMessage={
-            postsState.length > 0 ? (
-              <Box sx={{ textAlign: 'center', py: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  No more posts to load
-                </Typography>
-              </Box>
-            ) : null
-          }
-        >
-          <Stack spacing={3}>
-          {postsState.map((post) => {
-            return (
-            <PostCard
-              key={post.id}
-              post={post}
-              onEmojiClick={handleEmojiClick}
-              onReactionToggle={handleReactionToggle}
-              replyTexts={replyTexts}
-              onReplyTextChange={handleReplyTextChange}
-              onReplySubmit={handleReplySubmit}
-              replyingTo={replyingTo[post.id]}
-              onReplyingToChange={(value) => setReplyingTo(prev => ({ ...prev, [post.id]: value }))}
-              onReplyClick={handleReplyClick}
-              activeReplyFields={activeReplyFields}
-              onNestedReplySubmit={handleNestedReplySubmit}
-              replyFieldRefs={replyFieldRefs}
-              onPostReactionToggle={handlePostReactionToggle}
-              collapsedReplies={collapsedReplies}
-              onToggleReplyCollapse={toggleReplyCollapse}
-              onEditPost={handleEditPost}
-              onDeletePost={handleDeletePost}
-              onBookmarkToggle={handleBookmarkToggle}
-              darkMode={mode === "dark"}
-            />
-            );
-          })}
+            ) : (
+              <Box sx={{ height: 1 }} /> // Invisible trigger element
+            )}
+          </Box>
+        )}
+        
+        {/* End message */}
+        {postsState.length > 0 && !hasMoreState && (
+          <Box sx={{ textAlign: 'center', py: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              No more posts to load
+            </Typography>
+          </Box>
+        )}
       </Stack>
-    </InfiniteScroll>
     
     {/* Delete Confirmation Modal */}
     <ConfirmationModal
